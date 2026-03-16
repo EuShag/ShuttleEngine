@@ -1,0 +1,89 @@
+#include "VulkanHelperFunctions.hpp"
+#include <fstream>
+
+vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModule(vk::Device const& device, vk::PipelineStageFlagBits shaderStage, char const* filePath) {
+	std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
+	if (!shaderModuleFile.is_open()) {
+		throw std::runtime_error("Failed to open fragment shader file");
+	}
+	auto const shaderModuleFileSize = shaderModuleFile.tellg();
+	std::vector<char> fragmentShaderCode(shaderModuleFileSize);
+	shaderModuleFile.seekg(0);
+	shaderModuleFile.read(fragmentShaderCode.data(), shaderModuleFileSize);
+
+	return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
+		.codeSize = fragmentShaderCode.size(),
+		.pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())
+		});
+}
+
+uint32_t findMemoryTypeIndex(vk::PhysicalDevice const& physicalDevice, uint32_t memoryTypeBits, vk::MemoryPropertyFlags requiredProperties) {
+	auto const memoryProperties = physicalDevice.getMemoryProperties();
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
+		if ((memoryTypeBits & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & requiredProperties) == requiredProperties) {
+			return i;
+		}
+	}
+	throw std::runtime_error("Failed to find a suitable memory type index.");
+}
+
+bool checkLayersSupport(std::vector<char const*> const& requiredLayers) {
+	auto [result, availableLayers] = vk::enumerateInstanceLayerProperties();
+	if (result != vk::Result::eSuccess) {
+		throw std::runtime_error("Failed to enumerate instance layer properties");
+	}
+	for (char const* requiredLayer : requiredLayers) {
+		bool found = false;
+		for (auto const& [layerName, _1, _2, _3] : availableLayers) {
+			if (strcmp(requiredLayer, layerName) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool checkExtensionSupport(std::vector<char const*> const& requiredExtensions) {
+	auto [result, availableExtensions] = vk::enumerateInstanceExtensionProperties();
+	if (result != vk::Result::eSuccess) {
+		throw std::runtime_error("Failed to enumerate instance extension properties");
+	}
+
+	for (char const* requiredExtension : requiredExtensions) {
+		bool found = false;
+		for (auto const& [extensionName, _] : availableExtensions) {
+			if (strcmp(requiredExtension, extensionName) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool checkExtensionsSupport(vk::PhysicalDevice const& physicalDevice, std::vector<char const*> const& requiredExtensions) {
+	auto [result, availableExtensions] = physicalDevice.enumerateDeviceExtensionProperties();
+	if (result != vk::Result::eSuccess) {
+		throw std::runtime_error("Failed to enumerate device extension properties");
+	}
+	for (char const* requiredExtension : requiredExtensions) {
+		bool found = false;
+		for (auto const& [extensionName, _] : availableExtensions) {
+			if (strcmp(requiredExtension, extensionName) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			return false;
+		}
+	}
+	return true;
+}

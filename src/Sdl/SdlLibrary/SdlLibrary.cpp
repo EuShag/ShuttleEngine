@@ -1,0 +1,45 @@
+#include "SdlLibrary.hpp"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+
+#include "../SdlWindow/SdlWindow.hpp"
+
+#include <stdexcept>
+
+SdlLibrary::SdlLibrary() {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
+		throw std::runtime_error("Failed to initialize SDL");
+	}
+}
+
+[[nodiscard]] std::vector<char const*> SdlLibrary::getSurfaceRequiredExtensions() {
+	uint32_t sdlExtensionCount = 0;
+	if (!SDL_Vulkan_GetInstanceExtensions(nullptr, &sdlExtensionCount, nullptr)) {
+		throw std::runtime_error("Failed to get SDL Vulkan extension count");
+	}
+	std::vector<char const*> extensions(sdlExtensionCount);
+	if (!SDL_Vulkan_GetInstanceExtensions(nullptr, &sdlExtensionCount, extensions.data())) {
+		throw std::runtime_error("Failed to get SDL Vulkan extensions");
+	}
+	return extensions;
+}
+
+void SdlLibrary::postQuitEvent() {
+	SDL_Event quitEvent;
+	quitEvent.type = SDL_QUIT;
+	SDL_PushEvent(&quitEvent);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+bool SdlLibrary::pullEvents() {
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT) return false;
+		SdlWindow::processEvent(event);
+	}
+	return true;
+}
+
+SdlLibrary::~SdlLibrary() {
+	SDL_Quit();
+}
