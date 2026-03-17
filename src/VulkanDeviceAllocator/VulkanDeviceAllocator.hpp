@@ -37,8 +37,9 @@ public:
 		vk::Device device,
 		vk::PhysicalDevice physicalDevice,
 		vk::CommandPool commandPool,
-		vk::Queue transferQueue
-	) : device(device), physicalDevice(physicalDevice), commandPool(commandPool), graphicsQueue(transferQueue) {}
+		vk::Queue transferQueue,
+		vk::detail::DispatchLoaderDynamic const& dispatcher = vk::detail::defaultDispatchLoaderDynamic
+	);
 
 	[[nodiscard]] vk::ResultValue<vk::Buffer> createAndBindToMemoryBuffer(vk::BufferCreateInfo const& bufferCreateInfo);
 	[[nodiscard]] vk::ResultValue<vk::Image> createAndBindToMemoryImage(vk::ImageCreateInfo const& imageCreateInfo);
@@ -46,11 +47,5 @@ public:
 	vk::ResultValue<void> writeBufferData(vk::DeviceMemory deviceMemory, vk::Buffer buffer, uint64_t size, uint64_t offset = 0);
 
 private:
-	std::vector<vk::UniqueDeviceMemory> deviceMemories;
-	vk::Device device;
-	vk::PhysicalDevice physicalDevice;
-	vk::CommandPool commandPool;
-	vk::Queue graphicsQueue;
-
-	vk::Optional<uint32_t> findMemoryTypeIndex(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const;
+	void* allocator;
 };
