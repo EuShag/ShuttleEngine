@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
 #include <optional>
+#include <memory>
 #include "IncludeVulkan.hpp"
 
 template<typename T>

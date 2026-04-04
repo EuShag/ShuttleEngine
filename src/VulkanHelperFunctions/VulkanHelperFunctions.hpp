@@ -6,5 +6,4 @@ vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModule(vk::Device con
 bool checkExtensionSupport(std::vector<char const*> const& requiredExtensions);
 bool checkLayersSupport(std::vector<char const*> const& requiredLayers);
 bool checkExtensionsSupport(vk::PhysicalDevice const& physicalDevice, std::vector<char const*> const& requiredExtensions);
-uint32_t findQueueFamilyIndex(vk::PhysicalDevice const& physicalDevice, vk::QueueFlags requiredQueueFlags);
 uint32_t findMemoryTypeIndex(vk::PhysicalDevice const& physicalDevice, uint32_t memoryTypeBits, vk::MemoryPropertyFlags requiredProperties);

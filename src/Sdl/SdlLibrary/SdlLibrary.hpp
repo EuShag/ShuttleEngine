@@ -10,6 +10,7 @@ public:
 	SdlLibrary(SdlLibrary&&) = delete;
 	SdlLibrary& operator=(SdlLibrary&&) = delete;
 
+	void setRelativeMouseMode(bool enabled);
 
 	[[nodiscard]] static std::vector<char const*> getSurfaceRequiredExtensions();
 	void postQuitEvent();

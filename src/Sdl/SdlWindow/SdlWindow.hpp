@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include "../SdlKeyboard/SdlKeyCode.hpp"
 #include "../SdlKeyboard/SdlKeyMode.hpp"
+#include "../SdlMouse/SdlMouseButton.hpp"
 #include "IncludeVulkan.hpp"
 
 enum class SdlKeyState {
@@ -35,32 +36,41 @@ public:
 
 	static void processEvent(SDL_Event const& event);
 
-	void setWindowCloseEventCallback(std::function<void()> callback);
-	void setWindowResizeEventCallback(std::function<void(int, int)> callback);
-	void setWindowMoveEventCallback(std::function<void(int, int)> callback);
-	void setWindowFocusEventCallback(std::function<void(int)> callback);
-	void setWindowShowModeEventCallback(std::function<void(ShowMode)> callback);
-	void setMouseMotionEventCallback(std::function<void(int, int)> callback);
-	void setMouseButtonEventCallback(std::function<void(uint64_t)> callback);
-	void setMouseWheelEventCallback(std::function<void(int, int)> callback);
-	void setKeyboardEventCallback(std::function<void(SdlKeyCode, SdlKeyMode, SdlKeyState)> callback);
+	void setPosition(int x, int y);
+	void setSize(int width, int height);
+	void close();
+	void show();
+	void hide();
+	void maximize();
+	void minimize();
+	void restore();
+
+	void setWindowCloseEventCallback(std::function<void(SdlWindow&)> callback);
+	void setWindowResizeEventCallback(std::function<void(SdlWindow&, int, int)> callback);
+	void setWindowMoveEventCallback(std::function<void(SdlWindow&, int, int)> callback);
+	void setWindowFocusEventCallback(std::function<void(SdlWindow&, int)> callback);
+	void setWindowShowModeEventCallback(std::function<void(SdlWindow&, ShowMode)> callback);
+	void setMouseMotionEventCallback(std::function<void(SdlWindow&, int, int)> callback);
+	void setMouseButtonEventCallback(std::function<void(SdlWindow&, SdlMouseButton, SdlKeyState)> callback);
+	void setMouseWheelEventCallback(std::function<void(SdlWindow&, int, int)> callback);
+	void setKeyboardEventCallback(std::function<void(SdlWindow&, SdlKeyCode, SdlKeyMode, SdlKeyState)> callback);
 
 	~SdlWindow();
 
 private:
 	SDL_Window* window;
 
-	std::function<void()> windowCloseEventCallback;
+	std::function<void(SdlWindow&)> windowCloseEventCallback;
 
-	std::function<void(int, int)> windowResizeEventCallback;
-	std::function<void(int, int)> windowMoveEventCallback;
-	std::function<void(int)> windowFocusEventCallback;
-	std::function<void(ShowMode)> windowShowModeEventCallback;
+	std::function<void(SdlWindow&, int, int)> windowResizeEventCallback;
+	std::function<void(SdlWindow&, int, int)> windowMoveEventCallback;
+	std::function<void(SdlWindow&, int)> windowFocusEventCallback;
+	std::function<void(SdlWindow&, ShowMode)> windowShowModeEventCallback;
 
-	std::function<void(int, int)> mouseMotionEventCallback;
-	std::function<void(uint64_t)> mouseButtonEventCallback;
-	std::function<void(int, int)> mouseWheelEventCallback;
-	std::function<void(SdlKeyCode, SdlKeyMode, SdlKeyState)> keyboardEventCallback;
+	std::function<void(SdlWindow&, int, int)> mouseMotionEventCallback;
+	std::function<void(SdlWindow&, SdlMouseButton, SdlKeyState)> mouseButtonEventCallback;
+	std::function<void(SdlWindow&, int, int)> mouseWheelEventCallback;
+	std::function<void(SdlWindow&, SdlKeyCode, SdlKeyMode, SdlKeyState)> keyboardEventCallback;
 
 	bool hasCloseEventCallback = false;
 	bool hasResizeEventCallback = false;

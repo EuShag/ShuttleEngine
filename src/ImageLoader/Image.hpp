@@ -19,8 +19,8 @@ struct CubeMapImageData {
 	void* leftData;
 	void* topData;
 	void* bottomData;
-	void* frontData;
 	void* backData;
+	void* frontData;
 };
 
 struct CubeMapImageFiles {
@@ -52,12 +52,13 @@ public:
 	CubeMapImage() = delete;
 	explicit CubeMapImage(CubeMapImageFiles const& cubeMapImageFiles);
 	[[nodiscard]] CubeMapImageData getData() const { return imageData; }
+	[[nodiscard]] size_t getTotalDataSize() const { return static_cast<size_t>(imageData.sideWidth * imageData.sideWidth * 4) * 6; }
 
 private:
 	CubeMapImageData imageData{
 		.sideWidth = 0, 
 		.rightData = nullptr, .leftData = nullptr, 
-		.topData = nullptr, .bottomData = nullptr,
-		.frontData = nullptr, .backData = nullptr
+		.topData = nullptr, .bottomData = nullptr, 
+		.backData = nullptr, .frontData = nullptr
 	};
 };

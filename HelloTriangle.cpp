@@ -1,6 +1,7 @@
 #define VULKAN_HPP_NO_EXCEPTIONS
 #define VULKAN_HPP_NO_CONSTRUCTORS
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -8,6 +9,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.hpp>
@@ -16,25 +18,25 @@
 #include "Sdl.hpp"
 #include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 #include "VulkanInstanceBuilder/VulkanInstanceBuilder.hpp"
+#include "VulkanDeviceAllocator/VulkanDeviceAllocator.hpp"
+#include "VulkanCopyManager/VulkanCopyManager.hpp"
+#include "Camera/Camera.hpp"
 
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 int main(int argc, char** argv) {
-	try{
+	try {
+
+		vm::Camera camera{ glm::vec3{0.3,0.3,0.3}, glm::quat{0.1, 0.2, 0.2, 0.2} };
+		camera.lookAt(glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f });
 
 		SdlLibrary sdlLibrary; // Ensure SDL is initialized and cleaned up properly
 		VULKAN_HPP_DEFAULT_DISPATCHER.init();
 
-		auto window = SdlWindow("Hello Triangle", 800, 600);
+		auto window = SdlWindow("Hello Triangle", 1800, 1000);
 
-		window.setKeyboardEventCallback([&](SdlKeyCode keyCode, SdlKeyMode keyMode, SdlKeyState keyState) {
-			if (keyCode == SdlKeyCode::Escape && keyState == SdlKeyState::Pressed) {
-				std::cout << "Escape key pressed, closing window...\n";
-				sdlLibrary.postQuitEvent();
-			}});
-
-		window.setWindowCloseEventCallback([&] {
+		window.setWindowCloseEventCallback([&] (SdlWindow&) {
 			std::cout << "Window close event received, closing window...\n";
 			sdlLibrary.postQuitEvent();
 			});
@@ -42,10 +44,10 @@ int main(int argc, char** argv) {
 		auto requiredInstanceExtensions = SdlLibrary::getSurfaceRequiredExtensions();
 
 		requiredInstanceExtensions.push_back("VK_EXT_debug_utils");
-		auto const validationLayers = std::vector{"VK_LAYER_KHRONOS_validation"};
+		auto const validationLayers = std::vector{ "VK_LAYER_KHRONOS_validation" };
 
-		auto [buildInstanceResult, uniqueInstance] = 
-			VulkanInstanceBuilder{[&](VulkanInstanceBuilder& self) {
+		auto [buildInstanceResult, uniqueInstance] =
+			VulkanInstanceBuilder{ [&](VulkanInstanceBuilder& self) {
 				self
 					.addExtensions(requiredInstanceExtensions)
 					.addLayers(validationLayers)
@@ -57,14 +59,14 @@ int main(int argc, char** argv) {
 						.engineVersion = vk::makeVersion(1, 0, 0),
 						.apiVersion = vk::ApiVersion10
 						});
-			}}.buildUnique();
+			} }.buildUnique();
 
 		if (buildInstanceResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create Vulkan instance");
 		} VULKAN_HPP_DEFAULT_DISPATCHER.init(uniqueInstance.get());
 
 		auto const uniqueSurface = window.createVulkanSurfaceUnique(*uniqueInstance);
-	
+
 		auto [enumeratePhysicalDevicesResult, physicalDevices] = uniqueInstance.get().enumeratePhysicalDevices();
 		if (enumeratePhysicalDevicesResult != vk::Result::eSuccess || physicalDevices.empty()) {
 			throw std::runtime_error("Failed to find a suitable GPU");
@@ -80,16 +82,16 @@ int main(int argc, char** argv) {
 		std::vector<uint32_t> transferFamilyIndices{};
 		vk::PhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
-		for (auto physicalDevice1: physicalDevices) {
+		for (auto physicalDevice1 : physicalDevices) {
 			bool requiredExtensionsSupported = checkExtensionsSupport(physicalDevice1, requiredDeviceExtensions);
 			std::vector<uint32_t> physicalDevicePresentationFamilyIndices;
 			std::vector<uint32_t> physicalDeviceGraphicFamilyIndices;
 			std::vector<uint32_t> physicalDeviceComputeFamilyIndices;
 			std::vector<uint32_t> physicalDeviceTransferFamilyIndices;
-		
+
 			auto physicalDeviceQueueFamilyProperties = physicalDevice1.getQueueFamilyProperties();
 
-			for (int queueFamilyIndex = 0U; auto queueFamilyProperties: physicalDeviceQueueFamilyProperties) {
+			for (int queueFamilyIndex = 0U; auto&& queueFamilyProperties: physicalDeviceQueueFamilyProperties) {
 				if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics) physicalDeviceGraphicFamilyIndices.push_back(queueFamilyIndex);
 				if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eCompute) physicalDeviceComputeFamilyIndices.push_back(queueFamilyIndex);
 				if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eTransfer) physicalDeviceTransferFamilyIndices.push_back(queueFamilyIndex);
@@ -112,16 +114,16 @@ int main(int argc, char** argv) {
 		}
 
 		std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos{};
-		std::array queuePriorities = {1.0f, 1.0f, 1.0f, 1.0f};
-		std::pair<uint32_t, uint32_t> graphicQueueIndex{0,0};
-		std::pair<uint32_t, uint32_t> presentationQueueIndex{0,0};
-		std::pair<uint32_t, uint32_t> computeQueueIndex{0,0};
-		std::pair<uint32_t, uint32_t> transferQueueIndex{0,0};
+		std::array queuePriorities = { 1.0f, 1.0f, 1.0f, 1.0f };
+		std::pair<uint32_t, uint32_t> graphicQueueIndex{ 0,0 };
+		std::pair<uint32_t, uint32_t> presentationQueueIndex{ 0,0 };
+		std::pair<uint32_t, uint32_t> computeQueueIndex{ 0,0 };
+		std::pair<uint32_t, uint32_t> transferQueueIndex{ 0,0 };
 
-		for (auto graphicFamilyIndex: graphicFamilyIndices) {
-			for (auto presentationFamilyIndex: presentationFamilyIndices) {
-				for (auto computeFamilyIndex: computeFamilyIndices) {
-					for (auto transferFamilyIndex: transferFamilyIndices) {
+		for (auto graphicFamilyIndex : graphicFamilyIndices) {
+			for (auto presentationFamilyIndex : presentationFamilyIndices) {
+				for (auto computeFamilyIndex : computeFamilyIndices) {
+					for (auto transferFamilyIndex : transferFamilyIndices) {
 						if (graphicFamilyIndex == presentationFamilyIndex && presentationFamilyIndex == computeFamilyIndex && computeFamilyIndex == transferFamilyIndex) {
 							deviceQueueCreateInfos.push_back(
 								vk::DeviceQueueCreateInfo{
@@ -157,10 +159,42 @@ int main(int argc, char** argv) {
 			throw std::runtime_error("Failed to create logical device");
 		}
 
+		auto [createAllocatorResult, uniqueAllocator] = vma::UniqueAllocator::makeUnique(
+			*uniqueInstance,
+			*uniqueDevice,
+			physicalDevice,
+			vk::detail::defaultDispatchLoaderDynamic
+		);
+		if (createAllocatorResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create VMA allocator");
+		}
+
 		vk::Queue graphicQueue = uniqueDevice->getQueue(graphicQueueIndex.first, graphicQueueIndex.second);
 		vk::Queue presentationQueue = uniqueDevice->getQueue(presentationQueueIndex.first, presentationQueueIndex.second);
 		vk::Queue computeQueue = uniqueDevice->getQueue(computeQueueIndex.first, computeQueueIndex.second);
 		vk::Queue transferQueue = uniqueDevice->getQueue(transferQueueIndex.first, transferQueueIndex.second);
+
+		auto [craeteUniqueCommandPoolResult, uniqueTransferCommandPool] = uniqueDevice->createCommandPoolUnique(
+			vk::CommandPoolCreateInfo{
+				.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+				.queueFamilyIndex = transferQueueIndex.first
+			}
+		);
+		if (craeteUniqueCommandPoolResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create command pool");
+		}
+
+		auto [allocateUniqueCommandBuffersResult, uniqueTransferCommandBuffers] = uniqueDevice->allocateCommandBuffersUnique(
+			vk::CommandBufferAllocateInfo{
+				.commandPool = *uniqueTransferCommandPool,
+				.level = vk::CommandBufferLevel::ePrimary,
+				.commandBufferCount = 1
+			}
+		);
+		if (allocateUniqueCommandBuffersResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to allocate command buffers");
+		}
+		auto transferCommandBuffer = uniqueTransferCommandBuffers.front().get();
 
 		auto [getSurfaceCapabilitiesResult, physicalDeviceSurfaceCapabilities] = physicalDevice.getSurfaceCapabilitiesKHR(uniqueSurface.get());
 		if (getSurfaceCapabilitiesResult != vk::Result::eSuccess) {
@@ -234,29 +268,96 @@ int main(int argc, char** argv) {
 			if (createImageViewResult != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed to create image view");
 			}
-			uniqueImageViews.push_back( std::move(uniqueImageView));
+			uniqueImageViews.push_back(std::move(uniqueImageView));
 		}
 
-		vk::AttachmentDescription swapchainAttachmentDescription{
-			.format = swapchainImageFormat,
-			.samples = vk::SampleCountFlagBits::e1,
-			.loadOp = vk::AttachmentLoadOp::eClear,
-			.storeOp = vk::AttachmentStoreOp::eStore,
-			.stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-			.stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-			.initialLayout = vk::ImageLayout::eUndefined,
-			.finalLayout = vk::ImageLayout::ePresentSrcKHR
+		auto [createDepthBufferResult, uniqueDepthBufferImage] = uniqueAllocator->createAndAllocateImageUnique(
+			vk::ImageCreateInfo{
+				.imageType = vk::ImageType::e2D,
+				.format = vk::Format::eD32SfloatS8Uint,
+				.extent = vk::Extent3D{
+					.width = swapchainExtent.width,
+					.height = swapchainExtent.height,
+					.depth = 1
+				},
+				.mipLevels = 1,
+				.arrayLayers = 1,
+				.samples = vk::SampleCountFlagBits::e1,
+				.tiling = vk::ImageTiling::eOptimal,
+				.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+				.sharingMode = vk::SharingMode::eExclusive,
+				.queueFamilyIndexCount = 0,
+				.pQueueFamilyIndices = nullptr,
+				.initialLayout = vk::ImageLayout::eUndefined
+			},
+			vma::MemoryUsage::ePreferDeviceMemory
+		);
+		if (createDepthBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create depth buffer image");
+		}
+
+		auto [createDepthBufferImageViewResult, uniqueDepthBufferImageView] = uniqueDevice->createImageViewUnique(
+			vk::ImageViewCreateInfo{
+				.image = *uniqueDepthBufferImage,
+				.viewType = vk::ImageViewType::e2D,
+				.format = vk::Format::eD32SfloatS8Uint,
+				.components = vk::ComponentMapping{
+					.r = vk::ComponentSwizzle::eIdentity,
+					.g = vk::ComponentSwizzle::eIdentity,
+					.b = vk::ComponentSwizzle::eIdentity,
+					.a = vk::ComponentSwizzle::eIdentity
+				},
+				.subresourceRange = vk::ImageSubresourceRange{
+					.aspectMask = vk::ImageAspectFlagBits::eDepth,
+					.baseMipLevel = 0,
+					.levelCount = 1,
+					.baseArrayLayer = 0,
+					.layerCount = 1
+				}
+			});
+		if (createDepthBufferImageViewResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create depth buffer image view");
+		}
+
+		std::array swapchainAttachmentDescriptions{
+			vk::AttachmentDescription{
+				.format = swapchainImageFormat,
+				.samples = vk::SampleCountFlagBits::e1,
+				.loadOp = vk::AttachmentLoadOp::eClear,
+				.storeOp = vk::AttachmentStoreOp::eStore,
+				.stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+				.stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+				.initialLayout = vk::ImageLayout::eUndefined,
+				.finalLayout = vk::ImageLayout::ePresentSrcKHR
+			},
+			vk::AttachmentDescription{
+				.format = vk::Format::eD32SfloatS8Uint,
+				.samples = vk::SampleCountFlagBits::e1,
+				.loadOp = vk::AttachmentLoadOp::eClear,
+				.storeOp = vk::AttachmentStoreOp::eDontCare,
+				.stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+				.stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+				.initialLayout = vk::ImageLayout::eUndefined,
+				.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal
+			}
 		};
 
-		vk::AttachmentReference swapchainAttachmentReference{
+		vk::AttachmentReference colorAttachmentReference{
 			.attachment = 0,
 			.layout = vk::ImageLayout::eColorAttachmentOptimal
+		};
+
+		vk::AttachmentReference depthAttachmentReference{
+			.attachment = 1,
+			.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal
 		};
 
 		vk::SubpassDescription swapchainSubpassDescription{
 			.pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
 			.colorAttachmentCount = 1,
-			.pColorAttachments = &swapchainAttachmentReference
+			.pColorAttachments = &colorAttachmentReference,
+			.pResolveAttachments = nullptr,
+			.pDepthStencilAttachment = &depthAttachmentReference
 		};
 
 		std::array swapchainSubpassDependencies{
@@ -282,8 +383,8 @@ int main(int argc, char** argv) {
 
 		auto [renderPassCreateResult, uniqueRenderPass] = uniqueDevice->createRenderPassUnique(
 			vk::RenderPassCreateInfo{
-				.attachmentCount = 1,
-				.pAttachments = &swapchainAttachmentDescription,
+				.attachmentCount = static_cast<uint32_t>(swapchainAttachmentDescriptions.size()),
+				.pAttachments = swapchainAttachmentDescriptions.data(),
 				.subpassCount = 1,
 				.pSubpasses = &swapchainSubpassDescription,
 				.dependencyCount = static_cast<uint32_t>(swapchainSubpassDependencies.size()),
@@ -297,11 +398,12 @@ int main(int argc, char** argv) {
 		std::vector<vk::UniqueFramebuffer> uniqueFramebuffers{};
 		uniqueFramebuffers.reserve(imageCount);
 		for (auto& imageView: uniqueImageViews) {
+			std::array views = { *imageView, *uniqueDepthBufferImageView };
 			auto [createFramebufferResult, uniqueFramebuffer] = uniqueDevice->createFramebufferUnique(
 				vk::FramebufferCreateInfo{
 					.renderPass = *uniqueRenderPass,
-					.attachmentCount = 1,
-					.pAttachments = &imageView.get(),
+					.attachmentCount = 2,
+					.pAttachments = views.data(),
 					.width = swapchainExtent.width,
 					.height = swapchainExtent.height,
 					.layers = 1
@@ -315,13 +417,13 @@ int main(int argc, char** argv) {
 
 		std::array descriptorSetLayoutBindings{
 			vk::DescriptorSetLayoutBinding{
-				.binding = 0,
+				.binding = 1,
 				.descriptorType = vk::DescriptorType::eCombinedImageSampler,
 				.descriptorCount = 1,
 				.stageFlags = vk::ShaderStageFlagBits::eFragment
 			},
 			vk::DescriptorSetLayoutBinding{
-				.binding = 1,
+				.binding = 0,
 				.descriptorType = vk::DescriptorType::eUniformBuffer,
 				.descriptorCount = 1,
 				.stageFlags = vk::ShaderStageFlagBits::eVertex
@@ -351,6 +453,7 @@ int main(int argc, char** argv) {
 
 		auto [descriptorPoolCreateResult, uniqueDescriptorPool] = uniqueDevice->createDescriptorPoolUnique(
 			vk::DescriptorPoolCreateInfo{
+				.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
 				.maxSets = 1,
 				.poolSizeCount = static_cast<uint32_t>(descriptorSizes.size()),
 				.pPoolSizes = descriptorSizes.data(),
@@ -375,74 +478,60 @@ int main(int argc, char** argv) {
 		struct CameraData {
 			glm::mat4 view;
 			glm::mat4 projection;
-		} cameraData;
+		};
 
-		auto [cameraBufferCreateResult, uniqueCameraBuffer] = uniqueDevice->createBufferUnique(
+		float fov = glm::radians(45.0f);        // Угол обзора 45 градусов
+		float aspect = static_cast<float>(swapchainExtent.width) / static_cast<float>(swapchainExtent.height);  // Соотношение сторон окна
+		float nearPlane = 0.1f;                // Ближняя плоскость (не ставь 0!)
+		float farPlane = 1000.0f;                // Дальняя плоскость
+
+		glm::mat4 proj = glm::perspective(fov, aspect, nearPlane, farPlane);
+
+		// КРИТИЧЕСКИ ВАЖНО ДЛЯ VULKAN:
+		proj[1][1] *= -1;
+
+		CameraData cameraData{
+			.view = camera.getViewMatrix(),
+			.projection = proj
+		};
+
+		auto [cameraBufferCreateResult, uniqueCameraBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
 			vk::BufferCreateInfo{
 				.size = sizeof(CameraData),
 				.usage = vk::BufferUsageFlagBits::eUniformBuffer,
 				.sharingMode = vk::SharingMode::eExclusive
-			}
+			},
+			vma::MemoryUsage::ePreferHostMemory,
+			vma::AllocationCreateFlags{ vma::AllocationCreateFlagBits::eMapped } | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite
 		);
 		if (cameraBufferCreateResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create camera uniform buffer");
 		}
 
+		if (auto result = uniqueAllocator->writeBufferFromHost(
+			vma::BufferWriteInfo{
+				.dstBuffer = *uniqueCameraBuffer,
+				.dstBufferOffset = 0,
+				.srcData = &cameraData,
+				.dataSize = sizeof(CameraData)
+			}
+		); result != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to write camera data to uniform buffer");
+		}
+
 		CubeMapImageFiles files{
-			.rightFilePath = "img/right.jpg",
-			.leftFilePath = "img/left.jpg",
-			.topFilePath = "img/top.jpg",
-			.bottomFilePath = "img/bottom.jpg",
-			.backFilePath = "img/back.jpg",
-			.frontFilePath = "img/front.jpg"
+			.rightFilePath = "img/right.png",
+			.leftFilePath = "img/left.png",
+			.topFilePath = "img/up.png",
+			.bottomFilePath = "img/down.png",
+			.frontFilePath = "img/front.png",
+			.backFilePath = "img/back.png"
 		};
 
-		CubeMapImage{files};
+		CubeMapImage cubeMap{files};
+		auto sideWidth = static_cast<uint32_t>(cubeMap.getData().sideWidth);
 
-		auto cubeMapImageData = CubeMapImage{ files }.getImageData();
-
-		auto sideWidth = static_cast<uint32_t>(cubeMapImageData.sideWidth);
-
-		auto [stagingBufferCreateResult, uniqueStagingBuffer] = uniqueDevice->createBufferUnique(
-			vk::BufferCreateInfo{
-				.size = static_cast<vk::DeviceSize>(sideWidth) * 4 * 6, // Assuming 4 bytes per pixel (RGBA) and 6 faces
-				.usage = vk::BufferUsageFlagBits::eTransferSrc,
-				.sharingMode = vk::SharingMode::eExclusive
-			}
-		);
-		if (stagingBufferCreateResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create staging buffer");
-		}
-
-		auto stagingBufferMemoryRequirements = uniqueDevice->getBufferMemoryRequirements(*uniqueStagingBuffer);
-
-		auto [allocateStagingBufferMemoryResult, stagingBufferMemory] = uniqueDevice->allocateMemoryUnique(
-			vk::MemoryAllocateInfo{
-				.allocationSize = stagingBufferMemoryRequirements.size,
-				.memoryTypeIndex = findMemoryTypeIndex(physicalDevice, stagingBufferMemoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent)
-			}
-		);
-		if (allocateStagingBufferMemoryResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to allocate memory for staging buffer");
-		}
-
-		if (auto stagingBufferBindResult = uniqueDevice->bindBufferMemory(*uniqueStagingBuffer, *stagingBufferMemory, 0); stagingBufferBindResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to bind memory to staging buffer");
-		}
-
-		auto [mapStagingBufferMemoryResult, mappedStagingBufferMemory] = uniqueDevice->mapMemory(*stagingBufferMemory, 0, static_cast<vk::DeviceSize>(sideWidth) * 4 * 6);
-		if (mapStagingBufferMemoryResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to map staging buffer memory");
-		}
-
-		std::memcpy(mappedStagingBufferMemory, cubeMapImageData.leftData, static_cast<size_t>(sideWidth) * 4);
-		std::memcpy(static_cast<char*>(mappedStagingBufferMemory) + static_cast<size_t>(sideWidth) * 4, cubeMapImageData.rightData, static_cast<size_t>(sideWidth) * 4);
-		std::memcpy(static_cast<char*>(mappedStagingBufferMemory) + static_cast<size_t>(sideWidth) * 4 * 2, cubeMapImageData.topData, static_cast<size_t>(sideWidth) * 4);
-		std::memcpy(static_cast<char*>(mappedStagingBufferMemory) + static_cast<size_t>(sideWidth) * 4 * 3, cubeMapImageData.bottomData, static_cast<size_t>(sideWidth) * 4);
-		std::memcpy(static_cast<char*>(mappedStagingBufferMemory) + static_cast<size_t>(sideWidth) * 4 * 4, cubeMapImageData.backData, static_cast<size_t>(sideWidth) * 4);
-		std::memcpy(static_cast<char*>(mappedStagingBufferMemory) + static_cast<size_t>(sideWidth) * 4 * 5, cubeMapImageData.frontData, static_cast<size_t>(sideWidth) * 4);
-
-		auto [cubeMapImageCreateResult, uniqueCubeMapImage] = uniqueDevice->createImageUnique(
+		auto [createCubeMapResult, uniqueCubeMapMemoryResource] = uniqueAllocator->createAndAllocateImageUnique(
 			vk::ImageCreateInfo{
 				.flags = vk::ImageCreateFlagBits::eCubeCompatible,
 				.imageType = vk::ImageType::e2D,
@@ -457,213 +546,39 @@ int main(int argc, char** argv) {
 				.initialLayout = vk::ImageLayout::eUndefined
 			}
 		);
-		if (cubeMapImageCreateResult != vk::Result::eSuccess) {
+		if (createCubeMapResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create cube map image");
 		}
 
-		auto cubeMapImageMemoryRequirements = uniqueDevice->getImageMemoryRequirements(*uniqueCubeMapImage);
-
-		auto [allocateImageMemoryResult, ImageMemory] = uniqueDevice->allocateMemoryUnique(
-			vk::MemoryAllocateInfo{
-				.allocationSize = cubeMapImageMemoryRequirements.size,
-				.memoryTypeIndex = findMemoryTypeIndex(physicalDevice, cubeMapImageMemoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal)
-			}
+		auto [createUniqueAllocatedBufferResult, uniqueAllocatedStagingBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
+			vk::BufferCreateInfo{
+				.size = cubeMap.getTotalDataSize(),
+				.usage = vk::BufferUsageFlagBits::eTransferSrc,
+				.sharingMode = vk::SharingMode::eExclusive
+			},
+			vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eMapped
 		);
-		if (allocateImageMemoryResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to allocate memory for cube map image");
+		if (createUniqueAllocatedBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create staging buffer");
 		}
 
-		if (auto imageBindResult = uniqueDevice->bindImageMemory(*uniqueCubeMapImage, *ImageMemory, 0); imageBindResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to bind memory to cube map image");
-		}
-
-		auto [createCopyCommandPoolResult, uniqueCopyCommandPool] = uniqueDevice->createCommandPoolUnique(
-			vk::CommandPoolCreateInfo{
-				.flags = vk::CommandPoolCreateFlagBits::eTransient,
-				.queueFamilyIndex = transferQueueIndex.first
-			}
-		);
-		if (createCopyCommandPoolResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create command pool for copy operations");
-		}
-
-		auto [copyCommandBufferAllocateResult, uniqueCopyCommandBuffer] = uniqueDevice->allocateCommandBuffersUnique(
-			vk::CommandBufferAllocateInfo{
-				.commandPool = *uniqueCopyCommandPool,
-				.level = vk::CommandBufferLevel::ePrimary,
-				.commandBufferCount = 1
-			}
-		);
-		if (copyCommandBufferAllocateResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to allocate command buffer for copy operations");
-		}
-
-		// Transition cube map image layout to be optimal for receiving data from the staging buffer
-		auto copyCommandBuffer = uniqueCopyCommandBuffer.front().get();
-		if (auto beginCopyCommandBufferResult = copyCommandBuffer.begin(vk::CommandBufferBeginInfo{ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit }); beginCopyCommandBufferResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to begin recording copy command buffer");
-		}
-		copyCommandBuffer.pipelineBarrier(
-			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eTransfer,
-			{},
-			{},
-			{},
-			vk::ImageMemoryBarrier{
-				.srcAccessMask = {},
-				.dstAccessMask = vk::AccessFlagBits::eTransferWrite,
-				.oldLayout = vk::ImageLayout::eUndefined,
-				.newLayout = vk::ImageLayout::eTransferDstOptimal,
-				.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-				.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-				.image = *uniqueCubeMapImage,
-				.subresourceRange = vk::ImageSubresourceRange{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.baseMipLevel = 0,
-					.levelCount = 1,
-					.baseArrayLayer = 0,
-					.layerCount = 6
-				}
-			}
-		);
-
-		std::array bufferToImageRegions{
-			vk::BufferImageCopy{
-				.bufferOffset = 0,
-				.bufferRowLength = 0,
-				.bufferImageHeight = 0,
-				.imageSubresource = vk::ImageSubresourceLayers{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.mipLevel = 0,
-					.baseArrayLayer = 0,
-					.layerCount = 6
-				},
-				.imageOffset = vk::Offset3D{.x = 0, .y = 0, .z = 0},
-				.imageExtent = vk::Extent3D{.width = sideWidth, .height = sideWidth, .depth = 1}
-			},
-			vk::BufferImageCopy{
-				.bufferOffset = static_cast<vk::DeviceSize>(sideWidth) * 4,
-				.bufferRowLength = 0,
-				.bufferImageHeight = 0,
-				.imageSubresource = vk::ImageSubresourceLayers{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.mipLevel = 0,
-					.baseArrayLayer = 1,
-					.layerCount = 1
-				},
-				.imageOffset = vk::Offset3D{.x = 0, .y = 0, .z = 0},
-				.imageExtent = vk::Extent3D{.width = sideWidth, .height = sideWidth, .depth = 1}
-			},
-			vk::BufferImageCopy{
-				.bufferOffset = static_cast<vk::DeviceSize>(sideWidth) * 4 * 2,
-				.bufferRowLength = 0,
-				.bufferImageHeight = 0,
-				.imageSubresource = vk::ImageSubresourceLayers{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.mipLevel = 0,
-					.baseArrayLayer = 2,
-					.layerCount = 1
-				},
-				.imageOffset = vk::Offset3D{.x = 0, .y = 0, .z = 0},
-				.imageExtent = vk::Extent3D{.width = sideWidth, .height = sideWidth, .depth = 1}
-			},
-			vk::BufferImageCopy{
-				.bufferOffset = static_cast<vk::DeviceSize>(sideWidth) * 4 * 3,
-				.bufferRowLength = 0,
-				.bufferImageHeight = 0,
-				.imageSubresource = vk::ImageSubresourceLayers{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.mipLevel = 0,
-					.baseArrayLayer = 3,
-					.layerCount = 1
-				},
-				.imageOffset = vk::Offset3D{.x = 0, .y = 0, .z = 0},
-				.imageExtent = vk::Extent3D{.width = sideWidth, .height = sideWidth, .depth = 1}
-			},
-			vk::BufferImageCopy{
-				.bufferOffset = static_cast<vk::DeviceSize>(sideWidth) * 4 * 4,
-				.bufferRowLength = 0,
-				.bufferImageHeight = 0,
-				.imageSubresource = vk::ImageSubresourceLayers{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.mipLevel = 0,
-					.baseArrayLayer = 4,
-					.layerCount = 1
-				},
-				.imageOffset = vk::Offset3D{.x = 0, .y = 0, .z = 0},
-				.imageExtent = vk::Extent3D{.width = sideWidth, .height = sideWidth, .depth = 1}
-			},
-			vk::BufferImageCopy{
-				.bufferOffset = static_cast<vk::DeviceSize>(sideWidth) * 4 * 5,
-				.bufferRowLength = 0,
-				.bufferImageHeight = 0,
-				.imageSubresource = vk::ImageSubresourceLayers{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.mipLevel = 0,
-					.baseArrayLayer = 5,
-					.layerCount = 1
-				},
-				.imageOffset = vk::Offset3D{.x = 0, .y = 0, .z = 0},
-				.imageExtent = vk::Extent3D{.width = sideWidth, .height = sideWidth, .depth = 1}
-			}
+		vcm::StagingBuffer stagingBuffer{
+			std::move(uniqueAllocatedStagingBuffer),
+			vma::AllocatorCopier{ *uniqueAllocator }
 		};
-
-		copyCommandBuffer.copyBufferToImage(
-			*uniqueStagingBuffer,
-			*uniqueCubeMapImage,
-			vk::ImageLayout::eTransferDstOptimal,
-			bufferToImageRegions
+		stagingBuffer.writeCubeMapData(
+			transferQueue,
+			transferCommandBuffer, // Command buffer should be created and passed here
+			{}, // Wait semaphores should be created and passed here
+			{}, // Signal semaphores should be created and passed here
+			*uniqueCubeMapMemoryResource,
+			cubeMap
 		);
-		copyCommandBuffer.pipelineBarrier(
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eFragmentShader,
-			{},
-			{},
-			{},
-			vk::ImageMemoryBarrier{
-				.srcAccessMask = vk::AccessFlagBits::eTransferWrite,
-				.dstAccessMask = vk::AccessFlagBits::eShaderRead,
-				.oldLayout = vk::ImageLayout::eTransferDstOptimal,
-				.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-				.srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-				.dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-				.image = *uniqueCubeMapImage,
-				.subresourceRange = vk::ImageSubresourceRange{
-					.aspectMask = vk::ImageAspectFlagBits::eColor,
-					.baseMipLevel = 0,
-					.levelCount = 1,
-					.baseArrayLayer = 0,
-					.layerCount = 6
-				}
-			}
-		);
-		if (auto endCopyCommandBufferResult = copyCommandBuffer.end(); endCopyCommandBufferResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to end recording copy command buffer");
-		}
-
-		auto [transferSubmitFenceCreateResult, uniqueTransferFence] = uniqueDevice->createFenceUnique(vk::FenceCreateInfo{});
-		if (transferSubmitFenceCreateResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create fence for copy command buffer submission");
-		}
-
-		auto transferSubmitResult = transferQueue.submit(
-			vk::SubmitInfo{
-				.commandBufferCount = 1,
-				.pCommandBuffers = &copyCommandBuffer
-			},
-			*uniqueTransferFence
-		);
-		if (transferSubmitResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to submit copy command buffer");
-		}
-
-		if (auto waitTransferFenceResult = uniqueDevice->waitForFences(*uniqueTransferFence, vk::True, UINT64_MAX); waitTransferFenceResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to wait for copy command buffer fence");
-		}
 
 		auto [cubeMapImageViewCreateResult, uniqueCubeMapImageView] = uniqueDevice->createImageViewUnique(
 			vk::ImageViewCreateInfo{
-				.image = *uniqueCubeMapImage,
+				.image = *uniqueCubeMapMemoryResource,
 				.viewType = vk::ImageViewType::eCube,
 				.format = vk::Format::eR8G8B8A8Srgb,
 				.components = vk::ComponentMapping{
@@ -723,7 +638,7 @@ int main(int argc, char** argv) {
 		std::array writeDescriptorSets{
 			vk::WriteDescriptorSet{
 				.dstSet = *uniqueDescriptorSet,
-				.dstBinding = 0,
+				.dstBinding = 1,
 				.dstArrayElement = 0,
 				.descriptorCount = 1,
 				.descriptorType = vk::DescriptorType::eCombinedImageSampler,
@@ -731,7 +646,7 @@ int main(int argc, char** argv) {
 			},
 			vk::WriteDescriptorSet{
 				.dstSet = *uniqueDescriptorSet,
-				.dstBinding = 1,
+				.dstBinding = 0,
 				.dstArrayElement = 0,
 				.descriptorCount = 1,
 				.descriptorType = vk::DescriptorType::eUniformBuffer,
@@ -744,163 +659,129 @@ int main(int argc, char** argv) {
 			{}
 		);
 
-		std::array triangleVertices{ 
-			// positions|colors
-			0.0f, -0.5f, 1.0f, 0.0f, 0.0f,
-			0.5f,  0.5f, 0.0f, 1.0f, 0.0f,
-		   -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
-	   };
-
 		struct CubeVertex {
 			glm::vec3 position;
 			glm::vec3 directionVector;
 		};
 
-		// vertices for a cube;
+		// Вершины (центрированы от -0.1 до 0.1)
 		std::array cubeVertices{
-			CubeVertex{.position{-0.5f, -0.5f, -0.5f}, .directionVector{-1.0f, -1.0f, -1.0f} },
-			CubeVertex{.position{ 0.5f, -0.5f, -0.5f}, .directionVector{ 1.0f, -1.0f, -1.0f} },
-			CubeVertex{.position{ 0.5f,  0.5f, -0.5f}, .directionVector{ 1.0f,  1.0f, -1.0f} },
-			CubeVertex{.position{-0.5f,  0.5f, -0.5f}, .directionVector{-1.0f,  1.0f, -1.0f} },
-			CubeVertex{.position{-0.5f, -0.5f,  0.5f}, .directionVector{-1.0f, -1.0f,  1.0f} },
-			CubeVertex{.position{ 0.5f, -0.5f,  0.5f}, .directionVector{ 1.0f, -1.0f,  1.0f} },
-			CubeVertex{.position{ 0.5f,  0.5f,  0.5f}, .directionVector{ 1.0f,  1.0f,  1.0f} },
-			CubeVertex{.position{-0.5f,  0.5f,  0.5f}, .directionVector{-1.0f,  1.0f,  1.0f} }
+		  CubeVertex{.position{-0.1f, -0.1f, -0.1f}, .directionVector{-1.0f, -1.0f, -1.0f} }, // 0
+		  CubeVertex{.position{ 0.1f, -0.1f, -0.1f}, .directionVector{ 1.0f, -1.0f, -1.0f} }, // 1
+		  CubeVertex{.position{ 0.1f,  0.1f, -0.1f}, .directionVector{ 1.0f,  1.0f, -1.0f} }, // 2
+		  CubeVertex{.position{-0.1f,  0.1f, -0.1f}, .directionVector{-1.0f,  1.0f, -1.0f} }, // 3
+		  CubeVertex{.position{-0.1f, -0.1f,  0.1f}, .directionVector{-1.0f, -1.0f,  1.0f} }, // 4
+		  CubeVertex{.position{ 0.1f, -0.1f,  0.1f}, .directionVector{ 1.0f, -1.0f,  1.0f} }, // 5
+		  CubeVertex{.position{ 0.1f,  0.1f,  0.1f}, .directionVector{ 1.0f,  1.0f,  1.0f} }, // 6
+		  CubeVertex{.position{-0.1f,  0.1f,  0.1f}, .directionVector{-1.0f,  1.0f,  1.0f} }  // 7
 		};
+
+		// Индексы (все CCW при взгляде СНАРУЖИ)
+		std::array cubeIndices{
+			// Front face (Z = 0.1)
+			4, 5, 6, 6, 7, 4,
+			// Back face (Z = -0.1)
+			1, 0, 3, 3, 2, 1,
+			// Left face (X = -0.1)
+			4, 7, 3, 3, 0, 4,
+			// Right face (X = 0.1)
+			1, 2, 6, 6, 5, 1,
+			// Top face (Y = 0.1)
+			6, 2, 3, 3, 7, 6,
+			// Bottom face (Y = -0.1)
+			4, 0, 1, 1, 5, 4
+		};
+
+
 
 		struct ModelData {
 			glm::mat4 model;
 		};
 
 		ModelData cubePosition{
-			.model{glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f))}
-		};
-
-
-
-		// Write indices for the cube vertices
-		std::array cubeIndices{
-			0, 1, 2, 2, 3, 0, // back face
-			4, 5, 6, 6, 7, 4, // front face
-			4, 5, 1, 1, 0, 4, // bottom face
-			7, 6, 2, 2, 3, 7, // top face
-			4, 7, 3, 3, 0, 4, // left face
-			5, 6, 2, 2, 1, 5  // right face
+			.model{glm::mat4(1.0f)}
 		};
 		
-		auto [createCubeVertexBufferResult, uniqueCubeVertexBuffer] = uniqueDevice->createBufferUnique(
+		auto [createCubeVertexBufferResult, uniqueCubeVertexBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
 			vk::BufferCreateInfo{
 			.size = sizeof(cubeVertices),
 			.usage = vk::BufferUsageFlagBits::eVertexBuffer,
 			.sharingMode = vk::SharingMode::eExclusive
-			});
+			}, vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eMapped);
 		if (createCubeVertexBufferResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create cube vertex buffer");
 		}
 
-		auto [createCubeIndexBufferResult, uniqueCubeIndexBuffer] = uniqueDevice->createBufferUnique(
+		auto [createCubeIndexBufferResult, uniqueCubeIndexBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
 			vk::BufferCreateInfo{
 			.size = sizeof(cubeIndices),
 			.usage = vk::BufferUsageFlagBits::eIndexBuffer,
 			.sharingMode = vk::SharingMode::eExclusive
-			});
+			}, vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eMapped);
 		if (createCubeIndexBufferResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create cube index buffer");
 		}
 
+		vma::BufferWriteInfo cubeVertexBufferMemoryRange{
+			.dstBuffer = *uniqueCubeVertexBuffer,
+			.dstBufferOffset = 0,
+			.srcData = cubeVertices.data(),
+			.dataSize = sizeof(cubeVertices)
+		};
 
+		vma::BufferWriteInfo cubeIndexBufferMemoryRange{
+			.dstBuffer = *uniqueCubeIndexBuffer,
+			.dstBufferOffset = 0,
+			.srcData = cubeIndices.data(),
+			.dataSize = sizeof(cubeIndices)
+		};
 
-
-		auto [createBufferResult, uniqueVertexBuffer] = uniqueDevice->createBufferUnique(
-			vk::BufferCreateInfo{
-			.size = sizeof(triangleVertices),
-			.usage = vk::BufferUsageFlagBits::eVertexBuffer,
-			.sharingMode = vk::SharingMode::eExclusive
-			});
-		if (createBufferResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create vertex buffer");
+		if (auto writeCubeVertexBufferResult = uniqueAllocator->writeBufferFromHost(cubeVertexBufferMemoryRange); writeCubeVertexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to write cube vertex buffer data");
 		}
 
-		auto vertexBufferMemoryRequirements = uniqueDevice->getBufferMemoryRequirements(*uniqueVertexBuffer);
-		auto memoryProperties = physicalDevice.getMemoryProperties();
-
-		for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < memoryProperties.memoryTypeCount; memoryTypeIndex++) {
-			std::cout << "Memory type " << memoryTypeIndex << ": "
-				<< ((memoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible) ? "Host Visible " : "")
-				<< ((memoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent) ? "Host Coherent " : "")
-				<< ((memoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) ? "Device Local " : "")
-				<< ((memoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & vk::MemoryPropertyFlagBits::eHostCached) ? "Host Cached " : "")
-				<< '\n';
+		if (auto writeCubeIndexBufferResult = uniqueAllocator->writeBufferFromHost(cubeIndexBufferMemoryRange); writeCubeIndexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to write cube index buffer data");
 		}
 
-		std::optional<uint32_t> vertexBufferMemoryTypeIndex{0};
-		for (uint32_t memoryTypeIndex = 0; memoryTypeIndex < memoryProperties.memoryTypeCount; memoryTypeIndex++) {
-			if (vertexBufferMemoryRequirements.memoryTypeBits & 1 << memoryTypeIndex &&
-				memoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible &&
-				memoryProperties.memoryTypes[memoryTypeIndex].propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent) {
-				vertexBufferMemoryTypeIndex = memoryTypeIndex;
-				break;
-				}
-		}
-		if (!vertexBufferMemoryTypeIndex.has_value()) {
-			throw std::runtime_error("Failed to find suitable memory type for vertex buffer");
-		}
-
-		auto [allocateMemoryResult, uniqueVertexBufferMemory] = uniqueDevice->allocateMemoryUnique(
-			vk::MemoryAllocateInfo{
-				.allocationSize = vertexBufferMemoryRequirements.size,
-				.memoryTypeIndex = vertexBufferMemoryTypeIndex.value()
+		auto [createCubeUniquePipelineLayout, uniqueCubePipelineLayout] = uniqueDevice->createPipelineLayoutUnique(
+			vk::PipelineLayoutCreateInfo{
+				.setLayoutCount = 1,
+				.pSetLayouts = &uniqueDescriptorSetLayout.get()
 			}
 		);
-		if (allocateMemoryResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to allocate vertex buffer memory");
+		if (createCubeUniquePipelineLayout != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create cube pipeline layout");
 		}
 
-		if (auto allocateVertexBufferMemoryResult = uniqueDevice->bindBufferMemory(*uniqueVertexBuffer, *uniqueVertexBufferMemory, 0); allocateVertexBufferMemoryResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to bind vertex buffer memory");
+		auto [createUniqueCubeVertexShaderModuleResult, uniqueCubeVertexShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/cube.vert.spv");
+		if (createUniqueCubeVertexShaderModuleResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create cube vertex shader module");
 		}
 
-		// Map memory and copy vertex data
-		auto [mapMemoryResult, vertexBufferData] = uniqueDevice->mapMemory(uniqueVertexBufferMemory.get(), 0, vertexBufferMemoryRequirements.size);
-		if (mapMemoryResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to map vertex buffer memory");
-		}
-		std::memcpy(vertexBufferData, triangleVertices.data(), sizeof(triangleVertices));
-		uniqueDevice->unmapMemory(uniqueVertexBufferMemory.get());
-
-		auto [vertexShaderModuleCreateResult, uniqueVertexShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/triangle.vert.spv");
-		if (vertexShaderModuleCreateResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create vertex shader module");
-		}
-
-		auto [fragmentShaderModuleCreateResult, uniqueFragmentShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/triangle.frag.spv");
-		if (fragmentShaderModuleCreateResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create fragment shader module");
+		auto [createUniqueCubeFragmentShaderModuleResult, uniqueCubeFragmentShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/cube.frag.spv");
+		if (createUniqueCubeFragmentShaderModuleResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create cube fragment shader module");
 		}
 
 		std::vector shaderStages = {
 			vk::PipelineShaderStageCreateInfo {
 				.stage = vk::ShaderStageFlagBits::eVertex,
-				.module = *uniqueVertexShaderModule,
+				.module = *uniqueCubeVertexShaderModule,
 				.pName = "main"
 			},
 			vk::PipelineShaderStageCreateInfo {
 				.stage = vk::ShaderStageFlagBits::eFragment,
-				.module = *uniqueFragmentShaderModule,
+				.module = *uniqueCubeFragmentShaderModule,
 				.pName = "main"
 			}
 		};
 
-		auto [createPipelineLayoutResult, uniquePipelineLayout] = uniqueDevice->createPipelineLayoutUnique(
-			vk::PipelineLayoutCreateInfo{}
-		);
-		if (createPipelineLayoutResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create pipeline layout");
-		}
-
 		vk::VertexInputBindingDescription vertexInputBinding{
 			.binding = 0,
-			.stride = sizeof(float) * 5,
+			.stride = sizeof(CubeVertex),
 			.inputRate = vk::VertexInputRate::eVertex
 		};
 
@@ -908,14 +789,14 @@ int main(int argc, char** argv) {
 			{
 				.location = 0,
 				.binding = 0,
-				.format = vk::Format::eR32G32Sfloat,
+				.format = vk::Format::eR32G32B32Sfloat,
 				.offset = 0
 			},
 			{
 				.location = 1,
 				.binding = 0,
 				.format = vk::Format::eR32G32B32Sfloat,
-				.offset = 2 * sizeof(float)
+				.offset = sizeof(glm::vec3)
 			}
 		};
 
@@ -932,11 +813,11 @@ int main(int argc, char** argv) {
 		};
 
 		vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo{
-			.depthClampEnable = vk::False ,
+			.depthClampEnable = vk::False,
 			.rasterizerDiscardEnable = vk::False,
 			.polygonMode = vk::PolygonMode::eFill,
 			.cullMode = vk::CullModeFlagBits::eBack,
-			.frontFace = vk::FrontFace::eClockwise,
+			.frontFace = vk::FrontFace::eCounterClockwise,
 			.depthBiasEnable = vk::False,
 			.lineWidth = 1.0f
 		};
@@ -947,7 +828,10 @@ int main(int argc, char** argv) {
 		};
 
 		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{
-			.depthTestEnable = vk::False,
+			.depthTestEnable = vk::True,
+			.depthWriteEnable = vk::True,
+			.depthCompareOp = vk::CompareOp::eLess,
+			.depthBoundsTestEnable = vk::False,
 			.stencilTestEnable = vk::False
 		};
 
@@ -998,13 +882,209 @@ int main(int argc, char** argv) {
 				.pMultisampleState = &multisampleStateCreateInfo,
 				.pDepthStencilState = &depthStencilStateCreateInfo,
 				.pColorBlendState = &colorBlendStateCreateInfo,
-				.layout = uniquePipelineLayout.get(),
-				.renderPass = uniqueRenderPass.get(),
+				.layout = *uniqueCubePipelineLayout,
+				.renderPass = *uniqueRenderPass,
 				.subpass = 0
 			}
 		);
 		if (uniqueGraphicsPipelineResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create graphics pipeline.");
+		}
+
+		auto [loadSkyboxVertexShaderModuleResult, uniqueSkyboxVertexShaderModule] = 
+			loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/skybox.vert.spv");
+
+		auto [loadSkyboxFragmentShaderModuleResult, uniqueSkyboxFragmentShaderModule] = 
+			loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/skybox.frag.spv");
+
+		vk::PipelineShaderStageCreateInfo skyboxShaderStages[2]{
+			vk::PipelineShaderStageCreateInfo {
+				.stage = vk::ShaderStageFlagBits::eVertex,
+				.module = *uniqueSkyboxVertexShaderModule,
+				.pName = "main"
+			},
+			vk::PipelineShaderStageCreateInfo {
+				.stage = vk::ShaderStageFlagBits::eFragment,
+				.module = *uniqueSkyboxFragmentShaderModule,
+				.pName = "main"
+			}
+		};
+
+		// Pipeline for skybox should be created here in a similar way, with different shaders and possibly different pipeline states (e.g. cull mode, depth test/write)
+		std::array skyboxVertices{
+			glm::vec3{-1.0f, -1.0f, -1.0f},
+			glm::vec3{ 1.0f, -1.0f, -1.0f},
+			glm::vec3{ 1.0f,  1.0f, -1.0f},
+			glm::vec3{-1.0f,  1.0f, -1.0f},
+			glm::vec3{-1.0f, -1.0f,  1.0f},
+			glm::vec3{ 1.0f, -1.0f,  1.0f},
+			glm::vec3{ 1.0f,  1.0f,  1.0f},
+			glm::vec3{-1.0f,  1.0f,  1.0f}
+		};
+
+		uint32_t skyboxIndices[] = {
+			// Передняя грань (Z = -1)
+			0, 3, 2,
+			2, 1, 0,
+			// Задняя грань (Z = 1)
+			4, 5, 6,
+			6, 7, 4,
+			// Левая грань (X = -1)
+			0, 4, 7,
+			7, 3, 0,
+			// Правая грань (X = 1)
+			1, 2, 6,
+			6, 5, 1,
+			// Верхняя грань (Y = 1)
+			2, 3, 7, 
+			7, 6, 2,
+			// Нижняя грань (Y = -1)
+			0, 1, 5,
+			5, 4, 0
+		};
+
+		auto [createSkyboxVertexBufferResult, uniqueSkyboxVertexBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
+			vk::BufferCreateInfo{
+				.size = sizeof(skyboxVertices),
+				.usage = vk::BufferUsageFlagBits::eVertexBuffer,
+				.sharingMode = vk::SharingMode::eExclusive
+			},
+			vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eMapped
+		);
+		if (createSkyboxVertexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create skybox vertex buffer");
+		}
+
+		if (auto writeSkyboxVertexBufferResult = uniqueAllocator->writeBufferFromHost(
+			vma::BufferWriteInfo{
+				.dstBuffer = *uniqueSkyboxVertexBuffer,
+				.dstBufferOffset = 0,
+				.srcData = skyboxVertices.data(),
+				.dataSize = sizeof(skyboxVertices)
+			}
+		); writeSkyboxVertexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to write skybox vertex buffer data");
+		}
+
+		auto [createSkyboxIndexBufferResult, uniqueSkyboxIndexBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
+			vk::BufferCreateInfo{
+				.size = sizeof(skyboxIndices),
+				.usage = vk::BufferUsageFlagBits::eIndexBuffer,
+				.sharingMode = vk::SharingMode::eExclusive
+			},
+			vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eMapped
+		);
+		if (createSkyboxIndexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create skybox index buffer");
+		}
+
+		if (auto writeSkyboxIndexBufferResult = uniqueAllocator->writeBufferFromHost(
+			vma::BufferWriteInfo{
+				.dstBuffer = *uniqueSkyboxIndexBuffer,
+				.dstBufferOffset = 0,
+				.srcData = skyboxIndices,
+				.dataSize = sizeof(skyboxIndices)
+			}
+		); writeSkyboxIndexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to write skybox index buffer data");
+		}
+
+		vk::VertexInputAttributeDescription skyboxVertexInputAttribute{
+			.location = 0,
+			.binding = 0,
+			.format = vk::Format::eR32G32B32Sfloat,
+			.offset = 0
+		};
+
+		vk::VertexInputBindingDescription skyboxVertexInputBinding{
+			.binding = 0,
+			.stride = sizeof(glm::vec3),
+			.inputRate = vk::VertexInputRate::eVertex
+		};
+
+		vk::PipelineVertexInputStateCreateInfo skyboxVertexInputStateCreateInfo{
+			.vertexBindingDescriptionCount = 1,
+			.pVertexBindingDescriptions = &skyboxVertexInputBinding,
+			.vertexAttributeDescriptionCount = 1,
+			.pVertexAttributeDescriptions = &skyboxVertexInputAttribute
+		};
+
+		vk::PipelineInputAssemblyStateCreateInfo skyboxInputAssemblyStateCreateInfo{
+			.topology = vk::PrimitiveTopology::eTriangleList,
+			.primitiveRestartEnable = vk::False
+		};
+
+		vk::Viewport skyboxViewport{
+			.x = 0.0f,
+			.y = 0.0f,
+			.width = static_cast<float>(swapchainExtent.width),
+			.height = static_cast<float>(swapchainExtent.height),
+			.minDepth = 0.0f,
+			.maxDepth = 1.0f
+		};
+
+		vk::Rect2D skyboxScissor{
+			.offset = vk::Offset2D{0, 0},
+			.extent = swapchainExtent
+		};
+
+		vk::PipelineViewportStateCreateInfo skyboxViewPortStateCreateInfo{
+			.viewportCount = 1,
+			.pViewports = &skyboxViewport,
+			.scissorCount = 1,
+			.pScissors = &skyboxScissor
+		};
+
+		vk::PipelineRasterizationStateCreateInfo skyboxRasterizationStateCreateInfo{
+			.depthClampEnable = vk::False,
+			.rasterizerDiscardEnable = vk::False,
+			.polygonMode = vk::PolygonMode::eFill,
+			.cullMode = vk::CullModeFlagBits::eFront,
+			.frontFace = vk::FrontFace::eCounterClockwise,
+			.depthBiasEnable = vk::False,
+			.lineWidth = 1.0f
+		};
+
+		vk::PipelineMultisampleStateCreateInfo skyboxMultisampleStateCreateInfo{
+			.rasterizationSamples = vk::SampleCountFlagBits::e1,
+			.sampleShadingEnable = vk::False
+		};
+
+		vk::PipelineDepthStencilStateCreateInfo skyboxDepthStencilStateCreateInfo{
+			.depthTestEnable = vk::True,
+			.depthWriteEnable = vk::False, // Don't write to depth buffer for skybox
+			.depthCompareOp = vk::CompareOp::eLessOrEqual, // Use less or equal to ensure skybox is rendered behind all other geometry
+			.depthBoundsTestEnable = vk::False,
+			.stencilTestEnable = vk::False
+		};
+
+		vk::PipelineColorBlendStateCreateInfo skyboxColorBlendStateCreateInfo{
+			.logicOpEnable = vk::False,
+			.attachmentCount = 1,
+			.pAttachments = &colorBlendAttachmentState
+		};
+
+		auto [uniqueSkyboxGraphicsPipelineResult, uniqueSkyboxGraphicsPipeline] = uniqueDevice->createGraphicsPipelineUnique(
+			nullptr,
+			vk::GraphicsPipelineCreateInfo{
+				.stageCount = 2,
+				.pStages = skyboxShaderStages,
+				.pVertexInputState = &skyboxVertexInputStateCreateInfo,
+				.pInputAssemblyState = &skyboxInputAssemblyStateCreateInfo,
+				.pViewportState = &skyboxViewPortStateCreateInfo,
+				.pRasterizationState = &skyboxRasterizationStateCreateInfo,
+				.pMultisampleState = &skyboxMultisampleStateCreateInfo,
+				.pDepthStencilState = &skyboxDepthStencilStateCreateInfo,
+				.pColorBlendState = &skyboxColorBlendStateCreateInfo,
+				.layout = *uniqueCubePipelineLayout, // Assuming same pipeline layout can be used for skybox
+				.renderPass = *uniqueRenderPass,
+				.subpass = 0
+			}
+		);
+		if (uniqueSkyboxGraphicsPipelineResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create skybox graphics pipeline.");
 		}
 
 		auto [createCommandPoolResult, uniqueCommandPool] = uniqueDevice->createCommandPoolUnique(
@@ -1027,8 +1107,13 @@ int main(int argc, char** argv) {
 			throw std::runtime_error("Failed to allocate command buffers");
 		}
 
-		vk::ClearValue clearValue{
-			.color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}
+		std::array clearValues{
+			vk::ClearValue{
+				.color = vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} }
+			},
+			vk::ClearValue{
+				.depthStencil = vk::ClearDepthStencilValue{ .depth = 1.0f, .stencil = 0 }
+			}
 		};
 
 		for (uint32_t frameIndex = 0U; auto& commandBuffer : uniqueCommandBuffer) {
@@ -1045,14 +1130,35 @@ int main(int argc, char** argv) {
 						.offset = vk::Offset2D{ .x = 0, .y = 0},
 						.extent = swapchainExtent
 					},
-					.clearValueCount = 1,
-					.pClearValues = &clearValue
+					.clearValueCount = 2,
+					.pClearValues = clearValues.data()
 				},
 				vk::SubpassContents::eInline
 			);
+			// render cube
 			commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *uniqueGraphicsPipeline);
-			commandBuffer->bindVertexBuffers(0, {*uniqueVertexBuffer}, {0});
-			commandBuffer->draw(triangleVertices.size() / 5, 1, 0, 0);
+			commandBuffer->bindVertexBuffers(0, {*uniqueCubeVertexBuffer}, {0});
+			commandBuffer->bindIndexBuffer(*uniqueCubeIndexBuffer, 0, vk::IndexType::eUint32);
+			commandBuffer->bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics,
+				*uniqueCubePipelineLayout,
+				0,
+				{ *uniqueDescriptorSet },
+				{}
+			);
+			commandBuffer->drawIndexed(static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
+			// render skybox
+			commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *uniqueSkyboxGraphicsPipeline);
+			commandBuffer->bindVertexBuffers(0, { *uniqueSkyboxVertexBuffer }, { 0 });
+			commandBuffer->bindIndexBuffer(*uniqueSkyboxIndexBuffer, 0, vk::IndexType::eUint32);
+			commandBuffer->bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics,
+				*uniqueCubePipelineLayout, // Assuming same pipeline layout is used for skybox
+				0,
+				{ *uniqueDescriptorSet },
+				{}
+			);
+			commandBuffer->drawIndexed(static_cast<uint32_t>(std::size(skyboxIndices)), 1, 0, 0, 0);
 			commandBuffer->endRenderPass();
 			if (auto endCommandBufferResult = commandBuffer->end(); endCommandBufferResult != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed to end recording command buffer");
@@ -1090,10 +1196,85 @@ int main(int argc, char** argv) {
 
 		vk::PipelineStageFlags pipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
+		window.setKeyboardEventCallback([&](SdlWindow&, SdlKeyCode keyCode, SdlKeyMode keyMode, SdlKeyState keyState) {
+			if (keyCode == SdlKeyCode::Escape && keyState == SdlKeyState::Pressed) {
+				std::cout << "Escape key pressed, closing window...\n";
+				sdlLibrary.postQuitEvent();
+			}
+
+			static bool isRelativeMouseMode = false;
+
+			if (keyState == SdlKeyState::Pressed) {
+
+				switch (keyCode) {
+					case SdlKeyCode::W:
+						camera.move(glm::vec3(0.0f, 0.0f, -0.01f));
+						break;
+					case SdlKeyCode::S:
+						camera.move(glm::vec3(0.0f, 0.0f, 0.01f));
+						break;
+					case SdlKeyCode::A:
+						camera.move(glm::vec3(-0.01f, 0.0f, 0.0f));
+						break;
+					case SdlKeyCode::D:
+						camera.move(glm::vec3(0.01f, 0.0f, 0.0f));
+						break;
+					case SdlKeyCode::Q:
+						camera.move(glm::vec3(0.0f, -0.01f, 0.0f));
+						break;
+					case SdlKeyCode::E:
+						camera.move(glm::vec3(0.0f, 0.01f, 0.0f));
+						break;
+					case SdlKeyCode::Up:
+						camera.rotate(glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+						break;
+					case SdlKeyCode::Down:
+						camera.rotate(glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+						break;
+					case SdlKeyCode::Left:
+						camera.rotate(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+						break;
+					case SdlKeyCode::Right:
+						camera.rotate(glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));	
+						break;
+					case SdlKeyCode::PageUp:
+						camera.rotate(glm::radians(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+						break;
+					case SdlKeyCode::PageDown:
+						camera.rotate(glm::radians(-1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+						break;
+					case SdlKeyCode::Space:
+						if (isRelativeMouseMode) {
+							sdlLibrary.setRelativeMouseMode(false);
+							isRelativeMouseMode = false;
+						}
+						else {
+							sdlLibrary.setRelativeMouseMode(true);
+							isRelativeMouseMode = true;
+						}
+						break;
+					default:
+						break;
+				}
+			}
+			cameraData.view = camera.getViewMatrix();
+		});
+
 
 		while (running){
 
 			if(!sdlLibrary.pullEvents()) break;
+
+			vma::BufferWriteInfo updatedCameraData{
+				.dstBuffer = *uniqueCameraBuffer,
+				.dstBufferOffset = 0,
+				.srcData = &cameraData,
+				.dataSize = sizeof(CameraData)
+			};
+
+			if (auto result = uniqueAllocator->writeBufferFromHost(updatedCameraData); result != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to update camera uniform buffer");
+			}
 
 			if (auto waitFenceResult = uniqueDevice->waitForFences(*inFlightFences[currentFrame], vk::True, UINT64_MAX); waitFenceResult != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed to wait for fence");
@@ -1115,7 +1296,7 @@ int main(int argc, char** argv) {
 					.commandBufferCount = 1,
 					.pCommandBuffers = &uniqueCommandBuffer[currentImageIndex].get(),
 					.signalSemaphoreCount = 1,
-					.pSignalSemaphores = &renderFinishedSemaphores[currentFrame].get()
+					.pSignalSemaphores = &renderFinishedSemaphores[currentImageIndex].get()
 				} }, inFlightFences[currentFrame].get());
 			if (submitResult != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed to submit draw command buffer");
@@ -1123,7 +1304,7 @@ int main(int argc, char** argv) {
 			auto presentResult = presentationQueue.presentKHR(
 				vk::PresentInfoKHR{
 					.waitSemaphoreCount = 1,
-					.pWaitSemaphores = &renderFinishedSemaphores[currentFrame].get(),
+					.pWaitSemaphores = &renderFinishedSemaphores[currentImageIndex].get(),
 					.swapchainCount = 1,
 					.pSwapchains = &uniqueSwapchain.get(),
 					.pImageIndices = &currentImageIndex

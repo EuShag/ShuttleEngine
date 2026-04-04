@@ -46,5 +46,3 @@ vk::ResultValue<vk::UniqueInstance> VulkanInstanceBuilder::buildUnique(vk::detai
 		vk::UniqueInstance(instance, 
 		                   vk::detail::ObjectDestroy<vk::detail::NoParent, vk::detail::DispatchLoaderDynamic>{nullptr, dynamicDispatch}) };
 }
-
-void setupApplicationInfo(vk::ApplicationInfo const& applicationInfo);

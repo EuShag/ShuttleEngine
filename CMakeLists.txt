@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(HelloTriangle)
 
 add_executable(HelloTriangle
-	"src/HelloTriangle.cpp"
+	"HelloTriangle.cpp"
 	"src/Sdl/SdlLibrary/SdlLibrary.cpp" 
 	"src/Sdl/SdlWindow/SdlWindow.cpp" 
 	"src/VulkanInstanceBuilder/VulkanInstanceBuilder.cpp" 
@@ -16,30 +16,26 @@ add_executable(HelloTriangle
 	"src/VulkanPhysicalDevicePicker/VulkanPhysilcalDevicePicker.cpp"
 	"src/ImageLoader/Image.cpp"  
 	"src/VulkanDeviceAllocator/VulkanDeviceAllocator.cpp" 
-	"src/VulkanHelperFunctions/VulkanHelperFunctions.cpp" "src/VulkanModel/VulkanModel.cpp")
+	"src/VulkanHelperFunctions/VulkanHelperFunctions.cpp" 
+	"src/VulkanModel/VulkanModel.cpp" 
+	"src/VulkanCopyManager/VulkanCopyManager.cpp" 
+	"src/VulkanApplication/VulkanApplication.cpp" 
+	"src/Camera/Camera.cpp" "src/Skybox/Skybox.cpp")
 
 find_package(Vulkan REQUIRED)
-set(SDL2Libraries ${Vulkan_INCLUDE_DIRS}/../Lib/SDL2.lib ${Vulkan_INCLUDE_DIRS}/../Lib/SDL2main.lib)
+message("Vulkan include directories: ${Vulkan_INCLUDE_DIRS}")
+set(SDL2Libraries
+		${Vulkan_INCLUDE_DIRS}/../Lib/SDL2main.lib
+		${Vulkan_INCLUDE_DIRS}/../Lib/SDL2.lib)
+
 target_include_directories(HelloTriangle PRIVATE ${Vulkan_INCLUDE_DIRS})
-
-# add shader compilation step here if needed
-add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle.vert.spv ${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle.frag.spv
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/shaders
-	COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert -o ${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle.vert.spv
-	COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag -o ${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle.frag.spv
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.vert ${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.frag
-	COMMENT "Compiling shaders..."
-)
-
-add_custom_target(CompileShaders ALL
-	DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle.vert.spv ${CMAKE_CURRENT_BINARY_DIR}/shaders/triangle.frag.spv
-)
-
-add_dependencies(HelloTriangle CompileShaders)
 
 target_link_libraries(HelloTriangle PRIVATE ${SDL2Libraries})
 target_include_directories(HelloTriangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(HelloTriangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 target_include_directories(HelloTriangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/VMA/include")
 target_include_directories(HelloTriangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/stb")
+
+add_subdirectory(shaders)
+add_dependencies(HelloTriangle CompileShaders)
+

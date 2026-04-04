@@ -30,47 +30,47 @@ void SdlWindow::processEvent(SDL_Event const& event) {
 	dispatchEvent(event);
 }
 
-void SdlWindow::setWindowCloseEventCallback(std::function<void()> callback) {
+void SdlWindow::setWindowCloseEventCallback(std::function<void(SdlWindow&)> callback) {
 	hasCloseEventCallback = true;
 	windowCloseEventCallback = std::move(callback);
 }
 
-void SdlWindow::setWindowResizeEventCallback(std::function<void(int, int)> callback) {
+void SdlWindow::setWindowResizeEventCallback(std::function<void(SdlWindow&, int, int)> callback) {
 	hasResizeEventCallback = true;
 	windowResizeEventCallback = std::move(callback);
 }
 
-void SdlWindow::setWindowMoveEventCallback(std::function<void(int, int)> callback) {
+void SdlWindow::setWindowMoveEventCallback(std::function<void(SdlWindow&, int, int)> callback) {
 	hasMoveEventCallback = true;
 	windowMoveEventCallback = std::move(callback);
 }
 
-void SdlWindow::setWindowFocusEventCallback(std::function<void(int)> callback) {
+void SdlWindow::setWindowFocusEventCallback(std::function<void(SdlWindow&, int)> callback) {
 	hasFocusEventCallback = true;
 	windowFocusEventCallback = std::move(callback);
 }
 
-void SdlWindow::setWindowShowModeEventCallback(std::function<void(ShowMode)> callback) {
+void SdlWindow::setWindowShowModeEventCallback(std::function<void(SdlWindow&, ShowMode)> callback) {
 	hasShowModeEventCallback = true;
 	windowShowModeEventCallback = std::move(callback);
 }
 
-void SdlWindow::setMouseMotionEventCallback(std::function<void(int, int)> callback) {
+void SdlWindow::setMouseMotionEventCallback(std::function<void(SdlWindow&, int, int)> callback) {
 	hasMouseMotionEventCallback = true;
 	mouseMotionEventCallback = std::move(callback);
 }
 
-void SdlWindow::setMouseButtonEventCallback(std::function<void(uint64_t)> callback) {
+void SdlWindow::setMouseButtonEventCallback(std::function<void(SdlWindow&, SdlMouseButton, SdlKeyState)> callback) {
 	hasMouseButtonEventCallback = true;
 	mouseButtonEventCallback = std::move(callback);
 }
 
-void SdlWindow::setMouseWheelEventCallback(std::function<void(int, int)> callback) {
+void SdlWindow::setMouseWheelEventCallback(std::function<void(SdlWindow&, int, int)> callback) {
 	hasMouseWheelEventCallback = true;
 	mouseWheelEventCallback = std::move(callback);
 }
 
-void SdlWindow::setKeyboardEventCallback(std::function<void(SdlKeyCode, SdlKeyMode, SdlKeyState)> callback) {
+void SdlWindow::setKeyboardEventCallback(std::function<void(SdlWindow&, SdlKeyCode, SdlKeyMode, SdlKeyState)> callback) {
 	hasKeyboardEventCallback = true;
 	keyboardEventCallback = std::move(callback);
 }
@@ -108,43 +108,43 @@ void SdlWindow::dispatchWindowEvent(SDL_WindowEvent const& windowEvent) {
 	switch (windowEvent.event) {
 	case SDL_WINDOWEVENT_RESIZED:
 		if (window.hasResizeEventCallback) {
-			window.windowResizeEventCallback(windowEvent.data1, windowEvent.data2);
+			window.windowResizeEventCallback(window, windowEvent.data1, windowEvent.data2);
 		}
 		break;
 	case SDL_WINDOWEVENT_MOVED:
 		if (window.hasMoveEventCallback) {
-			window.windowMoveEventCallback(windowEvent.data1, windowEvent.data2);
+			window.windowMoveEventCallback(window, windowEvent.data1, windowEvent.data2);
 		}
 		break;
 	case SDL_WINDOWEVENT_FOCUS_GAINED:
 	case SDL_WINDOWEVENT_FOCUS_LOST:
 		if (window.hasFocusEventCallback) {
-			window.windowFocusEventCallback(windowEvent.event == SDL_WINDOWEVENT_FOCUS_GAINED);
+			window.windowFocusEventCallback(window, windowEvent.event == SDL_WINDOWEVENT_FOCUS_GAINED);
 		}
 		break;
 	case SDL_WINDOWEVENT_SHOWN:
 		if (window.hasShowModeEventCallback) {
-			window.windowShowModeEventCallback(ShowMode::Normal);
+			window.windowShowModeEventCallback(window, ShowMode::Normal);
 		}
 		break;
 	case SDL_WINDOWEVENT_HIDDEN:
 		if (window.hasShowModeEventCallback) {
-			window.windowShowModeEventCallback(ShowMode::Minimized);
+			window.windowShowModeEventCallback(window, ShowMode::Minimized);
 		}
 		break;
 	case SDL_WINDOWEVENT_MAXIMIZED:
 		if (window.hasShowModeEventCallback) {
-			window.windowShowModeEventCallback(ShowMode::Maximized);
+			window.windowShowModeEventCallback(window, ShowMode::Maximized);
 		}
 		break;
 	case SDL_WINDOWEVENT_MINIMIZED:
 		if (window.hasShowModeEventCallback) {
-			window.windowShowModeEventCallback(ShowMode::Minimized);
+			window.windowShowModeEventCallback(window, ShowMode::Minimized);
 		}
 		break;
 	case SDL_WINDOWEVENT_CLOSE:
 		if (window.hasCloseEventCallback) {
-			window.windowCloseEventCallback();
+			window.windowCloseEventCallback(window);
 		}
 		break;
 	default:
@@ -155,29 +155,28 @@ void SdlWindow::dispatchWindowEvent(SDL_WindowEvent const& windowEvent) {
 void SdlWindow::dispatchMouseMotionEvent(SDL_MouseMotionEvent const& mouseMotionEvent) {
 	SdlWindow& window = getObjectFromId(mouseMotionEvent.windowID);
 	if (window.hasMouseMotionEventCallback) {
-		window.mouseMotionEventCallback(mouseMotionEvent.x, mouseMotionEvent.y);
+		window.mouseMotionEventCallback(window, mouseMotionEvent.x, mouseMotionEvent.y);
 	}
 }
 
 void SdlWindow::dispatchMouseButtonEvent(SDL_MouseButtonEvent const& mouseButtonEvent) {
 	SdlWindow& window = getObjectFromId(mouseButtonEvent.windowID);
 	if (window.hasMouseButtonEventCallback) {
-		window.mouseButtonEventCallback(1ULL << mouseButtonEvent.button);
+		window.mouseButtonEventCallback(window, SdlMouseButton{ mouseButtonEvent.button }, SdlKeyState{ mouseButtonEvent.state });
 	}
 }
 
 void SdlWindow::dispatchMouseWheelEvent(SDL_MouseWheelEvent const& mouseWheelEvent) {
 	SdlWindow& window = getObjectFromId(mouseWheelEvent.windowID);
 	if (window.hasMouseWheelEventCallback) {
-		window.mouseButtonEventCallback(1ULL << 32 | static_cast<uint64_t>(mouseWheelEvent.x) & 0xFFFFFFFF);
-		window.mouseButtonEventCallback(1ULL << 33 | static_cast<uint64_t>(mouseWheelEvent.y) & 0xFFFFFFFF);
+		window.mouseWheelEventCallback(window, mouseWheelEvent.x, mouseWheelEvent.y);
 	}
 }
 
 void SdlWindow::dispatchKeyboardEvent(SDL_KeyboardEvent const& keyboardEvent) {
 	SdlWindow& window = getObjectFromId(keyboardEvent.windowID);
 	if (window.hasKeyboardEventCallback) {
-		window.keyboardEventCallback(SdlKeyCode{keyboardEvent.keysym.sym}, SdlKeyMode{keyboardEvent.keysym.mod}, SdlKeyState{keyboardEvent.state});
+		window.keyboardEventCallback(window, SdlKeyCode{keyboardEvent.keysym.sym}, SdlKeyMode{keyboardEvent.keysym.mod}, SdlKeyState{keyboardEvent.state});
 	}
 }
 
@@ -186,4 +185,3 @@ SdlWindow& SdlWindow::getObjectFromId(uint32_t windowId)
 	SDL_Window* sdlWindow = SDL_GetWindowFromID(windowId);
 	return *static_cast<SdlWindow*>(SDL_GetWindowData(sdlWindow, "SdlWindow"));
 }
-

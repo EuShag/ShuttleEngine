@@ -17,16 +17,6 @@ vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModule(vk::Device con
 		});
 }
 
-uint32_t findMemoryTypeIndex(vk::PhysicalDevice const& physicalDevice, uint32_t memoryTypeBits, vk::MemoryPropertyFlags requiredProperties) {
-	auto const memoryProperties = physicalDevice.getMemoryProperties();
-	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
-		if ((memoryTypeBits & (1 << i)) && (memoryProperties.memoryTypes[i].propertyFlags & requiredProperties) == requiredProperties) {
-			return i;
-		}
-	}
-	throw std::runtime_error("Failed to find a suitable memory type index.");
-}
-
 bool checkLayersSupport(std::vector<char const*> const& requiredLayers) {
 	auto [result, availableLayers] = vk::enumerateInstanceLayerProperties();
 	if (result != vk::Result::eSuccess) {

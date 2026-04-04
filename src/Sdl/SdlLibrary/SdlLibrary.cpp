@@ -12,6 +12,11 @@ SdlLibrary::SdlLibrary() {
 	}
 }
 
+void SdlLibrary::setRelativeMouseMode(bool enabled)
+{
+	SDL_SetRelativeMouseMode(enabled ? SDL_TRUE : SDL_FALSE);
+}
+
 [[nodiscard]] std::vector<char const*> SdlLibrary::getSurfaceRequiredExtensions() {
 	uint32_t sdlExtensionCount = 0;
 	if (!SDL_Vulkan_GetInstanceExtensions(nullptr, &sdlExtensionCount, nullptr)) {
