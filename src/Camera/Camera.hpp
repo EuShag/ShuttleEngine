@@ -12,7 +12,7 @@ namespace vm {
 		void rotate(float angle, glm::vec3 axis);
 		void lookAt(glm::vec3 target, glm::vec3 up);
 
-		glm::mat4 getViewMatrix() const;
+		[[nodiscard]] glm::mat4 getViewMatrix() const;
 
 	private:
 		glm::quat orientation;

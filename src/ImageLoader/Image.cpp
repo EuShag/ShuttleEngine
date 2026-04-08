@@ -3,7 +3,10 @@
 #include "stb_image.h"
 
 Image::Image(std::string const& filePath) {
-	imageData.data = stbi_load(filePath.c_str(), &imageData.width, &imageData.height, &imageData.channels, 4);
+	int width, height, channels;
+	imageData.data = stbi_load(filePath.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+	imageData.width = width;
+	imageData.height = height;
 }
 
 struct ExtentAndChannels {

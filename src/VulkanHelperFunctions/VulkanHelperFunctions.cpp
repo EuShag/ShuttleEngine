@@ -77,3 +77,14 @@ bool checkExtensionsSupport(vk::PhysicalDevice const& physicalDevice, std::vecto
 	}
 	return true;
 }
+
+void strideCopy(void *dst, void const *src, size_t elementSize, size_t elementCount, size_t dstStride, size_t srcStride)
+{
+	char* dstChar = static_cast<char*>(dst);
+	char const* srcChar = static_cast<char const*>(src);
+	for (size_t i = 0; i < elementCount; ++i) {
+		std::memcpy(dstChar, srcChar, elementSize);
+		dstChar += dstStride;
+		srcChar += srcStride;
+	}
+}

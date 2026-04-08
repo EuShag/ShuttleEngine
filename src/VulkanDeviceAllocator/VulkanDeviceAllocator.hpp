@@ -115,12 +115,12 @@ namespace vma {
 
 		UniqueAllocatedResource(UniqueAllocatedResource&& other) noexcept : allocatedResource{ other.allocatedResource }, deleter{ other.deleter } {
 			other.allocatedResource = AllocatedResource<TResource>{};
-			other.deleter = TDeleter{ Allocator{} };
+			other.deleter = TDeleter{};
 		}
 		UniqueAllocatedResource& operator=(UniqueAllocatedResource&& other) noexcept {
 			allocatedResource = other.allocatedResource;
 			deleter = other.deleter;
-			other.deleter = TDeleter{ Allocator{} };
+			other.deleter = TDeleter{};
 			other.allocatedResource = AllocatedResource<TResource>{};
 			return *this;
 		}
@@ -141,7 +141,7 @@ namespace vma {
 
 	private:
 		AllocatedResource<TResource> allocatedResource = AllocatedResource<TResource>{};
-		TDeleter deleter{ Allocator{} };
+		TDeleter deleter{};
 	};
 
 	using UniqueAllocatedBuffer = UniqueAllocatedResource<vk::Buffer, UniqueAllocatedBufferDeleter>;
@@ -179,13 +179,16 @@ namespace vma {
 			vma::MemoryUsage desireMemoryUsage = vma::MemoryUsage::eAuto,
 			vma::AllocationCreateFlags allocationCreateFlags = {}) const;
 
-		[[nodiscard]] vk::Result writeBufferFromHost(BufferWriteInfo const& writeInfo) const;
-		[[nodiscard]] vk::Result readBufferToHost(BufferReadInfo const& readInfos) const;
+		[[deprecated]] [[nodiscard]] vk::Result writeBufferFromHost(BufferWriteInfo const& writeInfo) const;
+		[[deprecated]] [[nodiscard]] vk::Result readBufferToHost(BufferReadInfo const& readInfos) const;
 
 		Allocator& operator=(Allocator const& other) {
 			handle = other.handle;
 			return *this;
 		}
+
+		[[nodiscard]] vk::ResultValue<void*> mapMemory(AllocatedBuffer buffer) const;
+		void unmapMemory(AllocatedBuffer buffer) const;
 
 		void destroyBuffer(
 			AllocatedBuffer allocatedBuffer) const;

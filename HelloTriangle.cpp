@@ -4,7 +4,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <fstream>
 #include <iostream>
-#include <optional>
+#include <queue>
+#include <stack>
 #include <utility>
 #include <vector>
 #include <glm/glm.hpp>
@@ -21,12 +22,95 @@
 #include "VulkanDeviceAllocator/VulkanDeviceAllocator.hpp"
 #include "VulkanCopyManager/VulkanCopyManager.hpp"
 #include "Camera/Camera.hpp"
-
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <assimp/matrix4x4.h>
+#include <glm/gtc/type_ptr.hpp>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+class Scene {
+
+public:
+};
+
+// Функция для обхода aiNode в ширину
+void traverseNode(aiNode* node, std::function<void(aiNode*)> const& callback) {
+	std::stack<aiNode*> nodeStack;
+	nodeStack.push(node);
+	while (!nodeStack.empty()) {
+		auto currentNode = nodeStack.top();
+		nodeStack.pop();
+
+		callback(currentNode);
+
+		for (unsigned int i = 0; i < currentNode->mNumChildren; ++i) {
+			nodeStack.push(currentNode->mChildren[i]);
+		}
+	}
+}
+
 int main(int argc, char** argv) {
 	try {
+		Assimp::Importer importer;
+		auto pScene = importer.ReadFile("assets/models/lowe/scene.gltf", aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+		if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode) {
+			std::cerr << "Assimp error: " << importer.GetErrorString() << std::endl;
+			return -1;
+		}
+
+		aiNode* loweNode = nullptr;
+		auto modelMatrix = glm::mat4(1.0f);
+
+		traverseNode(pScene->mRootNode, [&](aiNode* node) {
+			if (std::string(node->mName.C_Str()) == "Loewe_C.obj.cleaner.materialmerger.gles") {
+				loweNode = node;
+			}
+			modelMatrix = modelMatrix *	glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+			auto transformation = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+
+			// log matrices
+			std::cout << "Node name: " << node->mName.C_Str() << std::endl;
+			std::cout << "modelMatrix" << std::endl;
+			std::cout << transformation[0][0] << " " << transformation[0][1] << " " << transformation[0][2] << " " << transformation[0][3] << std::endl;
+			std::cout << transformation[1][0] << " " << transformation[1][1] << " " << transformation[1][2] << " " << transformation[1][3] << std::endl;
+			std::cout << transformation[2][0] << " " << transformation[2][1] << " " << transformation[2][2] << " " << transformation[2][3] << std::endl;
+			std::cout << transformation[3][0] << " " << transformation[3][1] << " " << transformation[3][2] << " " << transformation[3][3] << std::endl;
+
+		});
+
+		std::vector<aiMesh*> loweMeshes;
+
+		for (unsigned int i = 0; i < loweNode->mNumChildren; ++i) {
+			auto meshNode = loweNode->mChildren[i];
+			// display transformation matrix
+			for (unsigned int j = 0; j < meshNode->mNumMeshes; ++j) {
+				auto meshIndex = meshNode->mMeshes[j];
+				loweMeshes.push_back(pScene->mMeshes[meshIndex]);
+			}
+		}
+
+		struct DrawCallInfo {
+			uint32_t indexCount;
+			uint32_t firstIndex;
+			int32_t vertexOffset;
+		};
+
+		std::vector<DrawCallInfo> drawCalls;
+
+		size_t vertexBufferTotalCount = 0;
+		size_t indexBufferTotalCount = 0;
+
+
+		for (auto mesh: loweMeshes) {
+			vertexBufferTotalCount += mesh->mNumVertices;
+			indexBufferTotalCount += mesh->mNumFaces * 3;
+		}
+
+		size_t vertexTexCoordAttributeInitialOffset = vertexBufferTotalCount * sizeof(float) * 3;
+		size_t vertexBufferSize = vertexBufferTotalCount * (sizeof(float) * 3 + sizeof(float) * 3);
+		size_t indexBufferSize = indexBufferTotalCount * sizeof(uint32_t);
 
 		vm::Camera camera{ glm::vec3{0.3,0.3,0.3}, glm::quat{0.1, 0.2, 0.2, 0.2} };
 		camera.lookAt(glm::vec3{ 0.0f, 0.0f, 0.0f }, glm::vec3{ 0.0f, 1.0f, 0.0f });
@@ -174,13 +258,13 @@ int main(int argc, char** argv) {
 		vk::Queue computeQueue = uniqueDevice->getQueue(computeQueueIndex.first, computeQueueIndex.second);
 		vk::Queue transferQueue = uniqueDevice->getQueue(transferQueueIndex.first, transferQueueIndex.second);
 
-		auto [craeteUniqueCommandPoolResult, uniqueTransferCommandPool] = uniqueDevice->createCommandPoolUnique(
+		auto [createUniqueCommandPoolResult, uniqueTransferCommandPool] = uniqueDevice->createCommandPoolUnique(
 			vk::CommandPoolCreateInfo{
 				.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
 				.queueFamilyIndex = transferQueueIndex.first
 			}
 		);
-		if (craeteUniqueCommandPoolResult != vk::Result::eSuccess) {
+		if (createUniqueCommandPoolResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create command pool");
 		}
 
@@ -188,13 +272,14 @@ int main(int argc, char** argv) {
 			vk::CommandBufferAllocateInfo{
 				.commandPool = *uniqueTransferCommandPool,
 				.level = vk::CommandBufferLevel::ePrimary,
-				.commandBufferCount = 1
+				.commandBufferCount = 2
 			}
 		);
 		if (allocateUniqueCommandBuffersResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to allocate command buffers");
 		}
-		auto transferCommandBuffer = uniqueTransferCommandBuffers.front().get();
+		auto cubeMapCopyCommandBuffer = uniqueTransferCommandBuffers[0].get();
+		auto texture2dCopyCommandBuffer = uniqueTransferCommandBuffers[1].get();
 
 		auto [getSurfaceCapabilitiesResult, physicalDeviceSurfaceCapabilities] = physicalDevice.getSurfaceCapabilitiesKHR(uniqueSurface.get());
 		if (getSurfaceCapabilitiesResult != vk::Result::eSuccess) {
@@ -415,6 +500,80 @@ int main(int argc, char** argv) {
 			uniqueFramebuffers.push_back(std::move(uniqueFramebuffer));
 		}
 
+		auto material = pScene->mMaterials[loweMeshes.front()->mMaterialIndex];
+		aiString textureFilePath;
+		if (material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFilePath) == aiReturn_SUCCESS) {
+			std::cout << "Texture file path: " << textureFilePath.C_Str() << std::endl;
+		}
+		else {
+			std::cerr << "Failed to get texture file path from material" << std::endl;
+		}
+		std::string loweTextureFilePath = "assets/models/lowe/" + std::string(textureFilePath.C_Str());
+		Image loweTextureImage{loweTextureFilePath};
+
+		auto [loweImageCreateResult, uniqueLoweAllocatedImage] = uniqueAllocator->createAndAllocateImageUnique(
+			vk::ImageCreateInfo{
+				.imageType = vk::ImageType::e2D,
+				.format = vk::Format::eR8G8B8A8Srgb,
+				.extent = vk::Extent3D{
+					.width = loweTextureImage.getData().width,
+					.height = loweTextureImage.getData().height,
+					.depth = 1
+				},
+				.mipLevels = 14,
+				.arrayLayers = 1,
+				.samples = vk::SampleCountFlagBits::e1,
+				.tiling = vk::ImageTiling::eOptimal,
+				.usage = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc,
+				.sharingMode = vk::SharingMode::eExclusive,
+				.queueFamilyIndexCount = 0,
+				.pQueueFamilyIndices = nullptr,
+				.initialLayout = vk::ImageLayout::eUndefined
+			},
+			vma::MemoryUsage::ePreferDeviceMemory
+		);
+		if (loweImageCreateResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create image for lowe texture");
+		}
+
+		auto [createLoweImageViewResult, uniqueLoweImageView] = uniqueDevice->createImageViewUnique(
+			vk::ImageViewCreateInfo{
+				.image = *uniqueLoweAllocatedImage,
+				.viewType = vk::ImageViewType::e2D,
+				.format = vk::Format::eR8G8B8A8Srgb,
+				.components = vk::ComponentMapping{
+					.r = vk::ComponentSwizzle::eIdentity,
+					.g = vk::ComponentSwizzle::eIdentity,
+					.b = vk::ComponentSwizzle::eIdentity,
+					.a = vk::ComponentSwizzle::eIdentity
+				},
+				.subresourceRange = vk::ImageSubresourceRange{
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.baseMipLevel = 0,
+					.levelCount = 14,
+					.baseArrayLayer = 0,
+					.layerCount = 1
+				}
+			});
+		if (createLoweImageViewResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create image view for lowe texture");
+		}
+
+		vk::DescriptorSetLayoutBinding loweDescSetLayoutBindings[]{
+			{
+				.binding = 0,
+				.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+				.descriptorCount = 1,
+				.stageFlags = vk::ShaderStageFlagBits::eFragment
+			},
+			{
+				.binding = 1,
+				.descriptorType = vk::DescriptorType::eUniformBuffer,
+				.descriptorCount = 1,
+				.stageFlags = vk::ShaderStageFlagBits::eVertex
+			}
+		};
+
 		std::array descriptorSetLayoutBindings{
 			vk::DescriptorSetLayoutBinding{
 				.binding = 1,
@@ -443,18 +602,18 @@ int main(int argc, char** argv) {
 		std::array descriptorSizes{
 			vk::DescriptorPoolSize{
 				.type = vk::DescriptorType::eCombinedImageSampler,
-				.descriptorCount = 1
+				.descriptorCount = 3
 			},
 			vk::DescriptorPoolSize{
 				.type = vk::DescriptorType::eUniformBuffer,
-				.descriptorCount = 1
+				.descriptorCount = 3
 			}
 		};
 
 		auto [descriptorPoolCreateResult, uniqueDescriptorPool] = uniqueDevice->createDescriptorPoolUnique(
 			vk::DescriptorPoolCreateInfo{
 				.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-				.maxSets = 1,
+				.maxSets = 3,
 				.poolSizeCount = static_cast<uint32_t>(descriptorSizes.size()),
 				.pPoolSizes = descriptorSizes.data(),
 			}
@@ -508,16 +667,12 @@ int main(int argc, char** argv) {
 			throw std::runtime_error("Failed to create camera uniform buffer");
 		}
 
-		if (auto result = uniqueAllocator->writeBufferFromHost(
-			vma::BufferWriteInfo{
-				.dstBuffer = *uniqueCameraBuffer,
-				.dstBufferOffset = 0,
-				.srcData = &cameraData,
-				.dataSize = sizeof(CameraData)
-			}
-		); result != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to write camera data to uniform buffer");
+		auto [mapCameraBufferResult, cameraBufferDataPtr] = uniqueAllocator->mapMemory(*uniqueCameraBuffer);
+		if (mapCameraBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to map camera buffer memory");
 		}
+		std::memcpy(cameraBufferDataPtr, &cameraData, sizeof(CameraData));
+		uniqueAllocator->unmapMemory(*uniqueCameraBuffer);
 
 		CubeMapImageFiles files{
 			.rightFilePath = "img/right.png",
@@ -529,7 +684,7 @@ int main(int argc, char** argv) {
 		};
 
 		CubeMapImage cubeMap{files};
-		auto sideWidth = static_cast<uint32_t>(cubeMap.getData().sideWidth);
+		auto sideWidth = cubeMap.getData().sideWidth;
 
 		auto [createCubeMapResult, uniqueCubeMapMemoryResource] = uniqueAllocator->createAndAllocateImageUnique(
 			vk::ImageCreateInfo{
@@ -552,7 +707,7 @@ int main(int argc, char** argv) {
 
 		auto [createUniqueAllocatedBufferResult, uniqueAllocatedStagingBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
 			vk::BufferCreateInfo{
-				.size = cubeMap.getTotalDataSize(),
+				.size = loweTextureImage.getTotalSize() > cubeMap.getTotalDataSize() ? loweTextureImage.getTotalSize() : cubeMap.getTotalDataSize(),
 				.usage = vk::BufferUsageFlagBits::eTransferSrc,
 				.sharingMode = vk::SharingMode::eExclusive
 			},
@@ -567,13 +722,171 @@ int main(int argc, char** argv) {
 			std::move(uniqueAllocatedStagingBuffer),
 			vma::AllocatorCopier{ *uniqueAllocator }
 		};
-		stagingBuffer.writeCubeMapData(
-			transferQueue,
-			transferCommandBuffer, // Command buffer should be created and passed here
-			{}, // Wait semaphores should be created and passed here
-			{}, // Signal semaphores should be created and passed here
-			*uniqueCubeMapMemoryResource,
-			cubeMap
+
+
+		{
+			auto [createCopySemaphoreFinishedResult, uniqueCopySemaphoreFinished] = uniqueDevice->createSemaphoreUnique({});
+			auto [copyCompleteFenceCreateResult, uniqueCopyCompleteFence] = uniqueDevice->createFenceUnique({});
+			auto [copyCubeMapFenceCreateResult, uniqueCopyCubeMapFence] = uniqueDevice->createFenceUnique({});
+			if (createCopySemaphoreFinishedResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to create copy finished semaphore");
+			}
+			if (copyCubeMapFenceCreateResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to create copy cube map fence");
+			}
+			if (copyCompleteFenceCreateResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to create copy complete fence");
+			}
+
+			if (auto resultWrite = stagingBuffer.writeCubeMapData(
+				transferQueue,
+				cubeMapCopyCommandBuffer, // Command buffer should be created and passed here
+				{}, // Wait semaphores should be created and passed here
+				{*uniqueCopySemaphoreFinished}, // Signal semaphores should be created and passed here
+				*uniqueCopyCubeMapFence,
+				*uniqueCubeMapMemoryResource,
+				cubeMap
+			); resultWrite != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to write cube map data using staging buffer");
+			}
+			if (auto waitResult = uniqueDevice->waitForFences(*uniqueCopyCubeMapFence, VK_TRUE, UINT64_MAX); waitResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to wait for fences");
+			}
+			if (auto resetResult = uniqueDevice->resetFences(*uniqueCopyCubeMapFence); resetResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to reset fences");
+			}
+			if (auto resultWrite = stagingBuffer.writeTexture2dData(
+				transferQueue,
+				texture2dCopyCommandBuffer, // Command buffer should be created and passed here
+				{*uniqueCopySemaphoreFinished}, // Wait semaphores should be created and passed here
+				{}, // Signal semaphores should be created and passed here
+				*uniqueCopyCompleteFence,
+				*uniqueLoweAllocatedImage,
+				loweTextureImage
+			); resultWrite != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to write 2D texture data using staging buffer");
+			}
+			if( auto waitResult = uniqueDevice->waitForFences(*uniqueCopyCompleteFence, VK_TRUE, UINT64_MAX); waitResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to wait for fences");
+			}
+			if (auto resetResult = uniqueDevice->resetFences(*uniqueCopyCompleteFence); resetResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to reset fences");
+			}
+
+			if (auto result = stagingBuffer.generateMipmaps(
+				transferQueue,
+				cubeMapCopyCommandBuffer,
+				{}, // Wait semaphores should be created and passed here
+				{}, // Signal semaphores should be created and passed here
+				*uniqueCopyCompleteFence,
+				*uniqueLoweAllocatedImage,
+				vk::Extent2D {
+					loweTextureImage.getData().width,
+					loweTextureImage.getData().height,
+				},
+				14
+				); result != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to generate mipmaps");
+			}
+			if (auto waitResult = uniqueDevice->waitForFences(*uniqueCopyCompleteFence, VK_TRUE, UINT64_MAX); waitResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to wait for fences");
+			}
+		}
+
+		auto [loweTextureSamplerCreateResult, uniqueLoweTextureSampler] = uniqueDevice->createSamplerUnique(
+			vk::SamplerCreateInfo{
+				.magFilter = vk::Filter::eLinear,
+				.minFilter = vk::Filter::eLinear,
+				.mipmapMode = vk::SamplerMipmapMode::eLinear,
+				.addressModeU = vk::SamplerAddressMode::eRepeat,
+				.addressModeV = vk::SamplerAddressMode::eRepeat,
+				.addressModeW = vk::SamplerAddressMode::eRepeat,
+				.mipLodBias = 0.0f,
+				.anisotropyEnable = vk::True,
+				.maxAnisotropy = 16.0f,
+				.compareEnable = vk::False,
+				.compareOp = vk::CompareOp::eAlways,
+				.minLod = 0.0f,
+				.maxLod = 16.0f,
+				.borderColor = vk::BorderColor::eIntOpaqueBlack,
+				.unnormalizedCoordinates = vk::False
+			}
+		);
+		if (loweTextureSamplerCreateResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create sampler for lowe texture");
+		}
+
+		auto [createLoweDescriptorLayoutResult, uniqueLoweDescriptorSetLayout] = uniqueDevice->createDescriptorSetLayoutUnique(
+			vk::DescriptorSetLayoutCreateInfo{
+				.bindingCount = static_cast<uint32_t>(std::size(loweDescSetLayoutBindings)),
+				.pBindings = loweDescSetLayoutBindings
+			}
+		);
+		if (createLoweDescriptorLayoutResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create descriptor set layout for lowe texture");
+		}
+
+		auto [allocateLoweDescriptorSetResult, uniqueLoweDescriptorSets] = uniqueDevice->allocateDescriptorSetsUnique(
+			vk::DescriptorSetAllocateInfo{
+				.descriptorPool = *uniqueDescriptorPool,
+				.descriptorSetCount = 1,
+				.pSetLayouts = &uniqueLoweDescriptorSetLayout.get()
+			}
+		);
+		if (allocateLoweDescriptorSetResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to allocate descriptor set for lowe texture");
+		}
+		auto& uniqueLoweDescriptorSet = uniqueLoweDescriptorSets.front();
+
+		auto imageInfo = vk::DescriptorImageInfo{
+			.sampler = *uniqueLoweTextureSampler,
+			.imageView = *uniqueLoweImageView,
+			.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+		};
+
+
+		vk::DescriptorBufferInfo cameraBufferDescriptorInfo{
+			.buffer = *uniqueCameraBuffer,
+			.offset = 0,
+			.range = sizeof(CameraData)
+		};
+
+		auto [loweMatricesBufferCreateResult, uniqueLoweMatricesBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
+			vk::BufferCreateInfo{
+				.size = sizeof(glm::mat4) * 3,
+				.usage = vk::BufferUsageFlagBits::eUniformBuffer,
+				.sharingMode = vk::SharingMode::eExclusive
+			}, vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eHostAccessSequentialWrite
+			);
+		if (loweMatricesBufferCreateResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create matrices buffer for lowe texture");
+		}
+
+		vk::DescriptorBufferInfo loweMatricesBufferDescriptorInfo{
+			.buffer = *uniqueLoweMatricesBuffer,
+			.offset = 0,
+			.range = sizeof(glm::mat4) * 3
+		};
+
+		uniqueDevice->updateDescriptorSets(
+			{vk::WriteDescriptorSet{
+				.dstSet = *uniqueLoweDescriptorSet,
+				.dstBinding = 0,
+				.dstArrayElement = 0,
+				.descriptorCount = 1,
+				.descriptorType = vk::DescriptorType::eCombinedImageSampler,
+				.pImageInfo = &imageInfo
+			},
+			vk::WriteDescriptorSet{
+				.dstSet = *uniqueLoweDescriptorSet,
+				.dstBinding = 1,
+				.dstArrayElement = 0,
+				.descriptorCount = 1,
+				.descriptorType = vk::DescriptorType::eUniformBuffer,
+				.pBufferInfo = &loweMatricesBufferDescriptorInfo
+			}},
+			{}
 		);
 
 		auto [cubeMapImageViewCreateResult, uniqueCubeMapImageView] = uniqueDevice->createImageViewUnique(
@@ -629,12 +942,6 @@ int main(int argc, char** argv) {
 			.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
 		};
 
-		vk::DescriptorBufferInfo cameraBufferDescriptorInfo{
-			.buffer = *uniqueCameraBuffer,
-			.offset = 0,
-			.range = sizeof(CameraData)
-		};
-
 		std::array writeDescriptorSets{
 			vk::WriteDescriptorSet{
 				.dstSet = *uniqueDescriptorSet,
@@ -658,6 +965,236 @@ int main(int argc, char** argv) {
 			writeDescriptorSets,
 			{}
 		);
+
+		auto [createAndAllocateLoweVertexBufferResult, uniqueLoweVertexBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
+			vk::BufferCreateInfo{
+				.size = vertexBufferSize, // Assuming position only for simplicity
+				.usage = vk::BufferUsageFlagBits::eVertexBuffer,
+				.sharingMode = vk::SharingMode::eExclusive
+			},
+			vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eMapped
+		);
+		if (createAndAllocateLoweVertexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create lowe vertex buffer");
+		}
+
+		auto [createAndAllocateLoweIndexBufferResult, uniqueLoweIndexBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
+			vk::BufferCreateInfo{
+			.size = indexBufferSize,
+			.usage = vk::BufferUsageFlagBits::eIndexBuffer,
+			.sharingMode = vk::SharingMode::eExclusive,
+			},
+			vma::MemoryUsage::eCpuToGpu,
+			vma::AllocationCreateFlagBits::eMapped);
+		if (createAndAllocateLoweIndexBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create lowe index buffer");
+		}
+
+		// write vertex data to vertex buffer
+		std::vector<DrawCallInfo> loweDrawCallInfos;
+		uint32_t firstIndex = 0;
+		int32_t vertexOffset = 0;
+		for (auto loweMesh : loweMeshes) {
+
+			DrawCallInfo loweDrawCallInfo{
+				.indexCount = loweMesh->mNumFaces * 3,
+				.firstIndex = firstIndex,
+				.vertexOffset = vertexOffset
+			};
+
+			loweDrawCallInfos.push_back(loweDrawCallInfo);
+
+			for (int i = 0; i < loweMesh->mNumFaces; i++) {
+				vma::BufferWriteInfo indexBufferWriteInfo{
+					.dstBuffer = *uniqueLoweIndexBuffer,
+					.dstBufferOffset = (firstIndex + i * 3) * 4,
+					.srcData = loweMesh->mFaces[i].mIndices,
+					.dataSize = 3 * sizeof(uint32_t)
+				};
+				if (auto writeResult = uniqueAllocator->writeBufferFromHost(indexBufferWriteInfo); writeResult != vk::Result::eSuccess) {
+					throw std::runtime_error("Failed to create lowe index buffer");
+				}
+			}
+
+			vma::BufferWriteInfo vertexBufferWriteInfo{
+				.dstBuffer = *uniqueLoweVertexBuffer,
+				.dstBufferOffset = vertexOffset * sizeof(float) * 3, // Assuming position only for simplicity
+				.srcData = loweMesh->mVertices,
+				.dataSize = 3 * sizeof(float) * loweMesh->mNumVertices
+			};
+
+			vma::BufferWriteInfo uvBufferWriteInfo{
+				.dstBuffer = *uniqueLoweVertexBuffer,
+				.dstBufferOffset = vertexOffset * sizeof(float) * 3 + vertexTexCoordAttributeInitialOffset,
+				.srcData = loweMesh->mTextureCoords[0],
+				.dataSize = 3 * sizeof(float) * loweMesh->mNumVertices
+			};
+			if (auto writeResult = uniqueAllocator->writeBufferFromHost(vertexBufferWriteInfo); writeResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to write vertex data to lowe vertex buffer");
+			}
+			if (auto writeResult = uniqueAllocator->writeBufferFromHost(uvBufferWriteInfo); writeResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to write uv data to lowe vertex buffer");
+			}
+
+			firstIndex += loweMesh->mNumFaces * 3;
+			vertexOffset += loweMesh->mNumVertices;
+		}
+
+		auto [createLoweVertexShaderModuleResult, uniqueLoweVertexShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/simpleModel.vert.spv");
+		auto [createLoweFragmentShaderModuleResult, uniqueLoweFragmentShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/simpleModel.frag.spv");
+
+		if (createLoweVertexShaderModuleResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create lowe vertex shader module");
+		}
+		if (createLoweFragmentShaderModuleResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create lowe fragment shader module");
+		}
+
+		vk::PipelineShaderStageCreateInfo loweShaderStagesCreateInfos[]{
+			{
+				.stage = vk::ShaderStageFlagBits::eVertex,
+				.module = *uniqueLoweVertexShaderModule,
+				.pName = "main"
+			},
+			{
+				.stage = vk::ShaderStageFlagBits::eFragment,
+				.module = *uniqueLoweFragmentShaderModule,
+				.pName = "main"
+			}
+		};
+
+		vk::VertexInputBindingDescription loweVertexBindingDescriptions[] {
+			{
+				.binding = 0,
+				.stride = 3 * sizeof(float),
+				.inputRate = vk::VertexInputRate::eVertex
+			},
+			{
+				.binding = 1,
+				.stride = 3 * sizeof(float),
+				.inputRate = vk::VertexInputRate::eVertex
+			}
+		};
+
+		vk::VertexInputAttributeDescription loweVertexAttributeDescriptions[] {
+			{
+				.location = 0,
+				.binding = 0,
+				.format = vk::Format::eR32G32B32Sfloat,
+				.offset = 0,
+			},
+			{
+				.location = 1,
+				.binding = 1,
+				.format = vk::Format::eR32G32B32Sfloat,
+				.offset = 0
+			}
+		};
+
+		vk::PipelineVertexInputStateCreateInfo loweVertexInputStateCreateInfo {
+			.vertexBindingDescriptionCount = static_cast<uint32_t>(std::size(loweVertexBindingDescriptions)),
+			.pVertexBindingDescriptions = loweVertexBindingDescriptions,
+			.vertexAttributeDescriptionCount = static_cast<uint32_t>(std::size(loweVertexAttributeDescriptions)),
+			.pVertexAttributeDescriptions = loweVertexAttributeDescriptions
+		};
+
+		vk::PipelineInputAssemblyStateCreateInfo loweInputAssemblyStateCreateInfo {
+			.topology = vk::PrimitiveTopology::eTriangleList,
+			.primitiveRestartEnable = vk::False
+		};
+
+		vk::Viewport loweViewport{
+			.x = 0.0f,
+			.y = 0.0f,
+			.width = static_cast<float>(swapchainExtent.width),
+			.height = static_cast<float>(swapchainExtent.height),
+			.minDepth = 0.0f,
+			.maxDepth = 1.0f
+		};
+
+		vk::Rect2D loweScissor{
+			.offset{
+				.x = 0,
+				.y = 0
+			},
+			.extent{
+				.width = swapchainExtent.width,
+				.height = swapchainExtent.height
+			}
+		};
+
+		vk::PipelineViewportStateCreateInfo loweViewportStateCreateInfo {
+			.viewportCount = 1,
+			.pViewports = &loweViewport, // Dynamic state
+			.scissorCount = 1,
+			.pScissors = &loweScissor // Dynamic state
+		};
+
+		vk::PipelineRasterizationStateCreateInfo loweRasterizationStateCreateInfo {
+			.depthClampEnable = vk::False,
+			.rasterizerDiscardEnable = vk::False,
+			.polygonMode = vk::PolygonMode::eFill,
+			.cullMode = vk::CullModeFlagBits::eBack,
+			.frontFace = vk::FrontFace::eCounterClockwise,
+			.depthBiasEnable = vk::False,
+			.lineWidth = 1.0f
+		};
+
+		vk::PipelineMultisampleStateCreateInfo loweMultisampleStateCreateInfo {
+			.rasterizationSamples = vk::SampleCountFlagBits::e1,
+			.sampleShadingEnable = vk::False
+		};
+
+		vk::PipelineDepthStencilStateCreateInfo loweDepthStencilStateCreateInfo {
+			.depthTestEnable = vk::True,
+			.depthWriteEnable = vk::True,
+			.depthCompareOp = vk::CompareOp::eLess,
+			.depthBoundsTestEnable = vk::False,
+			.stencilTestEnable = vk::False
+		};
+
+		vk::PipelineColorBlendAttachmentState loweColorBlendAttachmentState {
+			.blendEnable = vk::False,
+			.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+		};
+
+		vk::PipelineColorBlendStateCreateInfo loweColorBlendStateCreateInfo {
+			.logicOpEnable = vk::False,
+			.attachmentCount = 1,
+			.pAttachments = &loweColorBlendAttachmentState
+		};
+
+		auto [createLowePipelineLayoutResult, uniqueLowePipelineLayout] = uniqueDevice->createPipelineLayoutUnique(
+			vk::PipelineLayoutCreateInfo{
+				.setLayoutCount = 1,
+				.pSetLayouts = &uniqueLoweDescriptorSetLayout.get()
+			}
+		);
+		if (createLowePipelineLayoutResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create pipeline layout for lowe");
+		}
+
+		auto [createLoweGraphicsPipelineResult, uniqueLoweGraphicsPipeline] = uniqueDevice->createGraphicsPipelineUnique(
+			nullptr,
+			vk::GraphicsPipelineCreateInfo{
+				.stageCount = 2,
+				.pStages = loweShaderStagesCreateInfos,
+				.pVertexInputState = &loweVertexInputStateCreateInfo,
+				.pInputAssemblyState = &loweInputAssemblyStateCreateInfo,
+				.pViewportState = &loweViewportStateCreateInfo,
+				.pRasterizationState = &loweRasterizationStateCreateInfo,
+				.pMultisampleState = &loweMultisampleStateCreateInfo,
+				.pDepthStencilState = &loweDepthStencilStateCreateInfo,
+				.pColorBlendState = &loweColorBlendStateCreateInfo,
+				.pDynamicState = nullptr,
+				.layout = *uniqueLowePipelineLayout,
+				.renderPass = *uniqueRenderPass,
+				.subpass = 0
+			});
+		if (createLoweGraphicsPipelineResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create graphics pipeline for lowe");
+		}
 
 		struct CubeVertex {
 			glm::vec3 position;
@@ -1041,7 +1578,7 @@ int main(int argc, char** argv) {
 			.depthClampEnable = vk::False,
 			.rasterizerDiscardEnable = vk::False,
 			.polygonMode = vk::PolygonMode::eFill,
-			.cullMode = vk::CullModeFlagBits::eFront,
+			.cullMode = vk::CullModeFlagBits::eNone,
 			.frontFace = vk::FrontFace::eCounterClockwise,
 			.depthBiasEnable = vk::False,
 			.lineWidth = 1.0f
@@ -1146,7 +1683,21 @@ int main(int argc, char** argv) {
 				{ *uniqueDescriptorSet },
 				{}
 			);
-			commandBuffer->drawIndexed(static_cast<uint32_t>(cubeIndices.size()), 1, 0, 0, 0);
+			commandBuffer->drawIndexed(cubeIndices.size(), 1, 0, 0, 0);
+			// lowe rendering
+			commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *uniqueLoweGraphicsPipeline);
+			commandBuffer->bindDescriptorSets(
+				vk::PipelineBindPoint::eGraphics,
+				*uniqueLowePipelineLayout,
+				0,
+				{ *uniqueLoweDescriptorSet },
+				{}
+			);
+			commandBuffer->bindVertexBuffers(0, { *uniqueLoweVertexBuffer, *uniqueLoweVertexBuffer }, { 0, vertexTexCoordAttributeInitialOffset });
+			commandBuffer->bindIndexBuffer(*uniqueLoweIndexBuffer, 0, vk::IndexType::eUint32);
+			for (auto [indexCount, firstIndex_, vertexOffset_]: loweDrawCallInfos) {
+				commandBuffer->drawIndexed(indexCount, 1, firstIndex_, vertexOffset_, 0);
+			}
 			// render skybox
 			commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *uniqueSkyboxGraphicsPipeline);
 			commandBuffer->bindVertexBuffers(0, { *uniqueSkyboxVertexBuffer }, { 0 });
@@ -1208,22 +1759,22 @@ int main(int argc, char** argv) {
 
 				switch (keyCode) {
 					case SdlKeyCode::W:
-						camera.move(glm::vec3(0.0f, 0.0f, -0.01f));
+						camera.move(glm::vec3(0.0f, 0.0f, -0.1f));
 						break;
 					case SdlKeyCode::S:
-						camera.move(glm::vec3(0.0f, 0.0f, 0.01f));
+						camera.move(glm::vec3(0.0f, 0.0f, 0.1));
 						break;
 					case SdlKeyCode::A:
-						camera.move(glm::vec3(-0.01f, 0.0f, 0.0f));
+						camera.move(glm::vec3(-0.1f, 0.0f, 0.0f));
 						break;
 					case SdlKeyCode::D:
-						camera.move(glm::vec3(0.01f, 0.0f, 0.0f));
+						camera.move(glm::vec3(0.1f, 0.0f, 0.0f));
 						break;
 					case SdlKeyCode::Q:
-						camera.move(glm::vec3(0.0f, -0.01f, 0.0f));
+						camera.move(glm::vec3(0.0f, -0.1f, 0.0f));
 						break;
 					case SdlKeyCode::E:
-						camera.move(glm::vec3(0.0f, 0.01f, 0.0f));
+						camera.move(glm::vec3(0.0f, 0.1f, 0.0f));
 						break;
 					case SdlKeyCode::Up:
 						camera.rotate(glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -1275,6 +1826,24 @@ int main(int argc, char** argv) {
 			if (auto result = uniqueAllocator->writeBufferFromHost(updatedCameraData); result != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed to update camera uniform buffer");
 			}
+
+			glm::mat4 loweMatrices[3] {
+				modelMatrix,
+				cameraData.view,
+				cameraData.projection
+			};
+
+			vma::BufferWriteInfo updatedModelData{
+				.dstBuffer = *uniqueLoweMatricesBuffer,
+				.dstBufferOffset = 0,
+				.srcData = loweMatrices,
+				.dataSize = sizeof(loweMatrices)
+			};
+
+			if (auto result = uniqueAllocator->writeBufferFromHost(updatedModelData); result != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to update model matrices buffer");
+			}
+
 
 			if (auto waitFenceResult = uniqueDevice->waitForFences(*inFlightFences[currentFrame], vk::True, UINT64_MAX); waitFenceResult != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed to wait for fence");

@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Environment/Hierarchy/GeneratedFilesCacheKey/Timestamp/@EntryValue" value="26" type="long" />
+    <option name="/Default/Housekeeping/FeatureSuggestion/FeatureSuggestionManager/DisabledSuggesters/=SwitchToGoToActionSuggester/@EntryIndexedValue" value="true" type="bool" />
+    <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
+  </component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
+  <component name="CMakeProjectFlavorService">
+    <option name="flavorId" value="CMakePlainProjectFlavor" />
+  </component>
+  <component name="CMakeReloadState">
+    <option name="reloaded" value="true" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="HelloTriangle" targetName="CopyCubeMapImages" />
+      <config projectName="HelloTriangle" targetName="CompileShaders" />
+      <config projectName="HelloTriangle" targetName="HelloTriangle" />
+      <config projectName="HelloTriangle" targetName="assimp" />
+      <config projectName="HelloTriangle" targetName="uninstall" />
+      <config projectName="HelloTriangle" targetName="unit" />
+      <config projectName="HelloTriangle" targetName="CopyAssets" />
+      <config projectName="HelloTriangle" targetName="zlibstatic" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" BUILD_OPTIONS="-j 10" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="67bbdf34-1660-4b1f-9a80-e44aa629a6ab" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/assets/CMakeLists.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/images/neg_x.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/images/neg_y.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/images/neg_z.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/images/pos_x.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/images/pos_y.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/images/pos_z.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/shaders/skybox.frag" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/skybox/shaders/skybox.vert" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/shaders/simpleModel.frag" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/shaders/simpleModel.vert" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/SceneGraph/SceneGraph.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/SceneGraph/SceneGraph.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/copilot.data.migration.ask2agent.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/HelloTriangle.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/HelloTriangle.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/cube.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/cube.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/cube.vert" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/cube.vert" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/skybox.frag" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/skybox.frag" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shaders/skybox.vert" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/skybox.vert" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Camera/Camera.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Camera/Camera.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ImageLoader/Image.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ImageLoader/Image.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ImageLoader/Image.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ImageLoader/Image.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanCopyManager/VulkanCopyManager.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanCopyManager/VulkanCopyManager.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanCopyManager/VulkanCopyManager.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanCopyManager/VulkanCopyManager.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanDeviceAllocator/VulkanDeviceAllocator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanDeviceAllocator/VulkanDeviceAllocator.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanDeviceAllocator/VulkanDeviceAllocator.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanDeviceAllocator/VulkanDeviceAllocator.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanModel/VulkanModel.cpp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VulkanModel/VulknaModel.hpp" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_E:/Users/Shagu/Projects/ShuttleEngine" value="3BwYEg2S8CW5hPpqkxzz1PAsBTS" />
+    </persistenceIdMap>
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="5648" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="CMakeLists.txt" />
+        <option value="GLSL Shader" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/src/Camera/Camera.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/ImageLoader/Image.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/VulkanCopyManager/VulkanCopyManager.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/src/VulkanDeviceAllocator/VulkanDeviceAllocator.hpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../../../../VulkanSDK/1.4.341.1/Include/vulkan/vulkan_structs.hpp" root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="OV4B9a0L" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2025" />
+    <option name="minorVersion" value="3.4" />
+    <option name="productBranch" value="Classic" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="3BwYEg2S8CW5hPpqkxzz1PAsBTS" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "CMake Application.HelloTriangle.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "RunOnceActivity.west.config.association.type.startup.service": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-debug",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-debug" />
+      <recent name="E:\Users\Shagu\Projects\ShuttleEngine\assets\skybox\shaders" />
+      <recent name="E:\Users\Shagu\Projects\ShuttleEngine\assets\skybox" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\Users\Shagu\Projects\ShuttleEngine\assets\skybox\images" />
+    </key>
+  </component>
+  <component name="RunManager" selected="CMake Application.HelloTriangle">
+    <configuration name="unit" type="CMakeGoogleTestRunConfigurationType" factoryName="Google Test" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="unit" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="HelloTriangle" RUN_TARGET_NAME="unit" TEST_MODE="SUITE_TEST">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+        <option name="BeforeTestRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CompileShaders" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="CompileShaders" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CopyAssets" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="CopyAssets" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CopyCubeMapImages" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="CopyCubeMapImages" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HelloTriangle" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="HelloTriangle" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="HelloTriangle" RUN_TARGET_NAME="HelloTriangle">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="assimp" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="assimp" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="uninstall" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="uninstall" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="zlibstatic" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="HelloTriangle" TARGET_NAME="zlibstatic" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="CMake Application.CompileShaders" />
+      <item itemvalue="CMake Application.CopyAssets" />
+      <item itemvalue="CMake Application.CopyCubeMapImages" />
+      <item itemvalue="CMake Application.HelloTriangle" />
+      <item itemvalue="CMake Application.assimp" />
+      <item itemvalue="CMake Application.uninstall" />
+      <item itemvalue="CMake Application.zlibstatic" />
+      <item itemvalue="Google Test.unit" />
+    </list>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="67bbdf34-1660-4b1f-9a80-e44aa629a6ab" name="Changes" comment="" />
+      <created>1775401492238</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1775401492238</updated>
+      <workItem from="1775401493710" duration="432000" />
+      <workItem from="1775401951136" duration="51000" />
+      <workItem from="1775402069855" duration="2916000" />
+      <workItem from="1775405503758" duration="412000" />
+      <workItem from="1775406024026" duration="343000" />
+      <workItem from="1775406391438" duration="686000" />
+      <workItem from="1775407209578" duration="2339000" />
+      <workItem from="1775501370359" duration="14445000" />
+      <workItem from="1775516021537" duration="10562000" />
+      <workItem from="1775587109753" duration="1571000" />
+      <workItem from="1775588888461" duration="277000" />
+      <workItem from="1775589186780" duration="419000" />
+      <workItem from="1775589625009" duration="3984000" />
+      <workItem from="1775594819764" duration="985000" />
+      <workItem from="1775643421595" duration="5896000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <watches-manager>
+      <configuration name="CMakeRunConfiguration">
+        <watch expression="pScene-&gt;mRootNode-&gt;mChildren-&gt;*mChildren-&gt;mName.data" language="C++" />
+        <watch expression="loweNode" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>

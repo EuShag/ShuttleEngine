@@ -1,5 +1,4 @@
 #version 460 core
-#extension GL_KHR_vulkan_glsl: enable
 // Skybox vertex shader
 layout (location = 0) in vec3 aPos;
 

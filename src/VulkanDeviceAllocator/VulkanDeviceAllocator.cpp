@@ -53,13 +53,13 @@ namespace vma {
 			&allocatorCreateInfo,
 			&resultAllocator
 		);
-		return vk::ResultValue<Allocator>{static_cast<vk::Result>(result), Allocator{resultAllocator}};
+		return vk::ResultValue{static_cast<vk::Result>(result), Allocator{resultAllocator}};
 	}
 
 	vk::ResultValue<AllocatedBuffer> Allocator::createAndAllocateBuffer(
 		vk::BufferCreateInfo const& bufferCreateInfo, 
-		vma::MemoryUsage desiredMemoryUsage, 
-		vma::AllocationCreateFlags allocationCreateFlags) const
+		MemoryUsage desiredMemoryUsage,
+		AllocationCreateFlags allocationCreateFlags) const
 	{
 		auto allocationCreateFlagsInt{ static_cast<uint32_t>(allocationCreateFlags) };
 		auto memoryUsageInt{ static_cast<VmaMemoryUsage>(desiredMemoryUsage) };
@@ -87,13 +87,13 @@ namespace vma {
 			&buffer, &allocation, nullptr
 		);
 
-		return vk::ResultValue<AllocatedBuffer>{static_cast<vk::Result>(result), AllocatedBuffer{allocation, buffer}};
+		return vk::ResultValue{static_cast<vk::Result>(result), AllocatedBuffer{allocation, buffer}};
 	}
 
 	vk::ResultValue<AllocatedImage> Allocator::createAndAllocateImage(
 		vk::ImageCreateInfo const& imageCreateInfo,
-		vma::MemoryUsage desiredMemoryUsage,
-		vma::AllocationCreateFlags allocationCreateFlags
+		MemoryUsage desiredMemoryUsage,
+		AllocationCreateFlags allocationCreateFlags
 	) const {
 		auto allocationCreateFlagsInt{ static_cast<uint32_t>(allocationCreateFlags) };
 		auto memoryUsageInt{ static_cast<VmaMemoryUsage>(desiredMemoryUsage) };
@@ -107,7 +107,7 @@ namespace vma {
 			.pUserData = nullptr,
 			.priority = 0.0f
 		};
-		auto&& allocator = reinterpret_cast<VmaAllocator>(handle);
+		auto&& allocator = static_cast<VmaAllocator>(handle);
 		VmaAllocation allocation;
 		VkImage image;
 		auto result = vmaCreateImage(
@@ -116,7 +116,7 @@ namespace vma {
 			&allocationCreateInfo,
 			&image, &allocation, nullptr
 		);
-		return vk::ResultValue<AllocatedImage>{static_cast<vk::Result>(result), AllocatedImage{ allocation, image }};
+		return vk::ResultValue{static_cast<vk::Result>(result), AllocatedImage{ allocation, image }};
 	}
 
 	vk::ResultValue<UniqueAllocatedBuffer> Allocator::createAndAllocateBufferUnique(
@@ -127,28 +127,28 @@ namespace vma {
 	{
 		auto result = createAndAllocateBuffer(bufferCreateInfo, desiredMemoryUsage, allocationCreateFlags);
 		if (!result.has_value()) {
-			return vk::ResultValue<UniqueAllocatedBuffer>{result.result, UniqueAllocatedBuffer{}};
+			return vk::ResultValue{result.result, UniqueAllocatedBuffer{}};
 		}
-		return vk::ResultValue<UniqueAllocatedBuffer>{result.result, UniqueAllocatedBuffer{ result.value, UniqueAllocatedBufferDeleter{*this} }};
+		return vk::ResultValue{result.result, UniqueAllocatedBuffer{ result.value, UniqueAllocatedBufferDeleter{*this} }};
 	}
 
 	vk::ResultValue<UniqueAllocatedImage> Allocator::createAndAllocateImageUnique(
 		vk::ImageCreateInfo const& imageCreateInfo,
-		vma::MemoryUsage desiredMemoryUsage,
-		vma::AllocationCreateFlags allocationCreateFlags
+		MemoryUsage desiredMemoryUsage,
+		AllocationCreateFlags allocationCreateFlags
 	) const
 	{
 		auto result = createAndAllocateImage(imageCreateInfo, desiredMemoryUsage, allocationCreateFlags);
 		if (!result.has_value()) {
-			return vk::ResultValue<UniqueAllocatedImage>{result.result, UniqueAllocatedImage{}};
+			return vk::ResultValue{result.result, UniqueAllocatedImage{}};
 		}
-		return vk::ResultValue<UniqueAllocatedImage>{result.result, UniqueAllocatedImage{ result.value, UniqueAllocatedImageDeleter{*this} }};
+		return vk::ResultValue{result.result, UniqueAllocatedImage{ result.value, UniqueAllocatedImageDeleter{*this} }};
 	}
 
 	vk::Result Allocator::writeBufferFromHost(BufferWriteInfo const& bufferWriteInfo) const
 	{
-		auto&& allocator = reinterpret_cast<VmaAllocator>(handle);
-		auto&& allocationHandle = reinterpret_cast<VmaAllocation>(bufferWriteInfo.dstBuffer.getAllocation());
+		auto&& allocator = static_cast<VmaAllocator>(handle);
+		auto&& allocationHandle = static_cast<VmaAllocation>(bufferWriteInfo.dstBuffer.getAllocation());
 		void* mappedData = nullptr;
 		VmaAllocationInfo allocationInfo;
 		vmaGetAllocationInfo(allocator, allocationHandle, &allocationInfo);
@@ -166,8 +166,8 @@ namespace vma {
 
 	vk::Result Allocator::readBufferToHost(BufferReadInfo const& bufferReadInfo) const
 	{
-		auto&& allocator = reinterpret_cast<VmaAllocator>(handle);
-		auto&& allocationHandle = reinterpret_cast<VmaAllocation>(bufferReadInfo.srcBuffer.getAllocation());
+		auto&& allocator = static_cast<VmaAllocator>(handle);
+		auto&& allocationHandle = static_cast<VmaAllocation>(bufferReadInfo.srcBuffer.getAllocation());
 		void* mappedData;
 		vmaMapMemory(allocator, allocationHandle, &mappedData);
 		std::memcpy(bufferReadInfo.dstData, static_cast<char*>(mappedData) + bufferReadInfo.srcBufferOffset, bufferReadInfo.dataSize);
@@ -175,25 +175,42 @@ namespace vma {
 		return vk::Result::eSuccess;
 	}
 
+	vk::ResultValue<void*> Allocator::mapMemory(AllocatedBuffer buffer) const {
+		auto&& allocator = static_cast<VmaAllocator>(handle);
+		auto&& allocationHandle = static_cast<VmaAllocation>(buffer.getAllocation());
+		void* mappedData;
+		auto mapResult = vmaMapMemory(allocator, allocationHandle, &mappedData);
+		if (mapResult != VK_SUCCESS) {
+			return vk::ResultValue<void*>{static_cast<vk::Result>(mapResult), nullptr};
+		}
+		return vk::ResultValue{static_cast<vk::Result>(mapResult), mappedData};
+	}
+
+	void Allocator::unmapMemory(AllocatedBuffer buffer) const {
+		auto&& allocator = static_cast<VmaAllocator>(handle);
+		auto&& allocationHandle = static_cast<VmaAllocation>(buffer.getAllocation());
+		vmaUnmapMemory(allocator, allocationHandle);
+	}
+
 	void Allocator::destroyBuffer(AllocatedBuffer buffer) const
 	{
-		auto&& allocator = reinterpret_cast<VmaAllocator>(handle);
-		auto&& allocationHandle = reinterpret_cast<VmaAllocation>(buffer.getAllocation());
+		auto&& allocator = static_cast<VmaAllocator>(handle);
+		auto&& allocationHandle = static_cast<VmaAllocation>(buffer.getAllocation());
 		auto&& bufferHandle = static_cast<VkBuffer>(static_cast<vk::Buffer>(buffer));
 		vmaDestroyBuffer(allocator, bufferHandle, allocationHandle);
 	}
 
 	void Allocator::destroyImage(AllocatedImage image) const
 	{
-		auto&& allocator = reinterpret_cast<VmaAllocator>(handle);
-		auto&& allocationHandle = reinterpret_cast<VmaAllocation>(image.getAllocation());
+		auto&& allocator = static_cast<VmaAllocator>(handle);
+		auto&& allocationHandle = static_cast<VmaAllocation>(image.getAllocation());
 		auto&& imageHandle = static_cast<VkImage>(static_cast<vk::Image>(image));
 		vmaDestroyImage(allocator, imageHandle, allocationHandle);
 	}
 
 	void Allocator::destroy() const
 	{
-		auto&& allocator = reinterpret_cast<VmaAllocator>(handle);
+		auto&& allocator = static_cast<VmaAllocator>(handle);
 		vmaDestroyAllocator(allocator);
 	}
 
