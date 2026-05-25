@@ -1,0 +1,70 @@
+{
+	"cmake" : 
+	{
+		"generator" : 
+		{
+			"multiConfig" : false,
+			"name" : "NMake Makefiles"
+		},
+		"paths" : 
+		{
+			"cmake" : "E:/Program Files/CMake/bin/cmake.exe",
+			"cpack" : "E:/Program Files/CMake/bin/cpack.exe",
+			"ctest" : "E:/Program Files/CMake/bin/ctest.exe",
+			"root" : "E:/Program Files/CMake/share/cmake-4.2"
+		},
+		"version" : 
+		{
+			"isDirty" : false,
+			"major" : 4,
+			"minor" : 2,
+			"patch" : 0,
+			"string" : "4.2.0-rc1",
+			"suffix" : "rc1"
+		}
+	},
+	"objects" : [],
+	"reply" : 
+	{
+		"client-vscode" : 
+		{
+			"query.json" : 
+			{
+				"requests" : 
+				[
+					{
+						"kind" : "cache",
+						"version" : 2
+					},
+					{
+						"kind" : "codemodel",
+						"version" : 2
+					},
+					{
+						"kind" : "toolchains",
+						"version" : 1
+					},
+					{
+						"kind" : "cmakeFiles",
+						"version" : 1
+					}
+				],
+				"responses" : 
+				[
+					{
+						"error" : "no buildsystem generated"
+					},
+					{
+						"error" : "no buildsystem generated"
+					},
+					{
+						"error" : "no buildsystem generated"
+					},
+					{
+						"error" : "no buildsystem generated"
+					}
+				]
+			}
+		}
+	}
+}

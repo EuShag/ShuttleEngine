@@ -4,6 +4,3 @@
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb.git
-[submodule "external/oneTBB"]
-	path = external/oneTBB
-	url = https://github.com/uxlfoundation/oneTBB

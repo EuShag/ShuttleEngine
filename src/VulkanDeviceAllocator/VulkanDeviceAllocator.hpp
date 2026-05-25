@@ -6,10 +6,10 @@
 namespace vma {
 	enum class AllocationCreateFlagBits : uint32_t {
 		eDedicatedMemory = 0x00000001,
-		eNeverAlloate = 0x00000002,
+		eNeverAllocate = 0x00000002,
 		eMapped = 0x00000004,
 		eUserDataCopyString = 0x00000020,
-		eUpperAddresBit = 0x00000040,
+		eUpperAddressBit = 0x00000040,
 		eDontBind = 0x00000080,
 		eWithinBud = 0x00000100,
 		eCanAlias = 0x00000200,
@@ -161,31 +161,28 @@ namespace vma {
 
 		[[nodiscard]] vk::ResultValue<AllocatedBuffer> createAndAllocateBuffer(
 			vk::BufferCreateInfo const& bufferCreateInfo,
-			vma::MemoryUsage desireMemoryUsage = vma::MemoryUsage::eAuto,
-			vma::AllocationCreateFlags allocationCreateFlags = {}) const;
+			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+			AllocationCreateFlags allocationCreateFlags = {}) const;
 
 		[[nodiscard]] vk::ResultValue<AllocatedImage> createAndAllocateImage(
 			vk::ImageCreateInfo const& imageCreateInfo,
-			vma::MemoryUsage desireMemoryUsage = vma::MemoryUsage::eAuto,
-			vma::AllocationCreateFlags allocationCreateFlags = {}) const;
+			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+			AllocationCreateFlags allocationCreateFlags = {}) const;
 
 		[[nodiscard]] vk::ResultValue<UniqueAllocatedBuffer> createAndAllocateBufferUnique(
 			vk::BufferCreateInfo const& bufferCreateInfo,
-			vma::MemoryUsage desireMemoryUsage = vma::MemoryUsage::eAuto,
-			vma::AllocationCreateFlags allocationCreateFlags = {}) const;
+			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+			AllocationCreateFlags allocationCreateFlags = {}) const;
 
 		[[nodiscard]] vk::ResultValue<UniqueAllocatedImage> createAndAllocateImageUnique(
 			vk::ImageCreateInfo const& imageCreateInfo,
-			vma::MemoryUsage desireMemoryUsage = vma::MemoryUsage::eAuto,
-			vma::AllocationCreateFlags allocationCreateFlags = {}) const;
+			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+			AllocationCreateFlags allocationCreateFlags = {}) const;
 
 		[[deprecated]] [[nodiscard]] vk::Result writeBufferFromHost(BufferWriteInfo const& writeInfo) const;
 		[[deprecated]] [[nodiscard]] vk::Result readBufferToHost(BufferReadInfo const& readInfos) const;
 
-		Allocator& operator=(Allocator const& other) {
-			handle = other.handle;
-			return *this;
-		}
+		Allocator& operator=(Allocator const& other) = default;
 
 		[[nodiscard]] vk::ResultValue<void*> mapMemory(AllocatedBuffer buffer) const;
 		void unmapMemory(AllocatedBuffer buffer) const;
@@ -206,10 +203,10 @@ namespace vma {
 	public:
 		AllocatorCopier(Allocator const& allocator) : allocator{ allocator } {}
 
-		[[nodiscard]] vk::Result writeBufferFromHost(BufferWriteInfo const& writeInfo) const {
+		[[nodiscard, deprecated]] vk::Result writeBufferFromHost(BufferWriteInfo const& writeInfo) const {
 			return allocator.writeBufferFromHost(writeInfo);
 		}
-		[[nodiscard]] vk::Result readBufferToHost(BufferReadInfo const& readInfos) const {
+		[[nodiscard, deprecated]] vk::Result readBufferToHost(BufferReadInfo const& readInfos) const {
 			return allocator.readBufferToHost(readInfos);
 		}
 
@@ -258,8 +255,8 @@ namespace vk {
 	struct FlagTraits<vma::AllocationCreateFlagBits> {
 		using WrappedType = uint32_t;
 		static constexpr bool isBitmask = true;
-		static constexpr vma::AllocationCreateFlags allFlags = vma::AllocationCreateFlagBits::eDedicatedMemory | vma::AllocationCreateFlagBits::eNeverAlloate | vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eUserDataCopyString |
-			vma::AllocationCreateFlagBits::eUpperAddresBit | vma::AllocationCreateFlagBits::eDontBind | vma::AllocationCreateFlagBits::eWithinBud |
+		static constexpr vma::AllocationCreateFlags allFlags = vma::AllocationCreateFlagBits::eDedicatedMemory | vma::AllocationCreateFlagBits::eNeverAllocate | vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eUserDataCopyString |
+			vma::AllocationCreateFlagBits::eUpperAddressBit | vma::AllocationCreateFlagBits::eDontBind | vma::AllocationCreateFlagBits::eWithinBud |
 			vma::AllocationCreateFlagBits::eCanAlias | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite | vma::AllocationCreateFlagBits::eHostAccessRandom |
 			vma::AllocationCreateFlagBits::eStrategyMinMemory | vma::AllocationCreateFlagBits::eCreateStrategyMinTime | vma::AllocationCreateFlagBits::eCreateStrategyMinOffset;
 	};

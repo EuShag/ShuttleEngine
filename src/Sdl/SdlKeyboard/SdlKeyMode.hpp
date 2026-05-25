@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <ranges>
+#include <SDL2/SDL.h>
 
 enum class SdlKeyModeBits
 {

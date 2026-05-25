@@ -17,6 +17,12 @@ void SdlLibrary::setRelativeMouseMode(bool enabled)
 	SDL_SetRelativeMouseMode(enabled ? SDL_TRUE : SDL_FALSE);
 }
 
+SdlKeyState SdlLibrary::getKeyState(SdlKeyCode keyCode) const {
+	int keyCount = 0;
+	auto keyState = SDL_GetKeyboardState(&keyCount);
+	if (keyState == nullptr) {}
+}
+
 [[nodiscard]] std::vector<char const*> SdlLibrary::getSurfaceRequiredExtensions() {
 	uint32_t sdlExtensionCount = 0;
 	if (!SDL_Vulkan_GetInstanceExtensions(nullptr, &sdlExtensionCount, nullptr)) {

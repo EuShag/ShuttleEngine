@@ -30,11 +30,6 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-class Scene {
-
-public:
-};
-
 // Функция для обхода aiNode в ширину
 void traverseNode(aiNode* node, std::function<void(aiNode*)> const& callback) {
 	std::stack<aiNode*> nodeStack;
@@ -61,23 +56,14 @@ int main(int argc, char** argv) {
 		}
 
 		aiNode* loweNode = nullptr;
-		auto modelMatrix = glm::mat4(1.0f);
+		auto modelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
 
 		traverseNode(pScene->mRootNode, [&](aiNode* node) {
+			std::cout << node->mName.C_Str() << std::endl;
 			if (std::string(node->mName.C_Str()) == "Loewe_C.obj.cleaner.materialmerger.gles") {
 				loweNode = node;
 			}
 			modelMatrix = modelMatrix *	glm::transpose(glm::make_mat4(&node->mTransformation.a1));
-			auto transformation = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
-
-			// log matrices
-			std::cout << "Node name: " << node->mName.C_Str() << std::endl;
-			std::cout << "modelMatrix" << std::endl;
-			std::cout << transformation[0][0] << " " << transformation[0][1] << " " << transformation[0][2] << " " << transformation[0][3] << std::endl;
-			std::cout << transformation[1][0] << " " << transformation[1][1] << " " << transformation[1][2] << " " << transformation[1][3] << std::endl;
-			std::cout << transformation[2][0] << " " << transformation[2][1] << " " << transformation[2][2] << " " << transformation[2][3] << std::endl;
-			std::cout << transformation[3][0] << " " << transformation[3][1] << " " << transformation[3][2] << " " << transformation[3][3] << std::endl;
-
 		});
 
 		std::vector<aiMesh*> loweMeshes;
@@ -109,7 +95,7 @@ int main(int argc, char** argv) {
 		}
 
 		size_t vertexTexCoordAttributeInitialOffset = vertexBufferTotalCount * sizeof(float) * 3;
-		size_t vertexBufferSize = vertexBufferTotalCount * (sizeof(float) * 3 + sizeof(float) * 3);
+		size_t vertexBufferSize = vertexBufferTotalCount * (sizeof(float) * 3 + sizeof(float) * 2);
 		size_t indexBufferSize = indexBufferTotalCount * sizeof(uint32_t);
 
 		vm::Camera camera{ glm::vec3{0.3,0.3,0.3}, glm::quat{0.1, 0.2, 0.2, 0.2} };
@@ -197,6 +183,13 @@ int main(int argc, char** argv) {
 			throw std::runtime_error("Failed to find a suitable GPU with required extensions and queue families");
 		}
 
+		auto memoryProperties = physicalDevice.getMemoryProperties();
+
+		for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+			auto memoryType = memoryProperties.memoryTypes[i];
+			std::cout << "MemoryType" << i << " :" << to_string(memoryProperties.memoryTypes[i].propertyFlags) << std::endl;
+		}
+
 		std::vector<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos{};
 		std::array queuePriorities = { 1.0f, 1.0f, 1.0f, 1.0f };
 		std::pair<uint32_t, uint32_t> graphicQueueIndex{ 0,0 };
@@ -242,6 +235,11 @@ int main(int argc, char** argv) {
 		if (createDeviceResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create logical device");
 		}
+
+		auto physicalDeviceVersion = physicalDevice.getProperties().apiVersion;
+		std::cout << "Physical device version: " << VK_API_VERSION_MAJOR(physicalDeviceVersion) << "."
+												 << VK_API_VERSION_MINOR(physicalDeviceVersion ) << "."
+												 << VK_API_VERSION_PATCH(physicalDeviceVersion) << std::endl;
 
 		auto [createAllocatorResult, uniqueAllocator] = vma::UniqueAllocator::makeUnique(
 			*uniqueInstance,
@@ -1017,32 +1015,43 @@ int main(int argc, char** argv) {
 				}
 			}
 
-			vma::BufferWriteInfo vertexBufferWriteInfo{
-				.dstBuffer = *uniqueLoweVertexBuffer,
-				.dstBufferOffset = vertexOffset * sizeof(float) * 3, // Assuming position only for simplicity
-				.srcData = loweMesh->mVertices,
-				.dataSize = 3 * sizeof(float) * loweMesh->mNumVertices
-			};
+			auto [mapVertexBufferResult, vertexBufferDataPtr] = uniqueAllocator->mapMemory(*uniqueLoweVertexBuffer);
+			if (mapVertexBufferResult != vk::Result::eSuccess) {
+				throw std::runtime_error("Failed to map lowe vertex buffer memory");
+			}
 
-			vma::BufferWriteInfo uvBufferWriteInfo{
-				.dstBuffer = *uniqueLoweVertexBuffer,
-				.dstBufferOffset = vertexOffset * sizeof(float) * 3 + vertexTexCoordAttributeInitialOffset,
-				.srcData = loweMesh->mTextureCoords[0],
-				.dataSize = 3 * sizeof(float) * loweMesh->mNumVertices
-			};
-			if (auto writeResult = uniqueAllocator->writeBufferFromHost(vertexBufferWriteInfo); writeResult != vk::Result::eSuccess) {
-				throw std::runtime_error("Failed to write vertex data to lowe vertex buffer");
-			}
-			if (auto writeResult = uniqueAllocator->writeBufferFromHost(uvBufferWriteInfo); writeResult != vk::Result::eSuccess) {
-				throw std::runtime_error("Failed to write uv data to lowe vertex buffer");
-			}
+			uint32_t positionAttributeSize = sizeof(float) * 3;
+			uint32_t texCoordAttributeSize = sizeof(float) * 2;
+
+			uint32_t positionAttributeOffset = vertexOffset * positionAttributeSize;
+			uint32_t texCoordAttributeOffset = vertexTexCoordAttributeInitialOffset + vertexOffset * texCoordAttributeSize;
+
+			strideCopy(
+				static_cast<char*>(vertexBufferDataPtr) + positionAttributeOffset,
+				loweMesh->mVertices,
+				sizeof(float) * 3,
+				loweMesh->mNumVertices,
+				sizeof(float) * 3,
+				sizeof(float) * 3
+			);
+
+			strideCopy(
+				static_cast<char*>(vertexBufferDataPtr) + texCoordAttributeOffset,
+				loweMesh->mTextureCoords[0],
+				sizeof(float) * 2,
+				loweMesh->mNumVertices,
+				sizeof(float) * 2,
+				sizeof(float) * 3
+				);
+
+			uniqueAllocator->unmapMemory(*uniqueLoweVertexBuffer);
 
 			firstIndex += loweMesh->mNumFaces * 3;
-			vertexOffset += loweMesh->mNumVertices;
+			vertexOffset += static_cast<int32_t>(loweMesh->mNumVertices);
 		}
 
-		auto [createLoweVertexShaderModuleResult, uniqueLoweVertexShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/simpleModel.vert.spv");
-		auto [createLoweFragmentShaderModuleResult, uniqueLoweFragmentShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/simpleModel.frag.spv");
+		auto [createLoweVertexShaderModuleResult, uniqueLoweVertexShaderModule] = loadAndCreateShaderModuleUnique(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/simpleModel.vert.spv");
+		auto [createLoweFragmentShaderModuleResult, uniqueLoweFragmentShaderModule] = loadAndCreateShaderModuleUnique(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/simpleModel.frag.spv");
 
 		if (createLoweVertexShaderModuleResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create lowe vertex shader module");
@@ -1072,7 +1081,7 @@ int main(int argc, char** argv) {
 			},
 			{
 				.binding = 1,
-				.stride = 3 * sizeof(float),
+				.stride = 2 * sizeof(float),
 				.inputRate = vk::VertexInputRate::eVertex
 			}
 		};
@@ -1087,7 +1096,7 @@ int main(int argc, char** argv) {
 			{
 				.location = 1,
 				.binding = 1,
-				.format = vk::Format::eR32G32B32Sfloat,
+				.format = vk::Format::eR32G32Sfloat,
 				.offset = 0
 			}
 		};
@@ -1238,7 +1247,7 @@ int main(int argc, char** argv) {
 		ModelData cubePosition{
 			.model{glm::mat4(1.0f)}
 		};
-		
+
 		auto [createCubeVertexBufferResult, uniqueCubeVertexBuffer] = uniqueAllocator->createAndAllocateBufferUnique(
 			vk::BufferCreateInfo{
 			.size = sizeof(cubeVertices),
@@ -1283,156 +1292,21 @@ int main(int argc, char** argv) {
 			throw std::runtime_error("Failed to write cube index buffer data");
 		}
 
-		auto [createCubeUniquePipelineLayout, uniqueCubePipelineLayout] = uniqueDevice->createPipelineLayoutUnique(
+		auto [createCubePipelineLayoutResult, uniqueCubePipelineLayout] = uniqueDevice->createPipelineLayoutUnique(
 			vk::PipelineLayoutCreateInfo{
 				.setLayoutCount = 1,
 				.pSetLayouts = &uniqueDescriptorSetLayout.get()
 			}
 		);
-		if (createCubeUniquePipelineLayout != vk::Result::eSuccess) {
+		if (createCubePipelineLayoutResult != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create cube pipeline layout");
 		}
 
-		auto [createUniqueCubeVertexShaderModuleResult, uniqueCubeVertexShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/cube.vert.spv");
-		if (createUniqueCubeVertexShaderModuleResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create cube vertex shader module");
-		}
+		auto [loadSkyboxVertexShaderModuleResult, uniqueSkyboxVertexShaderModule] =
+			loadAndCreateShaderModuleUnique(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/skybox.vert.spv");
 
-		auto [createUniqueCubeFragmentShaderModuleResult, uniqueCubeFragmentShaderModule] = loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/cube.frag.spv");
-		if (createUniqueCubeFragmentShaderModuleResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create cube fragment shader module");
-		}
-
-		std::vector shaderStages = {
-			vk::PipelineShaderStageCreateInfo {
-				.stage = vk::ShaderStageFlagBits::eVertex,
-				.module = *uniqueCubeVertexShaderModule,
-				.pName = "main"
-			},
-			vk::PipelineShaderStageCreateInfo {
-				.stage = vk::ShaderStageFlagBits::eFragment,
-				.module = *uniqueCubeFragmentShaderModule,
-				.pName = "main"
-			}
-		};
-
-		vk::VertexInputBindingDescription vertexInputBinding{
-			.binding = 0,
-			.stride = sizeof(CubeVertex),
-			.inputRate = vk::VertexInputRate::eVertex
-		};
-
-		vk::VertexInputAttributeDescription vertexInputAttributes[2]{
-			{
-				.location = 0,
-				.binding = 0,
-				.format = vk::Format::eR32G32B32Sfloat,
-				.offset = 0
-			},
-			{
-				.location = 1,
-				.binding = 0,
-				.format = vk::Format::eR32G32B32Sfloat,
-				.offset = sizeof(glm::vec3)
-			}
-		};
-
-		vk::PipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{
-			.vertexBindingDescriptionCount = 1,
-			.pVertexBindingDescriptions = &vertexInputBinding,
-			.vertexAttributeDescriptionCount = 2,
-			.pVertexAttributeDescriptions = vertexInputAttributes
-		};
-
-		vk::PipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo{
-			.topology = vk::PrimitiveTopology::eTriangleList,
-			.primitiveRestartEnable = vk::False
-		};
-
-		vk::PipelineRasterizationStateCreateInfo rasterizationStateCreateInfo{
-			.depthClampEnable = vk::False,
-			.rasterizerDiscardEnable = vk::False,
-			.polygonMode = vk::PolygonMode::eFill,
-			.cullMode = vk::CullModeFlagBits::eBack,
-			.frontFace = vk::FrontFace::eCounterClockwise,
-			.depthBiasEnable = vk::False,
-			.lineWidth = 1.0f
-		};
-
-		vk::PipelineMultisampleStateCreateInfo multisampleStateCreateInfo{
-			.rasterizationSamples = vk::SampleCountFlagBits::e1,
-			.sampleShadingEnable = vk::False
-		};
-
-		vk::PipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{
-			.depthTestEnable = vk::True,
-			.depthWriteEnable = vk::True,
-			.depthCompareOp = vk::CompareOp::eLess,
-			.depthBoundsTestEnable = vk::False,
-			.stencilTestEnable = vk::False
-		};
-
-		vk::PipelineColorBlendAttachmentState colorBlendAttachmentState{
-			.blendEnable = vk::False,
-			.colorWriteMask = vk::ColorComponentFlagBits::eR |
-							  vk::ColorComponentFlagBits::eG |
-							  vk::ColorComponentFlagBits::eB |
-							  vk::ColorComponentFlagBits::eA
-		};
-
-		vk::PipelineColorBlendStateCreateInfo colorBlendStateCreateInfo{
-			.logicOpEnable = vk::False,
-			.attachmentCount = 1,
-			.pAttachments = &colorBlendAttachmentState
-		};
-
-		vk::Viewport viewport{
-			.x = 0.0f,
-			.y = 0.0f,
-			.width = static_cast<float>(swapchainExtent.width),
-			.height = static_cast<float>(swapchainExtent.height),
-			.minDepth = 0.0f,
-			.maxDepth = 1.0f
-		};
-
-		vk::Rect2D scissor{
-			.offset = vk::Offset2D{0, 0},
-			.extent = swapchainExtent
-		};
-
-		vk::PipelineViewportStateCreateInfo viewPortStateCreateInfo{
-			.viewportCount = 1,
-			.pViewports = &viewport,
-			.scissorCount = 1,
-			.pScissors = &scissor
-		};
-
-		auto [uniqueGraphicsPipelineResult, uniqueGraphicsPipeline] = uniqueDevice->createGraphicsPipelineUnique(
-			nullptr,
-			vk::GraphicsPipelineCreateInfo{
-				.stageCount = static_cast<uint32_t>(shaderStages.size()),
-				.pStages = shaderStages.data(),
-				.pVertexInputState = &vertexInputStateCreateInfo,
-				.pInputAssemblyState = &inputAssemblyStateCreateInfo,
-				.pViewportState = &viewPortStateCreateInfo,
-				.pRasterizationState = &rasterizationStateCreateInfo,
-				.pMultisampleState = &multisampleStateCreateInfo,
-				.pDepthStencilState = &depthStencilStateCreateInfo,
-				.pColorBlendState = &colorBlendStateCreateInfo,
-				.layout = *uniqueCubePipelineLayout,
-				.renderPass = *uniqueRenderPass,
-				.subpass = 0
-			}
-		);
-		if (uniqueGraphicsPipelineResult != vk::Result::eSuccess) {
-			throw std::runtime_error("Failed to create graphics pipeline.");
-		}
-
-		auto [loadSkyboxVertexShaderModuleResult, uniqueSkyboxVertexShaderModule] = 
-			loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eVertexShader, "shaders/skybox.vert.spv");
-
-		auto [loadSkyboxFragmentShaderModuleResult, uniqueSkyboxFragmentShaderModule] = 
-			loadAndCreateShaderModule(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/skybox.frag.spv");
+		auto [loadSkyboxFragmentShaderModuleResult, uniqueSkyboxFragmentShaderModule] =
+			loadAndCreateShaderModuleUnique(*uniqueDevice, vk::PipelineStageFlagBits::eFragmentShader, "shaders/skybox.frag.spv");
 
 		vk::PipelineShaderStageCreateInfo skyboxShaderStages[2]{
 			vk::PipelineShaderStageCreateInfo {
@@ -1473,7 +1347,7 @@ int main(int argc, char** argv) {
 			1, 2, 6,
 			6, 5, 1,
 			// Верхняя грань (Y = 1)
-			2, 3, 7, 
+			2, 3, 7,
 			7, 6, 2,
 			// Нижняя грань (Y = -1)
 			0, 1, 5,
@@ -1597,6 +1471,11 @@ int main(int argc, char** argv) {
 			.stencilTestEnable = vk::False
 		};
 
+		vk::PipelineColorBlendAttachmentState colorBlendAttachmentState{
+			.blendEnable = vk::False,
+			.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
+		};
+
 		vk::PipelineColorBlendStateCreateInfo skyboxColorBlendStateCreateInfo{
 			.logicOpEnable = vk::False,
 			.attachmentCount = 1,
@@ -1672,18 +1551,6 @@ int main(int argc, char** argv) {
 				},
 				vk::SubpassContents::eInline
 			);
-			// render cube
-			commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *uniqueGraphicsPipeline);
-			commandBuffer->bindVertexBuffers(0, {*uniqueCubeVertexBuffer}, {0});
-			commandBuffer->bindIndexBuffer(*uniqueCubeIndexBuffer, 0, vk::IndexType::eUint32);
-			commandBuffer->bindDescriptorSets(
-				vk::PipelineBindPoint::eGraphics,
-				*uniqueCubePipelineLayout,
-				0,
-				{ *uniqueDescriptorSet },
-				{}
-			);
-			commandBuffer->drawIndexed(cubeIndices.size(), 1, 0, 0, 0);
 			// lowe rendering
 			commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *uniqueLoweGraphicsPipeline);
 			commandBuffer->bindDescriptorSets(
@@ -1709,7 +1576,7 @@ int main(int argc, char** argv) {
 				{ *uniqueDescriptorSet },
 				{}
 			);
-			commandBuffer->drawIndexed(static_cast<uint32_t>(std::size(skyboxIndices)), 1, 0, 0, 0);
+			commandBuffer->drawIndexed(std::size(skyboxIndices), 1, 0, 0, 0);
 			commandBuffer->endRenderPass();
 			if (auto endCommandBufferResult = commandBuffer->end(); endCommandBufferResult != vk::Result::eSuccess) {
 				throw std::runtime_error("Failed to end recording command buffer");
@@ -1747,6 +1614,28 @@ int main(int argc, char** argv) {
 
 		vk::PipelineStageFlags pipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
+		enum class CameraMoveDirectionFlagBits {
+			Forward = 0x1,
+			Backward = 0x2,
+			Left = 0x4,
+			Right = 0x8,
+			Up = 0x10,
+			Down = 0x20
+		};
+
+		enum class CameraRotationDirectionFlagBits {
+			PitchUp = 0x1,
+			PitchDown = 0x2,
+			YawLeft = 0x4,
+			YawRight = 0x8,
+			RollClock = 0x10,
+			RollCounterClock = 0x20
+		};
+
+		std::underlying_type_t<CameraMoveDirectionFlagBits> cameraMoveDirectionFlags = 0;
+		std::underlying_type_t<CameraRotationDirectionFlagBits> cameraRotationDirectionFlags = 0;
+
+
 		window.setKeyboardEventCallback([&](SdlWindow&, SdlKeyCode keyCode, SdlKeyMode keyMode, SdlKeyState keyState) {
 			if (keyCode == SdlKeyCode::Escape && keyState == SdlKeyState::Pressed) {
 				std::cout << "Escape key pressed, closing window...\n";
@@ -1759,40 +1648,40 @@ int main(int argc, char** argv) {
 
 				switch (keyCode) {
 					case SdlKeyCode::W:
-						camera.move(glm::vec3(0.0f, 0.0f, -0.1f));
+						cameraMoveDirectionFlags |= static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Forward);
 						break;
 					case SdlKeyCode::S:
-						camera.move(glm::vec3(0.0f, 0.0f, 0.1));
+						cameraMoveDirectionFlags |= static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Backward);
 						break;
 					case SdlKeyCode::A:
-						camera.move(glm::vec3(-0.1f, 0.0f, 0.0f));
+						cameraMoveDirectionFlags |= static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Left);
 						break;
 					case SdlKeyCode::D:
-						camera.move(glm::vec3(0.1f, 0.0f, 0.0f));
+						cameraMoveDirectionFlags |= static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Right);
 						break;
 					case SdlKeyCode::Q:
-						camera.move(glm::vec3(0.0f, -0.1f, 0.0f));
+						cameraMoveDirectionFlags |= static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Up);
 						break;
 					case SdlKeyCode::E:
-						camera.move(glm::vec3(0.0f, 0.1f, 0.0f));
+						cameraMoveDirectionFlags |= static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Down);
 						break;
 					case SdlKeyCode::Up:
-						camera.rotate(glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+						cameraRotationDirectionFlags |= static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::PitchUp);
 						break;
 					case SdlKeyCode::Down:
-						camera.rotate(glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+						cameraRotationDirectionFlags |= static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::PitchDown);
 						break;
 					case SdlKeyCode::Left:
-						camera.rotate(glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+						cameraRotationDirectionFlags |= static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::YawLeft);
 						break;
 					case SdlKeyCode::Right:
-						camera.rotate(glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));	
+						cameraRotationDirectionFlags |= static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::YawRight);
 						break;
 					case SdlKeyCode::PageUp:
-						camera.rotate(glm::radians(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+						cameraRotationDirectionFlags |= static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::RollCounterClock);
 						break;
 					case SdlKeyCode::PageDown:
-						camera.rotate(glm::radians(-1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+						cameraRotationDirectionFlags |= static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::RollClock);
 						break;
 					case SdlKeyCode::Space:
 						if (isRelativeMouseMode) {
@@ -1808,6 +1697,48 @@ int main(int argc, char** argv) {
 						break;
 				}
 			}
+			else if (keyState == SdlKeyState::Released) {
+				switch (keyCode) {
+					case SdlKeyCode::W:
+						cameraMoveDirectionFlags &= ~static_cast<std::underlying_type<CameraMoveDirectionFlagBits>::type>(CameraMoveDirectionFlagBits::Forward);
+						break;
+					case SdlKeyCode::S:
+						cameraMoveDirectionFlags &= ~static_cast<std::underlying_type<CameraMoveDirectionFlagBits>::type>(CameraMoveDirectionFlagBits::Backward);
+						break;
+					case SdlKeyCode::A:
+						cameraMoveDirectionFlags &= ~static_cast<std::underlying_type<CameraMoveDirectionFlagBits>::type>(CameraMoveDirectionFlagBits::Left);
+						break;
+					case SdlKeyCode::D:
+						cameraMoveDirectionFlags &= ~static_cast<std::underlying_type<CameraMoveDirectionFlagBits>::type>(CameraMoveDirectionFlagBits::Right);
+						break;
+					case SdlKeyCode::Q:
+						cameraMoveDirectionFlags &= ~static_cast<std::underlying_type<CameraMoveDirectionFlagBits>::type>(CameraMoveDirectionFlagBits::Up);
+						break;
+					case SdlKeyCode::E:
+						cameraMoveDirectionFlags &= ~static_cast<std::underlying_type<CameraMoveDirectionFlagBits>::type>(CameraMoveDirectionFlagBits::Down);
+						break;
+					case SdlKeyCode::Up:
+						cameraRotationDirectionFlags &= ~static_cast<std::underlying_type<CameraRotationDirectionFlagBits>::type>(CameraRotationDirectionFlagBits::PitchUp);
+						break;
+					case SdlKeyCode::Down:
+						cameraRotationDirectionFlags &= ~static_cast<std::underlying_type<CameraRotationDirectionFlagBits>::type>(CameraRotationDirectionFlagBits::PitchDown);
+						break;
+					case SdlKeyCode::Left:
+						cameraRotationDirectionFlags &= ~static_cast<std::underlying_type<CameraRotationDirectionFlagBits>::type>(CameraRotationDirectionFlagBits::YawLeft);
+						break;
+					case SdlKeyCode::Right:
+						cameraRotationDirectionFlags &= ~static_cast<std::underlying_type<CameraRotationDirectionFlagBits>::type>(CameraRotationDirectionFlagBits::YawRight);
+						break;
+					case SdlKeyCode::PageUp:
+						cameraRotationDirectionFlags &= ~static_cast<std::underlying_type<CameraRotationDirectionFlagBits>::type>(CameraRotationDirectionFlagBits::RollCounterClock);
+						break;
+					case SdlKeyCode::PageDown:
+						cameraRotationDirectionFlags &= ~static_cast<std::underlying_type<CameraRotationDirectionFlagBits>::type>(CameraRotationDirectionFlagBits::RollClock);
+						break;
+					default:
+						break;
+				}
+			}
 			cameraData.view = camera.getViewMatrix();
 		});
 
@@ -1815,6 +1746,54 @@ int main(int argc, char** argv) {
 		while (running){
 
 			if(!sdlLibrary.pullEvents()) break;
+			float yawAngle = 0.0f;
+			float pitchAngle = 0.0f;
+			float rollAngle = 0.0f;
+			if (cameraRotationDirectionFlags & static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::YawLeft)) {
+				yawAngle += 0.01f;
+			}
+			if (cameraRotationDirectionFlags & static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::YawRight)) {
+				yawAngle -= 0.01f;
+			}
+			if (cameraRotationDirectionFlags & static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::PitchUp)) {
+				pitchAngle += 0.01f;
+			}
+			if (cameraRotationDirectionFlags & static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::PitchDown)) {
+				pitchAngle -= 0.01f;
+			}
+			if (cameraRotationDirectionFlags & static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::RollClock)) {
+				rollAngle += 0.01f;
+			}
+			if (cameraRotationDirectionFlags & static_cast<std::underlying_type_t<CameraRotationDirectionFlagBits>>(CameraRotationDirectionFlagBits::RollCounterClock)) {
+				rollAngle -= 0.01f;
+			}
+			glm::quat rotationQuaternion = glm::quat(glm::vec3(pitchAngle, yawAngle, rollAngle));
+			float angle = glm::angle(rotationQuaternion);
+			glm::vec3 axis = glm::axis(rotationQuaternion);
+
+			glm::vec3 movementVector = glm::vec3(0.0f, 0.0f, 0.0f);
+			if (cameraMoveDirectionFlags & static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Forward)) {
+				movementVector.z -= 0.01f;
+			}
+			if (cameraMoveDirectionFlags & static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Backward)) {
+				movementVector.z += 0.01f;
+			}
+			if (cameraMoveDirectionFlags & static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Left)) {
+				movementVector.x -= 0.01f;
+			}
+			if (cameraMoveDirectionFlags & static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Right)) {
+				movementVector.x += 0.01f;
+			}
+			if (cameraMoveDirectionFlags & static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Up)) {
+				movementVector.y += 0.01f;
+			}
+			if (cameraMoveDirectionFlags & static_cast<std::underlying_type_t<CameraMoveDirectionFlagBits>>(CameraMoveDirectionFlagBits::Down)) {
+				movementVector.y -= 0.01f;
+			}
+			camera.rotate(angle, axis);
+			camera.move(movementVector);
+			cameraData.view = camera.getViewMatrix();
+
 
 			vma::BufferWriteInfo updatedCameraData{
 				.dstBuffer = *uniqueCameraBuffer,

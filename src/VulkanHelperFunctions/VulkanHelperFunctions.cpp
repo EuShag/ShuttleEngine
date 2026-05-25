@@ -1,7 +1,7 @@
 #include "VulkanHelperFunctions.hpp"
 #include <fstream>
 
-vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModule(vk::Device const& device, vk::PipelineStageFlagBits shaderStage, char const* filePath) {
+vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Device const& device, vk::PipelineStageFlagBits shaderStage, char const* filePath) {
 	std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
 	if (!shaderModuleFile.is_open()) {
 		throw std::runtime_error("Failed to open fragment shader file");
@@ -12,6 +12,22 @@ vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModule(vk::Device con
 	shaderModuleFile.read(fragmentShaderCode.data(), shaderModuleFileSize);
 
 	return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
+		.codeSize = fragmentShaderCode.size(),
+		.pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())
+		});
+}
+
+vk::ResultValue<vk::ShaderModule> loadAndCreateShaderModule(vk::Device const& device, vk::PipelineStageFlagBits shaderStage, char const* filePath) {
+	std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
+	if (!shaderModuleFile.is_open()) {
+		throw std::runtime_error("Failed to open fragment shader file");
+	}
+	auto const shaderModuleFileSize = shaderModuleFile.tellg();
+	std::vector<char> fragmentShaderCode(shaderModuleFileSize);
+	shaderModuleFile.seekg(0);
+	shaderModuleFile.read(fragmentShaderCode.data(), shaderModuleFileSize);
+
+	return device.createShaderModule(vk::ShaderModuleCreateInfo{
 		.codeSize = fragmentShaderCode.size(),
 		.pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())
 		});

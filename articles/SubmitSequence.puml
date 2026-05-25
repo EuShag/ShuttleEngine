@@ -1,0 +1,83 @@
+@startuml
+participant coro
+
+box queueManager
+    participant queueManager as QM
+endbox
+
+box TaskAwaiting
+participant TaskState as TS
+participant TaskAwaitable as TAle
+participant TaskAwaiter as TAer
+endbox
+box sharedResources
+    participant queuePool as QP
+    participant submitQueue as SQ
+    participant fencePool as FP
+    participant fenceWaitingQueue as FWQ
+endbox
+
+participant VkQueue
+participant VkDevice
+
+==Launch==
+activate coro
+coro -> QM : submit(submits)
+activate QM
+create TS
+QM -> TS : TaskState()
+activate TS
+TS -> TS : setState(WAITING_QUEUE)
+return
+QM -> TS : getAwaitable()
+activate TS
+create TAle
+TS -> TAle : TaskAwaitable
+return submitAwaitable
+QM -> QP : tryAcquire(VkQueue& queue)
+activate QP
+return isQueueAcquired
+alt [isQueueAcquired==false]
+    QM -> SQ : enqueue(submits, taskState)
+    QM --> coro : submitAwaitable
+else [isQueueAcquired==true]
+    QM -> QM : createLocalSubmitQueue
+    loop !submitQueue.empty()
+        QM -> SQ : dequeue(submits)
+        QM -> QM : enqueue(localSubmitQueue)
+        QM -> QM : incrementSubmitCount
+    end
+    QM -> QM : localSubmitQueue.enqueue(submits)
+    QM -> QM : incrementSubmitCount
+    QM -> QM : allocateFenceBuffer(SubmitCount)
+    QM -> FP : getFences(SubmitCount, fenceBuffer)
+    loop !localSubmitQueue.empty
+        QM -> TS : setState(PENDING)
+        QM -> VkQueue : vkQueueSubmit(submit, fenceBuffer[i])
+    end
+    QM -> QP : releaseQueue(queue)
+    QM -> FWQ : enqueue(fenceBufferPtr)
+    return submitAwaitable
+end
+==Awaiting==
+coro -> coro : await_transform(executor)
+coro -> TAle : operator co_await
+activate TAle
+create TAer
+TAle -> TAer : taskAwaiter
+return taskAwaiter
+coro -> TAer : await_ready()
+activate TAer
+TAer -> TS : isDone()
+return isDone
+alt isDone==false
+    coro -> TAer : await_suspend(std::coroutine_handle h)
+    activate TAer
+    TAer -> TS : setCoroHandle(h, executor)
+    return void
+    coro-->[ : suspend
+else isDone==true
+    coro -> coro : continue execution
+end
+
+@enduml

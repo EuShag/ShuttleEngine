@@ -6,11 +6,11 @@
 #include <glm/glm.hpp>
 
 namespace vrender {
+
 	class Skybox {
 	public:
-		Skybox(vk::Device device, vma::Allocator allocator, CubeMapImage cubeMap);
-
-		void writeCommands(vk::CommandBuffer commandBuffer, vk::DescriptorSet cameraDescriptorSet) const;
+		Skybox(vk::Device device, vma::Allocator allocator, CubeMapImage cubeMap, vk::RenderPass renderPass, vk::Extent2D extent, char* vertexShaderFile, char* fragmentShaderFile);
+		void writeDrawCommands(vk::CommandBuffer commandBuffer, vk::DescriptorSet cameraDescriptorSet) const;
 
 		~Skybox();
 	private:
@@ -56,7 +56,7 @@ namespace vrender {
 		vk::UniquePipelineLayout pipelineLayout;
 		vk::UniqueDescriptorSet descriptorSet;
 		
-		vk::ImageView cubemapImageView;
-		vk::Sampler cubemapSampler;
+		vk::UniqueImageView cubeMapImageView;
+		vk::UniqueSampler cubeMapSampler;
 	};
 }
