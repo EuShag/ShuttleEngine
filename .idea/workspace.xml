@@ -147,76 +147,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="67bbdf34-1660-4b1f-9a80-e44aa629a6ab" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/articles/FenceWaiterSequence.puml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/articles/Introduction.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/articles/SubmitSequence.puml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/articles/SubmitterClasses.puml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/articles/img/Introduction/AsyncWaitSequence.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/articles/img/Introduction/SyncWaitSequence.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_Blender_Cycles.blend" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_Blender_Cycles.glb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_COL_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_METALNESS_4K_METALNESS-PlantMonstera001_ROUGHNESS_4K_METALNESS.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_METALNESS_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_NRM_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_ROUGHNESS_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_SSS_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera001_preview1.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera002_Blender_Cycles.bin" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonstera002_Blender_Cycles.gltf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonsteraVase001_COL_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonsteraVase001_METALNESS_4K_METALNESS-PlantMonsteraVase001_ROUGHNESS_4K_METALNESS.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonsteraVase001_METALNESS_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonsteraVase001_NRM_4K_METALNESS.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/models/PlantMonstera001/PlantMonsteraVase001_ROUGHNESS_4K_METALNESS.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/.cmake/api/v1/query/client-vscode/query.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/.cmake/api/v1/reply/error-2026-04-24T14-00-18-0482.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/CMakeCache.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/CMakeConfigureLog.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/CMakeFiles/cmake.check_cache" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/_deps/assimp-subbuild/CMakeCache.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/_deps/assimp-subbuild/CMakeFiles/4.2.0-rc1/CMakeSystem.cmake" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/_deps/assimp-subbuild/CMakeFiles/CMakeConfigureLog.yaml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/_deps/assimp-subbuild/CMakeFiles/cmake.check_cache" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build/_deps/assimp-subbuild/CMakeLists.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/external/concurrentqueue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/external/mimalloc" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/external/taskflow" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/img/qwantani_sunset_puresky_4k.exr" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/PbrModelLoader/Scene.hpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Texture/Texture.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Texture/Texture.hpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitmodules" beforeDir="false" afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/project.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/project.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/editor.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/HelloTriangle.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/HelloTriangle.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/external/assimp" beforeDir="false" afterPath="$PROJECT_DIR$/external/assimp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/external/oneTBB" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/cube.frag" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/cube.vert" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/shaders/simpleModel.vert" beforeDir="false" afterPath="$PROJECT_DIR$/shaders/simpleModel.vert" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneGraph/SceneGraph.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/SceneGraph/SceneGraph.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Sdl/Model/Model.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Sdl/SdlKeyboard/SdlKeyMode.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Sdl/SdlKeyboard/SdlKeyMode.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Sdl/SdlLibrary/SdlLibrary.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Sdl/SdlLibrary/SdlLibrary.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Sdl/SdlLibrary/SdlLibrary.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Sdl/SdlLibrary/SdlLibrary.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Skybox/Skybox.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Skybox/Skybox.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Skybox/Skybox.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Skybox/Skybox.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanApplication/VulkanApplication.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanApplication/VulkanApplication.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanDeviceAllocator/VulkanDeviceAllocator.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanDeviceAllocator/VulkanDeviceAllocator.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanDeviceBuilder/VulkanDeviceBuilder.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanDeviceBuilder/VulkanDeviceBuilder.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/VulkanHelperFunctions/VulkanHelperFunctions.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanPhysicalDevicePicker/VulkanPhysicalDevicePicker.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VulkanPhysicalDevicePicker/VulkanPhysilcalDevicePicker.cpp" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -1270,7 +1202,7 @@
       <workItem from="1779633993268" duration="2918000" />
       <workItem from="1779645962314" duration="6355000" />
       <workItem from="1779662666479" duration="114000" />
-      <workItem from="1779703561599" duration="916000" />
+      <workItem from="1779703561599" duration="986000" />
     </task>
     <servers />
   </component>
