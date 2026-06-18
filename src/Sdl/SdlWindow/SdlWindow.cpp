@@ -6,7 +6,7 @@ SdlWindow::SdlWindow(char const* title, int width, int height) {
 		title,
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		width, height,
-		SDL_WINDOW_VULKAN
+		SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
 	);
 	if (!window) {
 		throw std::runtime_error("Failed to create SDL window");
@@ -28,6 +28,15 @@ SdlWindow::SdlWindow(char const* title, int width, int height) {
 
 void SdlWindow::processEvent(SDL_Event const& event) {
 	dispatchEvent(event);
+}
+
+vk::Extent2D SdlWindow::getExtent() const {
+	int32_t width, height;
+	SDL_Vulkan_GetDrawableSize(window, &width, &height);
+	return {
+		.width = static_cast<uint32_t>(width),
+		.height = static_cast<uint32_t>(height)
+	};
 }
 
 void SdlWindow::setWindowCloseEventCallback(std::function<void(SdlWindow&)> callback) {
@@ -140,6 +149,11 @@ void SdlWindow::dispatchWindowEvent(SDL_WindowEvent const& windowEvent) {
 	case SDL_WINDOWEVENT_MINIMIZED:
 		if (window.hasShowModeEventCallback) {
 			window.windowShowModeEventCallback(window, ShowMode::Minimized);
+		}
+		break;
+	case SDL_WINDOWEVENT_RESTORED:
+		if (window.hasShowModeEventCallback) {
+			window.windowShowModeEventCallback(window, ShowMode::Normal);
 		}
 		break;
 	case SDL_WINDOWEVENT_CLOSE:

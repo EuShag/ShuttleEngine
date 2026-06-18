@@ -19,7 +19,11 @@ public:
 	[[nodiscard]] static std::vector<char const*> getSurfaceRequiredExtensions();
 	void postQuitEvent();
 
+	void addCustomEventProcessor(std::function<void (SDL_Event const& event)> const &processor);
+
 	bool pullEvents();
 
 	~SdlLibrary();
+private:
+	std::vector<std::function<void (SDL_Event const& event)>> customEventProcessors;
 };

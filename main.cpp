@@ -1,0 +1,533 @@
+#define VULKAN_HPP_NO_EXCEPTIONS
+#define VULKAN_HPP_NO_CONSTRUCTORS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#include <fstream>
+#include <iostream>
+#include <chrono>
+#include <utility>
+#include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+#include <vulkan/vulkan.hpp>
+
+#include "Sdl.hpp"
+#include "DeviceAllocator/DeviceAllocator.hpp"
+#include "Camera/Camera.hpp"
+#include "CameraController/CameraController.hpp" // Наш новый класс контроля
+#include "PbrRender/Render.hpp"       // Твой рендерер с тенями
+#include "AssimpLoader/AssimpLoader.hpp"           // Предполагаем, что загрузчик готов
+#include "VkBootstrap.h"
+#include "FrameManager/FrameManager.hpp"
+#include "Painters/SunLightControlPanel/SunLightControlPanel.hpp"
+#include "RetireController/RetireController.hpp"
+#include "SwapchainFactory/SwapchainFactory.hpp"
+#include "Terrain/Terrain.hpp"
+#include "UiRender/UiRender.hpp"
+#include "VulkanDebugger/VulkanDebugger.hpp"
+
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
+using namespace shuttle_engine;
+
+int main(int, char**) {
+	try {
+		// =========================================================================
+		// 1. ИНИЦИАЛИЗАЦИЯ ОКНА И СИСТЕМЫ СИГНАЛОВ
+		// =========================================================================
+		SdlLibrary sdlLibrary; // Инициализирует SDL
+		VULKAN_HPP_DEFAULT_DISPATCHER.init();
+
+		auto window = SdlWindow("Shuttle Engine - Adriatic Flight", 1800, 1000);
+
+		window.setWindowCloseEventCallback([&] (SdlWindow&) {
+			std::cout << "[System] Window close event received, closing window...\n";
+			sdlLibrary.postQuitEvent();
+		});
+
+		auto requiredSurfaceExtensions = SdlLibrary::getSurfaceRequiredExtensions();
+		requiredSurfaceExtensions.push_back(vk::EXTDebugUtilsExtensionName);
+		VulkanDebugger debugger{};
+		auto messengerCreateInfo = debugger.getDebugMessengerCreateInfo();
+
+		// =========================================================================
+		// 2. СОЗДАНИЕ VULKAN INSTANCE, SURFACE И PHYSICAL DEVICE (Твой родной код)
+		// =========================================================================
+		vkb::InstanceBuilder instanceBuilder;
+		auto instanceResult = instanceBuilder.
+			set_app_name("Shuttle Engine - Adriatic Flight").
+			request_validation_layers(true).
+			set_engine_name("Shuttle Engine").
+			enable_extensions(requiredSurfaceExtensions).
+			set_debug_messenger_severity(messengerCreateInfo.messageSeverity).
+			set_debug_messenger_type(messengerCreateInfo.messageType).
+			set_debug_callback(messengerCreateInfo.pfnUserCallback).
+			build();
+
+		if (instanceResult.has_value()) {
+			std::cout << "[System] Vulkan instance created successfully.\n";
+		} else {
+			throw std::runtime_error("Failed to create Vulkan instance: " + instanceResult.error().message());
+		}
+
+		vk::Instance instance{instanceResult.value().instance};
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
+		vk::UniqueInstance uniqueInstance{
+			vk::Instance{instanceResult.value().instance},
+			vk::UniqueHandleTraits<vk::Instance, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>::deleter{
+				nullptr,
+				VULKAN_HPP_DEFAULT_DISPATCHER}
+		};
+
+		vk::UniqueDebugUtilsMessengerEXT messenger{
+			vk::DebugUtilsMessengerEXT{instanceResult.value().debug_messenger},
+			vk::UniqueHandleTraits<vk::DebugUtilsMessengerEXT, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>::deleter{
+				instance,
+				nullptr,
+				VULKAN_HPP_DEFAULT_DISPATCHER
+			}
+		};
+
+		auto uniqueSurface = window.createVulkanSurfaceUnique(instance);
+
+
+		auto vkbPhysicalDeviceResult = vkb::PhysicalDeviceSelector{instanceResult.value(), *uniqueSurface}.
+			set_minimum_version(1, 0).
+			set_required_features(
+				vk::PhysicalDeviceFeatures{
+					.multiDrawIndirect = vk::True,
+					.samplerAnisotropy = vk::True
+				}
+			).
+			add_required_extension(vk::KHRSwapchainExtensionName).
+			select();
+
+		if (!vkbPhysicalDeviceResult.has_value()) {
+			throw std::runtime_error("Failed to select physical device: " + vkbPhysicalDeviceResult.error().message());
+		}
+		std::cout << "[System] Physical device selected: " << vkbPhysicalDeviceResult->properties.deviceName << "\n";
+
+		auto vkbDeviceResult = vkb::DeviceBuilder{vkbPhysicalDeviceResult.value()}.
+			set_allocation_callbacks(nullptr).
+			build();
+
+		if (!vkbDeviceResult.has_value()) {
+			throw std::runtime_error("Failed to create logical device: " + vkbDeviceResult.error().message());
+		}
+		std::cout << "[System] Vulkan instance created successfully.\n";
+
+		auto graphicsQueueResult = vkbDeviceResult.value().get_queue_and_index(vkb::QueueType::graphics);
+		auto computeQueueResult = vkbDeviceResult.value().get_queue_and_index(vkb::QueueType::compute);
+		auto transferQueueResult = vkbDeviceResult.value().get_queue_and_index(vkb::QueueType::transfer);
+		auto presentationQueueResult = vkbDeviceResult.value().get_queue_and_index(vkb::QueueType::present);
+
+		vk::Queue graphicsQueue = graphicsQueueResult.value().first;
+		vk::Queue presentationQueue = presentationQueueResult.value().first;
+		vk::Queue transferQueue = transferQueueResult.value().first;
+
+		auto graphicsQueueFamilyIndex = graphicsQueueResult.value().second;
+		auto transferQueueFamilyIndex = transferQueueResult.value().second;
+		auto presentationQueueFamilyIndex = presentationQueueResult.value().second;
+
+		if (!graphicsQueueResult.has_value() || !presentationQueueResult.has_value() || !computeQueueResult.has_value() || !transferQueueResult.has_value()) {
+			throw std::runtime_error("Failed to retrieve required queues from the logical device");
+		}
+
+		vk::PhysicalDevice physicalDevice = vkbPhysicalDeviceResult.value().physical_device;
+		vk::Device device = vkbDeviceResult.value().device;
+		VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
+		vk::UniqueDevice uniqueDevice{
+			device,
+			vk::UniqueHandleTraits<vk::Device, VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>::deleter{ nullptr, VULKAN_HPP_DEFAULT_DISPATCHER }
+		};
+
+		// Инициализация твоего класса-обертки DeviceAllocator
+		auto [createAllocatorResult, uniqueAllocator] = resources::UniqueAllocator::makeUnique(
+			*uniqueInstance,
+			*uniqueDevice,
+			physicalDevice,
+			vk::detail::defaultDispatchLoaderDynamic
+		);
+		if (createAllocatorResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create VMA allocator");
+		}
+		// Оборачиваем в наш класс ресурсов
+		resources::DeviceAllocator allocator{ *uniqueAllocator };
+
+		// Создаем Command Pool для трансфера ресурсов на GPU
+		auto [createCommandPoolResult, uniqueTransferCommandPool] = uniqueDevice->createCommandPoolUnique(
+			vk::CommandPoolCreateInfo{
+				.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+				.queueFamilyIndex = transferQueueFamilyIndex
+			}
+		);
+		if (createCommandPoolResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create transfer command pool");
+		}
+
+		// =========================================================================
+		// 5. ИНИЦИАЛИЗАЦИЯ ИНДУСТРИАЛЬНОГО РЕНДЕРЕРА SHUTTLE ENGINE
+		// =========================================================================
+		std::cout << "[Init] Initializing PbrRender pipeline...\n";
+		auto [pbrRes, pbrRender] = PbrRender::create(*uniqueDevice, vk::ImageLayout::ePresentSrcKHR);
+		if (pbrRes != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create PbrRender system");
+		}
+
+		// =========================================================================
+		// 6. ЗАГРУЗКА СЦЕНЫ НА GPU ЧЕРЕЗ MULTI-DRAW INDIRECT
+		// =========================================================================
+		std::cout << "[Scene] Loading 3D mesh via Assimp...\n";
+		AssimpLoader loader;
+		HostSceneData globalScene = loader.loadScene("assets/models/lowe/scene.gltf");
+		HostSceneData ufo = loader.loadScene("assets/models/Rigged_UFO_gltf/Rigged_Modular UFO 2.8.glb.gltf");
+
+		// Generate terrain mesh
+		TerrainProperties terrainProperties{
+			.meshResolution = vk::Extent2D{
+				.width = 2096,
+				.height = 2096,
+			},
+			.worldSize = {512.0f, 512.0f},
+			.minHeight = -40.0f,
+			.maxHeight = 40.0f
+		};
+
+		HostMeshData terrainMesh = TerrainGeometryGenerator::createFromHeightMap(terrainProperties, Image1D16bit("assets/terrain/novotroitsk_terrain.png"));
+		HostMaterialData terrainMaterial = loadFromFiles(
+			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_albedo.png",
+			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_normal-dx.png",
+			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_roughness.png",
+			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_ao.png",
+			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_metallic.png",
+			""
+		);
+
+		HostSceneData tankSceneData = loader.loadScene("assets/models/tank/small_lpg_tank_4k.gltf");
+
+		globalScene.merge(tankSceneData,
+			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -25.0f, 0.0f)) *
+			glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 10.0f, 10.0f)));
+
+		globalScene.merge(ufo, glm::translate(glm::mat4(1.0f), glm::vec3(30.0f, 10.0f, 60.0f)));
+
+		globalScene.addTerrain(terrainMesh, terrainMaterial, glm::translate(glm::mat4(1), glm::vec3(0.0f, -50.0f, 0.0f)));
+
+		// Загружаем всю геометрию и текстуры на GPU за один вызов
+		std::cout << "[Scene] Uploading buffers and textures to GPU Local memory...\n";
+		auto [uploadRes, deviceSceneData] = pbrRender.uploadScene(
+			std::move(globalScene),
+			transferQueue,
+			*uniqueDevice,
+			*uniqueTransferCommandPool,
+			allocator
+		);
+		if (uploadRes != vk::Result::eSuccess) {
+			throw std::runtime_error("CRITICAL: Failed to upload scene data to GPU");
+		}
+		std::cout << "[Scene] Scene uploaded successfully. Render-ready.\n";
+
+		// =========================================================================
+		// 7. СОЗДАНИЕ СИСТЕМЫ ПЛАВНОГО УПРАВЛЕНИЯ КАМЕРОЙ (NEW!)f
+		// =========================================================================
+		Camera camera{ glm::vec3{10.0f, 30.3f, 0.0f} };
+		camera.lookAt(glm::vec3(0.0f, 0.0f, 0.0f));
+
+		CameraController cameraController{ camera };
+
+		// Регистрируем управление через нашу обертку
+		window.setKeyboardEventCallback([&](SdlWindow&, SdlKeyCode keyCode, SdlKeyMode, SdlKeyState keyState) {
+			cameraController.handleKeyboardEvent(window, keyCode, SdlKeyModeBits::None, keyState, sdlLibrary);
+		});
+
+		// =========================================================================
+		// 9. ГЛАВНЫЙ ЦИКЛ ОТРЫВА ОТ ЗЕМЛИ (DYNAMICAL GAME LOOP)
+		// =========================================================================
+
+		std::array descriptorPoolSizes {
+			vk::DescriptorPoolSize{
+				.type = vk::DescriptorType::eUniformBuffer,
+				.descriptorCount = 10
+			},
+			vk::DescriptorPoolSize{
+				.type = vk::DescriptorType::eStorageBuffer,
+				.descriptorCount = 10
+			},
+			vk::DescriptorPoolSize{
+				.type = vk::DescriptorType::eSampledImage,
+				.descriptorCount = 10
+			}
+		};
+
+		auto [createFrameDataDescriptorPool, frameDataDescriptorPool] = device.createDescriptorPoolUnique(
+			{
+				.maxSets = 10,
+				.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size()),
+				.pPoolSizes = descriptorPoolSizes.data()
+			}
+		);
+
+		SwapchainContext swapchainContext{
+			.physicalDevice = physicalDevice,
+			.device = device,
+			.surface = *uniqueSurface,
+			.graphicsQueueFamily = graphicsQueueFamilyIndex,
+			.presentQueueFamily = presentationQueueFamilyIndex
+		};
+
+		auto [createSwapchainResult, swapchain] = createSwapchain(
+			swapchainContext,
+			window.getExtent()
+		);
+		if (createSwapchainResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create swapchain");
+		}
+
+		auto [createRenderTargetsResult, renderTargets] = pbrRender.createRenderTargets(
+			device,
+			allocator,
+			swapchain.images,
+			swapchain.extent
+		);
+
+		if (createRenderTargetsResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create render targets");
+		}
+
+		uint32_t frameCount = 2U;
+		uint32_t currentFrameIndex = 0U;
+
+		auto [createFrameManagerResult, frameManager] = FrameManager::create(device, frameCount, swapchain.imageCount);
+		if (createFrameManagerResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create frameManager");
+		}
+
+		auto [createFrameDatasResult, frameDatas] = pbrRender.createFrameDatas(
+			device,
+			allocator,
+			{ .width = 4096, .height = 4096 },
+			*frameDataDescriptorPool,
+			frameCount
+		);
+
+		if (createFrameDatasResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create frame datas");
+		}
+
+		auto uiRenderResultValue = UiRender::create(
+			window,
+			instance,
+			physicalDevice,
+			device,
+			graphicsQueueFamilyIndex,
+			graphicsQueue,
+			swapchain.imageCount,
+			pbrRender.getMainRenderPass()
+		);
+
+		auto uiRender = std::move(uiRenderResultValue.value);
+		uiRender.bindInputEventHandler(sdlLibrary);
+
+		// Запуск таймера С++20 для расчета Delta Time
+		auto lastTime = std::chrono::high_resolution_clock::now();
+
+		std::cout << "[Run] Entering main render loop. Engine is green.\n";
+
+		SunLightControlPanel sunLightControlPanel{
+			deviceSceneData.directionalLightDatas[0].direction,
+			deviceSceneData.directionalLightDatas[0].color,
+			deviceSceneData.directionalLightDatas[0].color.a,
+		};
+
+		auto [createUniqueGraphicsCommandPoolResult, uniqueGraphicsCommandPool] = uniqueDevice->createCommandPoolUnique(
+			{
+				.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+				.queueFamilyIndex = graphicsQueueFamilyIndex
+			}
+		);
+		if (createUniqueGraphicsCommandPoolResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create graphics command pool");
+		}
+		auto [allocateGraphicsCommandBufferResult, uniqueGraphicsCommandBuffers] = uniqueDevice->allocateCommandBuffersUnique(
+			{
+				.commandPool = *uniqueGraphicsCommandPool,
+				.level = vk::CommandBufferLevel::ePrimary,
+				.commandBufferCount = frameCount
+			}
+		);
+		if (allocateGraphicsCommandBufferResult != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to create graphics command buffer");
+		}
+
+		bool isMinimized = false;
+		window.setWindowShowModeEventCallback( [&isMinimized](SdlWindow const& window, ShowMode showMode) {
+			if (showMode == ShowMode::Minimized) {
+				isMinimized = true;
+			}
+			else isMinimized = false;
+		});
+
+		SwapchainResources activeResources{
+			.swapchain = std::move(swapchain),
+			.frameManager = std::move(frameManager),
+			.renderTargets = std::move(renderTargets)
+		};
+		RetireController retireController{};
+
+		// Локальный хелпер для безопасного и плавного пересоздания ресурсов
+		auto recreateAllResources = [&] {
+
+			auto [result, newResources] = retireController.updateSwapchainResources(
+				swapchainContext,
+				window.getExtent(),
+				allocator,
+				pbrRender,
+				frameCount,
+				std::move(activeResources) // Передаем старые ресурсы в RetireController
+			);
+
+			if (result != vk::Result::eSuccess) {
+				throw std::runtime_error("Fatal: Swapchain recreation failed");
+			}
+
+			// Активируем новые ресурсы
+			activeResources = std::move(newResources);
+
+			// Обновляем матрицу проекции камеры под новое соотношение сторон
+			camera.setWindowSize(activeResources.swapchain.extent.width, activeResources.swapchain.extent.height);
+		};
+
+		while (true) {
+			// ВычисляемdeltaTime
+			auto currentTime = std::chrono::high_resolution_clock::now();
+			float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
+			lastTime = currentTime;
+
+			// -----------------------------------------------------------------
+			// ФАЗА 1: Опрос и фильтрация событий ОС (До всякой синхронизации GPU!)
+			// -----------------------------------------------------------------
+			if (!sdlLibrary.pullEvents()) break;
+			if (isMinimized) continue;
+			cameraController.update(deltaTime);
+
+			// -----------------------------------------------------------------
+			// ФАЗА 2: Синхронизация CPU-GPU (Ожидание фенса текущего слота кадра)
+			// -----------------------------------------------------------------
+			auto prepareRes = activeResources.frameManager.prepareFrameSlot(device, currentFrameIndex);
+			if (prepareRes != vk::Result::eSuccess) {
+				throw std::runtime_error("Fatal: Failed to prepare frame slot");
+			}
+
+			uiRender.drawUi(std::move(FPSCounterPainter{}));
+
+			// CPU-часть синхронизации завершена!
+			// Этот слот кадра гарантированно освободился на GPU -> поджигаем бит в renderMask у пенсионеров
+			retireController.renderRetireUpdate(currentFrameIndex);
+
+			// -----------------------------------------------------------------
+			// ФАЗА 3: Запрос свободного изображения из свопчейна (Acquire)
+			// -----------------------------------------------------------------
+			auto acquireResult = activeResources.frameManager.acquireNextImage(
+				device,
+				*activeResources.swapchain.swapchain,
+				currentFrameIndex
+			);
+
+			if (acquireResult.result == vk::Result::eSuccess) {
+				uint32_t const imageIndex = acquireResult.value;
+
+				// Изображение успешно получено -> поджигаем бит в presentMask у пенсионеров.
+				// Если все биты рендера и презентации совпали с целевыми, старые ресурсы тихо умрут прямо сейчас.
+				retireController.presentRetireUpdate(imageIndex);
+
+				// -------------------------------------------------------------
+				// ФАЗА 4: Обновление игровой логики и данных на GPU
+				// -------------------------------------------------------------
+
+				// Загружаем обновленные матрицы камеры и свет в UBO/SSBO на GPU
+				auto updateRes = PbrRender::updateSceneData(
+					allocator,
+					deviceSceneData,
+					frameDatas[currentFrameIndex],
+					camera.getViewMatrix(),
+					camera.getProjectionMatrix(),
+					camera.getShortProjectionMatrix(),
+					camera.getPosition()
+				);
+				if (updateRes != vk::Result::eSuccess) {
+					throw std::runtime_error("Failed to update scene data buffer on GPU");
+				}
+
+				// -------------------------------------------------------------
+				// ФАЗА 6: Запись Vulkan команд (Command Recording)
+				// -------------------------------------------------------------
+				vk::CommandBuffer cmd = uniqueGraphicsCommandBuffers[currentFrameIndex].get();
+				cmd.reset();
+				cmd.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+
+				// Записываем проход рендеринга сцены
+				pbrRender.recordRenderFrameCommands(
+					deviceSceneData,
+					cmd,
+					frameDatas[currentFrameIndex],
+					activeResources.renderTargets[imageIndex], // Рендерим в таргет текущей картинки
+					[&](vk::CommandBuffer drawCmd) {
+						uiRender.recordDrawCommands(drawCmd);
+					}
+				);
+
+				cmd.end();
+
+				// -------------------------------------------------------------
+				// ФАЗА 7: Отправка на GPU (Submit) и Вывод на экран (Present)
+				// -------------------------------------------------------------
+				auto submitRes = activeResources.frameManager.submitRenderCommands(
+					graphicsQueue,
+					cmd,
+					currentFrameIndex,
+					imageIndex
+				);
+				if (submitRes != vk::Result::eSuccess) {
+					throw std::runtime_error("Failed to submit command buffer to graphics queue");
+				}
+
+				auto presentResult = activeResources.frameManager.present(
+					presentationQueue,
+					*activeResources.swapchain.swapchain,
+					imageIndex
+				);
+
+				// Обрабатываем возможный ресайз на этапе Present
+				if (presentResult == vk::Result::eSuboptimalKHR || presentResult == vk::Result::eErrorOutOfDateKHR) {
+					recreateAllResources();
+				} else if (presentResult != vk::Result::eSuccess) {
+					throw std::runtime_error("Fatal: Failed to present rendered image to queue");
+				}
+
+				// Переходим к следующему слоту кадра в полете
+				currentFrameIndex = (currentFrameIndex + 1) % frameCount;
+			}
+			// Обрабатываем возможный ресайз на этапе Acquire
+			else if (acquireResult.result == vk::Result::eSuboptimalKHR || acquireResult.result == vk::Result::eErrorOutOfDateKHR) {
+				recreateAllResources();
+			}
+			else {
+				throw std::runtime_error("Fatal: Failed to acquire next image from swapchain!");
+			}
+		}
+
+		// Завершение работы
+		if (uniqueDevice->waitIdle() != vk::Result::eSuccess) {
+			throw std::runtime_error("Failed to wait for device idle during shutdown");
+		}
+		uiRender.destroy(device);
+		std::cout << "[Shutdown] Device idle confirmed. Exiting cleanly.\n";
+		return 0;
+	}
+	catch (const std::exception& ex) {
+		std::cerr << "[CRITICAL ERROR] " << ex.what() << '\n';
+		return EXIT_FAILURE;
+	}
+}

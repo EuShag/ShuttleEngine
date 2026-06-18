@@ -41,11 +41,21 @@ void SdlLibrary::postQuitEvent() {
 	SDL_PushEvent(&quitEvent);
 }
 
+void SdlLibrary::addCustomEventProcessor(std::function<void(SDL_Event const& event)> const &processor) {
+	if (processor == nullptr) {
+		return;
+	}
+	customEventProcessors.push_back(processor);
+}
+
 // ReSharper disable once CppMemberFunctionMayBeStatic
 bool SdlLibrary::pullEvents() {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) return false;
+		for (auto customEventProcessor : customEventProcessors) {
+			customEventProcessor(event);
+		}
 		SdlWindow::processEvent(event);
 	}
 	return true;

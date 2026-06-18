@@ -1,7 +1,7 @@
 #include "VulkanHelperFunctions.hpp"
 #include <fstream>
 
-vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Device const& device, vk::PipelineStageFlagBits shaderStage, char const* filePath) {
+vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Device const& device, char const* filePath) {
 	std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
 	if (!shaderModuleFile.is_open()) {
 		throw std::runtime_error("Failed to open fragment shader file");
@@ -17,7 +17,7 @@ vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Devi
 		});
 }
 
-vk::ResultValue<vk::ShaderModule> loadAndCreateShaderModule(vk::Device const& device, vk::PipelineStageFlagBits shaderStage, char const* filePath) {
+vk::ResultValue<vk::ShaderModule> loadAndCreateShaderModule(vk::Device const& device, char const* filePath) {
 	std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
 	if (!shaderModuleFile.is_open()) {
 		throw std::runtime_error("Failed to open fragment shader file");

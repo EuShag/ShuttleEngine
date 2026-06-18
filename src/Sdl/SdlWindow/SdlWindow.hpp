@@ -24,6 +24,10 @@ class SdlWindow {
 public:
 	SdlWindow(char const* title, int width, int height);
 
+	SDL_Window* getWindow() {
+		return window;
+	}
+
 	[[nodiscard]] vk::SurfaceKHR createVulkanSurface(vk::Instance const& instance) const;
 
 	[[nodiscard]] vk::UniqueSurfaceKHR createVulkanSurfaceUnique(vk::Instance const& instance) const;
@@ -35,6 +39,8 @@ public:
 	SdlWindow& operator=(SdlWindow&&) = delete;
 
 	static void processEvent(SDL_Event const& event);
+
+	vk::Extent2D getExtent() const;
 
 	void setPosition(int x, int y);
 	void setSize(int width, int height);

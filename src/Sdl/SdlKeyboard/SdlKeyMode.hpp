@@ -30,6 +30,25 @@ enum class SdlKeyModeBits
 class SdlKeyMode {
 public:
 	SdlKeyMode() = default;
+
+	SdlKeyMode(const SdlKeyMode&) = default;
+
+	SdlKeyMode(SdlKeyMode&&) = default;
+
+	SdlKeyMode& operator=(const SdlKeyMode&) = default;
+	SdlKeyMode& operator=(SdlKeyMode&&) = default;
+
+	SdlKeyMode(std::initializer_list<SdlKeyModeBits> bits) {
+		keyModeBits = 0;
+		for (auto bit : bits) {
+			keyModeBits |= static_cast<uint16_t>(bit);
+		}
+	}
+
+	SdlKeyMode(SdlKeyModeBits bit) {
+		keyModeBits = static_cast<uint16_t>(bit);
+	}
+
 	explicit SdlKeyMode(Uint16 keyModeBits) : keyModeBits(keyModeBits) {}
     bool operator||(SdlKeyModeBits bit) const {
 		return (keyModeBits & static_cast<uint32_t>(bit)) != 0;
