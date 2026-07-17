@@ -152,8 +152,8 @@ namespace shuttle_engine {
 
     vk::Result PbrRender::initMainPipeline(vk::Device device) {
         // 1. Загрузка шейдеров
-        auto vertModule = loadAndCreateShaderModuleUnique(device, "shaders/pbr.vert.spv");
-        auto fragModule = loadAndCreateShaderModuleUnique(device, "shaders/pbr.frag.spv");
+        auto vertModule = loadAndCreateShaderModuleUnique(device, "../shaders/pbr.vert.spv");
+        auto fragModule = loadAndCreateShaderModuleUnique(device, "../shaders/pbr.frag.spv");
 
         vk::PipelineShaderStageCreateInfo shaderStages[] = {
             {
@@ -308,7 +308,7 @@ namespace shuttle_engine {
 
     vk::Result PbrRender::initShadowPipeline(vk::Device device) {
         // 1. Шейдеры (только Vertex, так как фрагментный для тени не нужен)
-        auto vertModule = loadAndCreateShaderModuleUnique(device, "shaders/shadow.vert.spv");
+        auto vertModule = loadAndCreateShaderModuleUnique(device, "../shaders/shadow.vert.spv");
         if (vertModule.result != vk::Result::eSuccess) {
             return vertModule.result;
         }

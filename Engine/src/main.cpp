@@ -181,8 +181,8 @@ int main(int, char**) {
 		// =========================================================================
 		std::cout << "[Scene] Loading 3D mesh via Assimp...\n";
 		AssimpLoader loader;
-		HostSceneData globalScene = loader.loadScene("assets/models/lowe/scene.gltf");
-		HostSceneData ufo = loader.loadScene("assets/models/Rigged_UFO_gltf/Rigged_Modular UFO 2.8.glb.gltf");
+		HostSceneData globalScene = loader.loadScene("../assets/models/lowe/scene.gltf");
+		HostSceneData ufo = loader.loadScene("../assets/models/Rigged_UFO_gltf/Rigged_Modular UFO 2.8.glb.gltf");
 
 		// Generate terrain mesh
 		TerrainProperties terrainProperties{
@@ -195,17 +195,17 @@ int main(int, char**) {
 			.maxHeight = 40.0f
 		};
 
-		HostMeshData terrainMesh = TerrainGeometryGenerator::createFromHeightMap(terrainProperties, Image1D16bit("assets/terrain/novotroitsk_terrain.png"));
+		HostMeshData terrainMesh = TerrainGeometryGenerator::createFromHeightMap(terrainProperties, Image1D16bit("../assets/terrain/novotroitsk_terrain.png"));
 		HostMaterialData terrainMaterial = loadFromFiles(
-			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_albedo.png",
-			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_normal-dx.png",
-			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_roughness.png",
-			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_ao.png",
-			"assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_metallic.png",
+			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_albedo.png",
+			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_normal-dx.png",
+			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_roughness.png",
+			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_ao.png",
+			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_metallic.png",
 			""
 		);
 
-		HostSceneData tankSceneData = loader.loadScene("assets/models/tank/small_lpg_tank_4k.gltf");
+		HostSceneData tankSceneData = loader.loadScene("../assets/models/tank/small_lpg_tank_4k.gltf");
 
 		globalScene.merge(tankSceneData,
 			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -25.0f, 0.0f)) *
@@ -402,7 +402,7 @@ int main(int, char**) {
 		while (true) {
 			// ВычисляемdeltaTime
 			auto currentTime = std::chrono::high_resolution_clock::now();
-			float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
+			float deltaTime = std::chrono::duration<float>(currentTime - lastTime).count();
 			lastTime = currentTime;
 
 			// -----------------------------------------------------------------

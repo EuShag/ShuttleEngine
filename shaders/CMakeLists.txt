@@ -27,9 +27,7 @@ add_custom_command(
 )
 
 add_custom_target(CompileShaders ALL
-	DEPENDS 
-		${CMAKE_CURRENT_BINARY_DIR}/cube.vert.spv
-		${CMAKE_CURRENT_BINARY_DIR}/cube.frag.spv
+	DEPENDS
 		${CMAKE_CURRENT_BINARY_DIR}/skybox.vert.spv
 		${CMAKE_CURRENT_BINARY_DIR}/skybox.frag.spv
 		${CMAKE_CURRENT_BINARY_DIR}/simpleModel.vert.spv

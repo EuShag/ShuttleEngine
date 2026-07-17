@@ -195,7 +195,6 @@ namespace shuttle_engine {
             aiProcess_Triangulate |
             aiProcess_GenSmoothNormals |
             aiProcess_CalcTangentSpace |
-            aiProcess_JoinIdenticalVertices |
             aiProcess_FlipUVs
         );
 
