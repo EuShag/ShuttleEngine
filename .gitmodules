@@ -1,0 +1,39 @@
+[submodule "external/assimp"]
+	path = external/assimp
+	url = https://github.com/assimp/assimp
+[submodule "external/tinyddsloader"]
+	path = external/tinyddsloader
+	url = https://github.com/benikabocha/tinyddsloader
+[submodule "external/stb"]
+	path = external/stb
+	url = https://github.com/nothings/stb
+[submodule "external/VulkanMemoryAllocator"]
+	path = external/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+[submodule "external/mio"]
+	path = external/mio
+	url = https://github.com/vimpunk/mio
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "external/bc7enc_rdo"]
+	path = external/bc7enc_rdo
+	url = https://github.com/richgel999/bc7enc_rdo
+[submodule "external/vk-bootstrap"]
+	path = external/vk-bootstrap
+	url = https://github.com/charles-lunarg/vk-bootstrap
+[submodule "external/meshoptimizer"]
+	path = external/meshoptimizer
+	url = https://github.com/zeux/meshoptimizer
+[submodule "external/compressonator"]
+	path = external/compressonator
+	url = https://github.com/GPUOpen-Tools/compressonator
+[submodule "external/FidelityFX-SPD"]
+	path = external/FidelityFX-SPD
+	url = https://github.com/GPUOpen-Effects/FidelityFX-SPD
+[submodule "external/ISPCTextureCompressor"]
+	path = external/ISPCTextureCompressor
+	url = https://github.com/GameTechDev/ISPCTextureCompressor
+[submodule "external/cmft"]
+	path = external/cmft
+	url = https://github.com/dariomanesku/cmft

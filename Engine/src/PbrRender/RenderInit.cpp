@@ -400,8 +400,10 @@ namespace shuttle_engine {
                 .addressModeU = vk::SamplerAddressMode::eClampToBorder, // Граница карты теней
                 .addressModeV = vk::SamplerAddressMode::eClampToBorder,
                 .addressModeW = vk::SamplerAddressMode::eClampToBorder,
-                .compareEnable = vk::True,              // ЭТО ВКЛЮЧАЕТ СРАВНЕНИЕ ГЛУБИНЫ
-                .compareOp = vk::CompareOp::eLess,    // Если глубина пикселя < глубины в карте -> СВЕТ
+                // Manual PCF is done in pbr.frag via sampler2D(shadowMap, shadowSampler),
+                // so hardware compare must stay disabled here.
+                .compareEnable = vk::False,
+                .compareOp = vk::CompareOp::eLess,
                 .borderColor = vk::BorderColor::eFloatOpaqueWhite, // За границами - белый (свет)
             }
         );

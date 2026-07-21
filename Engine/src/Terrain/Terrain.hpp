@@ -8,6 +8,7 @@
 #include <glm/vec3.hpp>
 
 #include "IncludeVulkan.hpp"
+#include "HostRenderData/HostRenderData.hpp"
 #include "ImageLoader/Image.hpp"
 
 namespace shuttle_engine {

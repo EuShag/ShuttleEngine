@@ -12,7 +12,7 @@ namespace shuttle_engine {
     class SunLightControlPanel : public IuiPainter {
     public:
         // Передаем ссылки на данные, которыми будем управлять
-        SunLightControlPanel(glm::vec3& dir, glm::vec4& color, float& intensity)
+        SunLightControlPanel(glm::vec4& dir, glm::vec4& color, float& intensity)
             : m_dir(dir), m_color(color), m_intensity(intensity) {}
 
         void drawUi() override {
@@ -30,7 +30,7 @@ namespace shuttle_engine {
 
     private:
         // Ссылки на реальные переменные в движке
-        glm::vec3& m_dir;
+        glm::vec4& m_dir;
         glm::vec4& m_color;
         float&     m_intensity;
     };

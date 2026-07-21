@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
 
 set(IMGUI_SOURCES
-        ${imgui_SOURCE_DIR}/imgui.cpp
-        ${imgui_SOURCE_DIR}/imgui_draw.cpp
-        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-        ${imgui_SOURCE_DIR}/imgui_tables.cpp
-        ${imgui_SOURCE_DIR}/imgui_demo.cpp            # Для тестирования
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp   # Бэкэнд для SDL2
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+        ${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp
+        ${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp
+        ${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
+        ${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp
+        ${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp            # Для тестирования
+        ${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp   # Бэкэнд для SDL2
+        ${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp
 )
 
 add_executable(Engine
@@ -22,16 +22,12 @@ add_executable(Engine
         "src/Skybox/Skybox.cpp"
         "src/Terrain/Terrain.cpp"
         "src/Terrain/Terrain.hpp"
-        "src/Terrain/Terrain.hpp"
         "src/PbrRender/Render.cpp"
         "src/PbrRender/Render.hpp"
-        "src/AssimpLoader/AssimpLoader.cpp"
-        "src/AssimpLoader/AssimpLoader.hpp"
+        "src/BlobLoader/BlobLoader.hpp"
+        "src/BlobLoader/BlobLoader.cpp"
         "src/HostRenderData/HostRenderData.cpp"
         "src/DeviceAllocator/DeviceAllocator.cpp"
-        "src/HostImageProcessor/HostImageProcessor.cpp"
-        "src/HostImageProcessor/HostImageProcessor.hpp"
-        "src/HostImageProcessor/HostImageProcessor.hpp"
         "src/PbrRender/RenderInit.cpp"
         "src/PbrRender/PrepareMaterial.cpp"
         "src/CameraController/CameraController.cpp"
@@ -40,8 +36,6 @@ add_executable(Engine
         "src/PbrRender/PrepareMesh.cpp"
         "src/UiRender/UiRender.cpp"
         "src/UiRender/UiRender.hpp"
-        "src/ApplicationCotroller/ApplicationController.cpp"
-        "src/ApplicationCotroller/ApplicationController.hpp"
         "src/Painters/SunLightControlPanel/SunLightControlPanel.cpp"
         "src/Painters/SunLightControlPanel/SunLightControlPanel.hpp"
         "src/FrameManager/FrameManager.cpp"
@@ -67,21 +61,15 @@ target_compile_definitions(Engine
 
 target_link_libraries(Engine PRIVATE vk-bootstrap::vk-bootstrap)
 target_link_libraries(Engine PRIVATE ${SDL2Libraries})
-target_link_libraries(Engine PRIVATE assimp::assimp)
-target_link_libraries(Engine PRIVATE mimalloc)
-target_include_directories(Engine PRIVATE "${imgui_SOURCE_DIR}")
+target_include_directories(Engine PRIVATE "${Vulkan_INCLUDE_DIRS}/SDL2")
+target_include_directories(Engine PRIVATE "${PROJECT_SOURCE_DIR}/external/imgui")
 target_include_directories(Engine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(Engine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/VMA/include")
+target_include_directories(Engine PRIVATE "${PROJECT_SOURCE_DIR}/AssetProcessor/include")
+target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/VulkanMemoryAllocator/include")
 target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/stb")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/assimp/include")
-target_include_directories(Engine SYSTEM PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/_deps/assimp-build/include")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/concurrentqueue")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/mimalloc/include")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/taskflow")
 target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/vk-bootstrap/src")
 
 add_dependencies(Engine CopyAssets)
 add_dependencies(Engine CompileShaders)
 add_dependencies(Engine CopyCubeMapImages)
-add_dependencies(Engine assimp)

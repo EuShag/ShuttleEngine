@@ -3,36 +3,40 @@
 #include <fstream>
 #include <algorithm>
 #include <cmath>
+#include <cctype>
 
 #include <omp.h>
+#include <vulkan/vulkan.h>
 
 // 1. Подключаем STB
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #define TINYDDSLOADER_IMPLEMENTATION
+#include <cstring>
+
 #include "stb_image.h"
 #include "stb_image_resize2.h"
-#include "bc7enc.h"
-#include "rgbcx.h"
 #include "tinyddsloader.h"
-#include <ktx.h>
+#include <optional>
+#include "../ispc_texcomp/ispc_texcomp.h"
 
 namespace shuttle_engine::compiler {
+    namespace {
+        // Вспомогательный метод для получения блока 4x4
+        void get4x4Block(const uint8_t* rgba, int width, int height, int blockX, int blockY, uint32_t* outBlock) {
+            for (int y = 0; y < 4; ++y) {
+                int const py = std::min(blockY * 4 + y, height - 1);
+                for (int x = 0; x < 4; ++x) {
+                    int const px = std::min(blockX * 4 + x, width - 1);
+                    size_t const pixelIdx = (py * width + px) * 4;
 
-    // Вспомогательный метод для получения блока 4x4
-    static void get4x4Block(const uint8_t* rgba, int width, int height, int blockX, int blockY, uint32_t* outBlock) {
-        for (int y = 0; y < 4; ++y) {
-            int py = std::min(blockY * 4 + y, height - 1);
-            for (int x = 0; x < 4; ++x) {
-                int px = std::min(blockX * 4 + x, width - 1);
-                size_t pixelIdx = (py * width + px) * 4;
+                    auto const r = static_cast<uint32_t>(rgba[pixelIdx + 0]);
+                    auto const g = static_cast<uint32_t>(rgba[pixelIdx + 1]);
+                    auto const b = static_cast<uint32_t>(rgba[pixelIdx + 2]);
+                    auto const a = static_cast<uint32_t>(rgba[pixelIdx + 3]);
 
-                uint8_t r = rgba[pixelIdx + 0];
-                uint8_t g = rgba[pixelIdx + 1];
-                uint8_t b = rgba[pixelIdx + 2];
-                uint8_t a = rgba[pixelIdx + 3];
-
-                outBlock[y * 4 + x] = r | (g << 8) | (b << 16) | (a << 24);
+                    outBlock[y * 4 + x] = (r) | (g << 8) | (b << 16) | (a << 24);
+                }
             }
         }
     }
@@ -42,7 +46,7 @@ namespace shuttle_engine::compiler {
         auto* pixels = reinterpret_cast<glm::u8vec4*>(rgbaPixels.data());
 
         // #pragma omp parallel for // Если подключите OpenMP, этот цикл улетит на все ядра CPU
-        #pragma omp parallel for
+        #pragma omp parallel for default(none) shared(totalPixels, pixels)
         for (size_t i = 0; i < totalPixels; ++i) {
             // 1. Распаковка байт в float-вектор через конструктор GLM
             auto normal = glm::vec3(pixels[i].x, pixels[i].y, pixels[i].z);
@@ -82,6 +86,10 @@ namespace shuttle_engine::compiler {
         }
 
         std::streamsize const size = file.tellg();
+        if (size <= 0) {
+            std::cerr << "[TextureImporter] Empty or invalid file size: " << filePath << std::endl;
+            return false;
+        }
         file.seekg(0, std::ios::beg);
 
         std::vector<uint8_t> fileBuffer(size);
@@ -108,17 +116,75 @@ namespace shuttle_engine::compiler {
         std::vector<uint8_t>& outData
     ) {
         std::string ext = formatHint;
-        std::ranges::transform(ext, ext.begin(), ::tolower);
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
 
         if (ext == "dds") {
             return importDDS(memoryData, memorySize, outMetaData, outData);
         }
-        else if (ext == "ktx" || ext == "ktx2") {
-            return importKTX(memoryData, memorySize, outMetaData, outData);
+        if (ext == "ktx" || ext == "ktx2") {
+            std::cerr << "[TextureImporter] KTX format not yet implemented." << std::endl;
+            return false;
         }
-        else {
+        if (ext == "png" || ext == "png2" || ext == "jpg" || ext == "jpeg" || ext == "tga" || ext == "bmp") {
             return importSTB(memoryData, memorySize, options, outMetaData, outData);
+            return false;
         }
+        return importSTB(memoryData, memorySize, options, outMetaData, outData);
+    }
+
+
+    // -----------------------------------------------------------------------------
+    // Импорт напрямую из RGBA-памяти
+    // -----------------------------------------------------------------------------
+    bool TextureImporter::importFromRGBA(const uint8_t* rgbaPixels, int width, int height, const TextureImportOptions& options, format::TextureMetaData& outMetaData, std::vector<uint8_t>& outData) {
+        if (!rgbaPixels || width <= 0 || height <= 0) return false;
+
+        auto const mipCount = options.generateMips ?
+            static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1 : 1u;
+
+        outData.clear();
+        std::vector<uint8_t> currentMipPixels(rgbaPixels, rgbaPixels + (static_cast<size_t>(width) * height * 4));
+
+        int curW = width;
+        int curH = height;
+
+        for (uint32_t mip = 0; mip < mipCount; ++mip) {
+            std::vector<uint8_t> compressedLevel;
+
+            if (options.format == TextureFormat::BC7_SRGB) {
+                compressedLevel = compressToBC7(currentMipPixels.data(), curW, curH);
+            } else if (options.format == TextureFormat::BC5_UNORM) {
+                renormalizeNormalMap(currentMipPixels, curW, curH);
+                compressedLevel = compressToBC5(currentMipPixels.data(), curW, curH);
+            }
+
+            outData.insert(outData.end(), compressedLevel.begin(), compressedLevel.end());
+
+            if (mip < mipCount - 1) {
+                int nextW = std::max(1, curW / 2);
+                int nextH = std::max(1, curH / 2);
+                std::vector<uint8_t> nextMipPixels(nextW * nextH * 4);
+
+                stbir_resize_uint8_linear(
+                    currentMipPixels.data(), curW, curH, 0,
+                    nextMipPixels.data(), nextW, nextH, 0,
+                    STBIR_RGBA
+                );
+
+                currentMipPixels = std::move(nextMipPixels);
+                curW = nextW;
+                curH = nextH;
+            }
+        }
+
+        outMetaData.width = width;
+        outMetaData.height = height;
+        outMetaData.mipCount = mipCount;
+        outMetaData.numLayers = 1;
+        outMetaData.isCubemap = 0;
+        outMetaData.format = (options.format == TextureFormat::BC7_SRGB) ? VK_FORMAT_BC7_SRGB_BLOCK : VK_FORMAT_BC5_UNORM_BLOCK;
+
+        return true;
     }
 
     // -----------------------------------------------------------------------------
@@ -133,14 +199,11 @@ namespace shuttle_engine::compiler {
     ) {
         stbi_set_flip_vertically_on_load(options.flipY ? 1 : 0);
         int w, h, comp;
-        uint8_t* rawPixels = stbi_load_from_memory(data, size, &w, &h, &comp, 4); // Всегда RGBA
+        uint8_t* rawPixels = stbi_load_from_memory(data, static_cast<int>(size), &w, &h, &comp, 4); // Всегда RGBA
         if (!rawPixels) return false;
 
-        uint32_t mipCount = options.generateMips ?
+        auto const mipCount = options.generateMips ?
             static_cast<uint32_t>(std::floor(std::log2(std::max(w, h)))) + 1 : 1;
-
-        bc7enc_compress_block_init();
-        rgbcx::init();
 
         outData.clear();
         std::vector currentMipPixels(rawPixels, rawPixels + (w * h * 4));
@@ -183,50 +246,328 @@ namespace shuttle_engine::compiler {
         outMetaData.mipCount = mipCount;
         outMetaData.numLayers = 1;
         outMetaData.isCubemap = 0;
-        outMetaData.format = (options.format == TextureFormat::BC7_SRGB) ? 145 : 141; // Vulkan BC7/BC5
+        outMetaData.format = (options.format == TextureFormat::BC7_SRGB) ? VK_FORMAT_BC7_SRGB_BLOCK : VK_FORMAT_BC5_UNORM_BLOCK; // Vulkan BC7/BC5
 
         return true;
     }
 
-    std::vector<uint8_t> TextureImporter::compressToBC7(const uint8_t* rgbaPixels, int width, int height) {
-        int blocksX = (width + 3) / 4;
-        int blocksY = (height + 3) / 4;
-        std::vector<uint8_t> outData(blocksX * blocksY * 16);
+    // -----------------------------------------------------------------------------
+    // Утилита: упаковать раздельные AO / Roughness / Metalness в одну ORM текстуру
+    // R = Occlusion, G = Roughness, B = Metalness, A = 255
+    // Принимает пути к файлам — любой из них может быть отсутствующим (std::nullopt).
+    // Если roughnessIsGloss == true, входной roughness интерпретируется как glossiness и будет инвертирован.
+    // -----------------------------------------------------------------------------
+    void TextureImporter::packORMFromFiles(
+        const std::optional<std::string>& occlusionPath,
+        const std::optional<std::string>& roughnessPath,
+        const std::optional<std::string>& metalnessPath,
+        const TextureImportOptions& options,
+        format::TextureMetaData& outMetaData,
+        std::vector<uint8_t>& outData,
+        bool roughnessIsGloss
+    ) {
+        // Загрузим изображения (если присутствуют), сохраняя их в RGBA8 буферы
+        int wA=0,hA=0, cA=0;
+        int wR=0,hR=0, cR=0;
+        int wM=0,hM=0, cM=0;
+        uint8_t* dataA = nullptr;
+        uint8_t* dataR = nullptr;
+        uint8_t* dataM = nullptr;
 
-        bc7enc_compress_block_params params{};
-        bc7enc_compress_block_params_init(&params);
-        params.m_weights[0] = 1.0f; // Red   [0]
-        params.m_weights[1] = 1.0f; // Green [1]
-        params.m_weights[2] = 1.0f; // Blue  [2]
-        params.m_weights[3] = 1.0f; // Alpha [3]
+        try {
+            if (occlusionPath && !occlusionPath->empty()) dataA = stbi_load(occlusionPath->c_str(), &wA, &hA, &cA, 4);
+            if (roughnessPath && !roughnessPath->empty()) dataR = stbi_load(roughnessPath->c_str(), &wR, &hR, &cR, 4);
+            if (metalnessPath && !metalnessPath->empty()) dataM = stbi_load(metalnessPath->c_str(), &wM, &hM, &cM, 4);
+        } catch (...) {
+            if (dataA) stbi_image_free(dataA);
+            if (dataR) stbi_image_free(dataR);
+            if (dataM) stbi_image_free(dataM);
+        }
 
-        for (int by = 0; by < blocksY; ++by) {
-            for (int bx = 0; bx < blocksX; ++bx) {
-                uint32_t rgbaBlock[16];
-                get4x4Block(rgbaPixels, width, height, bx, by, rgbaBlock);
-                uint8_t* dst = outData.data() + (by * blocksX + bx) * 16;
-                bc7enc_compress_block(dst, rgbaBlock, &params);
+        // Выберем целевой размер: используем максимум по ширине/высоте среди доступных карт, либо 1x1
+        int targetW = 1, targetH = 1;
+        if (dataA) { targetW = std::max(targetW, wA); targetH = std::max(targetH, hA); }
+        if (dataR) { targetW = std::max(targetW, wR); targetH = std::max(targetH, hR); }
+        if (dataM) { targetW = std::max(targetW, wM); targetH = std::max(targetH, hM); }
+
+        // Создаем рабочие буферы в RGBA8 одинакового размера
+        std::vector<uint8_t> bufA(targetW * targetH * 4);
+        std::vector<uint8_t> bufR(targetW * targetH * 4);
+        std::vector<uint8_t> bufM(targetW * targetH * 4);
+
+        // Если нет данных — заполним дефолтами (AO=255, Rough=255, Metal=0)
+        if (!dataA) {
+            for (unsigned char & i : bufA) i = 255;
+        } else {
+            if (wA == targetW && hA == targetH) {
+                std::memcpy(bufA.data(), dataA, targetW * targetH * 4);
+            } else {
+                stbir_resize_uint8_linear(dataA, wA, hA, 0, bufA.data(), targetW, targetH, 0, STBIR_RGBA);
             }
         }
+
+        if (!dataR) {
+            for (unsigned char & i : bufR) i = 255;
+        } else {
+            if (wR == targetW && hR == targetH) {
+                std::memcpy(bufR.data(), dataR, targetW * targetH * 4);
+            } else {
+                stbir_resize_uint8_linear(dataR, wR, hR, 0, bufR.data(), targetW, targetH, 0, STBIR_RGBA);
+            }
+        }
+
+        if (!dataM) {
+            for (unsigned char & i : bufM) i = 0;
+        } else {
+            if (wM == targetW && hM == targetH) {
+                std::memcpy(bufM.data(), dataM, targetW * targetH * 4);
+            } else {
+                stbir_resize_uint8_linear(dataM, wM, hM, 0, bufM.data(), targetW, targetH, 0, STBIR_RGBA);
+            }
+        }
+
+        // Освободим исходники
+        if (dataA) stbi_image_free(dataA);
+        if (dataR) stbi_image_free(dataR);
+        if (dataM) stbi_image_free(dataM);
+
+        // Соберем итоговый RGBA буфер: R = occlusion (use red channel of bufA), G = roughness (red), B = metalness (red), A = 255
+        std::vector<uint8_t> finalRGBA(targetW * targetH * 4);
+        for (int y = 0; y < targetH; ++y) {
+            for (int x = 0; x < targetW; ++x) {
+                size_t idx = (static_cast<size_t>(y) * targetW + x) * 4;
+                uint8_t ao = bufA[idx + 0];
+                uint8_t rough = bufR[idx + 0];
+                uint8_t metal = bufM[idx + 0];
+                if (roughnessIsGloss) rough = static_cast<uint8_t>(255 - rough);
+                finalRGBA[idx + 0] = ao;
+                finalRGBA[idx + 1] = rough;
+                finalRGBA[idx + 2] = metal;
+                finalRGBA[idx + 3] = 255;
+            }
+        }
+
+        // Теперь компрессим и генерируем мипы аналогично importSTB
+        outData.clear();
+        std::vector<uint8_t> currentMipPixels = std::move(finalRGBA);
+        int curW = targetW;
+        int curH = targetH;
+
+        uint32_t mipCount = options.generateMips ? static_cast<uint32_t>(std::floor(std::log2(std::max(curW, curH)))) + 1u : 1u;
+
+        for (uint32_t mip = 0; mip < mipCount; ++mip) {
+            std::vector<uint8_t> compressedLevel;
+            if (options.format == TextureFormat::BC7_SRGB) {
+                compressedLevel = compressToBC7(currentMipPixels.data(), curW, curH);
+            } else if (options.format == TextureFormat::BC5_UNORM) {
+                renormalizeNormalMap(currentMipPixels, curW, curH); // harmless for ORM but keep parity
+                compressedLevel = compressToBC5(currentMipPixels.data(), curW, curH);
+            }
+
+            outData.insert(outData.end(), compressedLevel.begin(), compressedLevel.end());
+
+            if (mip < mipCount - 1) {
+                int nextW = std::max(1, curW / 2);
+                int nextH = std::max(1, curH / 2);
+                std::vector<uint8_t> nextMip(nextW * nextH * 4);
+                stbir_resize_uint8_linear(currentMipPixels.data(), curW, curH, 0, nextMip.data(), nextW, nextH, 0, STBIR_RGBA);
+                currentMipPixels = std::move(nextMip);
+                curW = nextW; curH = nextH;
+            }
+        }
+
+        outMetaData.width = targetW;
+        outMetaData.height = targetH;
+        outMetaData.mipCount = mipCount;
+        outMetaData.numLayers = 1;
+        outMetaData.isCubemap = 0;
+        outMetaData.format = (options.format == TextureFormat::BC7_SRGB) ? 145u : 141u;
+    }
+
+    // -----------------------------------------------------------------------------
+    // Упаковка ORM из памяти (например, из встроенных Assimp текстур)
+    // Формат и семантика такие же, как у packORMFromFiles.
+    // -----------------------------------------------------------------------------
+    void TextureImporter::packORMFromMemory(
+        const uint8_t* occlusionData, size_t occlusionSize,
+        const uint8_t* roughnessData, size_t roughnessSize,
+        const uint8_t* metalnessData, size_t metalnessSize,
+        const TextureImportOptions& options,
+        format::TextureMetaData& outMetaData,
+        std::vector<uint8_t>& outData,
+        bool roughnessIsGloss
+    ) {
+        int wA=0,hA=0,cA=0;
+        int wR=0,hR=0,cR=0;
+        int wM=0,hM=0,cM=0;
+        uint8_t* dataA = nullptr;
+        uint8_t* dataR = nullptr;
+        uint8_t* dataM = nullptr;
+
+        if (occlusionData && occlusionSize > 0) dataA = stbi_load_from_memory(occlusionData, static_cast<int>(occlusionSize), &wA, &hA, &cA, 4);
+        if (roughnessData && roughnessSize > 0) dataR = stbi_load_from_memory(roughnessData, static_cast<int>(roughnessSize), &wR, &hR, &cR, 4);
+        if (metalnessData && metalnessSize > 0) dataM = stbi_load_from_memory(metalnessData, static_cast<int>(metalnessSize), &wM, &hM, &cM, 4);
+
+        // Выберем целевой размер
+        int targetW = 1, targetH = 1;
+        if (dataA) { targetW = std::max(targetW, wA); targetH = std::max(targetH, hA); }
+        if (dataR) { targetW = std::max(targetW, wR); targetH = std::max(targetH, hR); }
+        if (dataM) { targetW = std::max(targetW, wM); targetH = std::max(targetH, hM); }
+
+        std::vector<uint8_t> bufA(targetW * targetH * 4);
+        std::vector<uint8_t> bufR(targetW * targetH * 4);
+        std::vector<uint8_t> bufM(targetW * targetH * 4);
+
+        if (!dataA) {
+            std::ranges::fill(bufA, 255);
+        } else {
+            if (wA == targetW && hA == targetH) std::memcpy(bufA.data(), dataA, targetW * targetH * 4);
+            else stbir_resize_uint8_linear(dataA, wA, hA, 0, bufA.data(), targetW, targetH, 0, STBIR_RGBA);
+        }
+
+        if (!dataR) {
+            std::ranges::fill(bufR, 255);
+        } else {
+            if (wR == targetW && hR == targetH) std::memcpy(bufR.data(), dataR, targetW * targetH * 4);
+            else stbir_resize_uint8_linear(dataR, wR, hR, 0, bufR.data(), targetW, targetH, 0, STBIR_RGBA);
+        }
+
+        if (!dataM) {
+            std::ranges::fill(bufM, 0);
+        } else {
+            if (wM == targetW && hM == targetH) std::memcpy(bufM.data(), dataM, targetW * targetH * 4);
+            else stbir_resize_uint8_linear(dataM, wM, hM, 0, bufM.data(), targetW, targetH, 0, STBIR_RGBA);
+        }
+
+        if (dataA) stbi_image_free(dataA);
+        if (dataR) stbi_image_free(dataR);
+        if (dataM) stbi_image_free(dataM);
+
+        // Собираем финальный RGBA
+        std::vector<uint8_t> finalRGBA(targetW * targetH * 4);
+        for (int y = 0; y < targetH; ++y) {
+            for (int x = 0; x < targetW; ++x) {
+                size_t idx = (static_cast<size_t>(y) * targetW + x) * 4;
+                uint8_t ao = bufA[idx + 0];
+                uint8_t rough = bufR[idx + 0];
+                uint8_t metal = bufM[idx + 0];
+                if (roughnessIsGloss) rough = static_cast<uint8_t>(255 - rough);
+                finalRGBA[idx + 0] = ao;
+                finalRGBA[idx + 1] = rough;
+                finalRGBA[idx + 2] = metal;
+                finalRGBA[idx + 3] = 255;
+            }
+        }
+
+        // Компрессия и мипы — переиспользуем реализацию из packORMFromFiles
+        outData.clear();
+        std::vector<uint8_t> currentMipPixels = std::move(finalRGBA);
+        int curW = targetW;
+        int curH = targetH;
+
+        uint32_t mipCount = options.generateMips ? static_cast<uint32_t>(std::floor(std::log2(std::max(curW, curH)))) + 1u : 1u;
+
+        for (uint32_t mip = 0; mip < mipCount; ++mip) {
+            std::vector<uint8_t> compressedLevel;
+            if (options.format == TextureFormat::BC7_SRGB) {
+                compressedLevel = compressToBC7(currentMipPixels.data(), curW, curH);
+            } else if (options.format == TextureFormat::BC5_UNORM) {
+                renormalizeNormalMap(currentMipPixels, curW, curH);
+                compressedLevel = compressToBC5(currentMipPixels.data(), curW, curH);
+            }
+            outData.insert(outData.end(), compressedLevel.begin(), compressedLevel.end());
+
+            if (mip < mipCount - 1) {
+                int nextW = std::max(1, curW / 2);
+                int nextH = std::max(1, curH / 2);
+                std::vector<uint8_t> nextMip(nextW * nextH * 4);
+                stbir_resize_uint8_linear(currentMipPixels.data(), curW, curH, 0, nextMip.data(), nextW, nextH, 0, STBIR_RGBA);
+                currentMipPixels = std::move(nextMip);
+                curW = nextW; curH = nextH;
+            }
+        }
+
+        outMetaData.width = targetW;
+        outMetaData.height = targetH;
+        outMetaData.mipCount = mipCount;
+        outMetaData.numLayers = 1;
+        outMetaData.isCubemap = 0;
+        outMetaData.format = (options.format == TextureFormat::BC7_SRGB) ? 145u : 141u;
+    }
+
+    std::vector<uint8_t> TextureImporter::compressToBC7(const uint8_t* rgbaPixels, int width, int height) {
+        int const blocksX = (width + 3) / 4;
+        int const blocksY = (height + 3) / 4;
+
+        // BC7 занимает ровно 16 байт на блок 4x4 пикселя
+        std::vector<uint8_t> outData(static_cast<size_t>(blocksX) * blocksY * 16);
+
+        bc7_enc_settings settings{};
+        // ИСПРАВЛЕНО: используем точное имя функции из заголовка Intel ISPC
+        GetProfile_basic(&settings);
+
+        size_t const rowStrideInBytes = static_cast<size_t>(width) * 4;
+
+        #pragma omp parallel for default(none) \
+        shared(blocksY, blocksX, width, rgbaPixels, outData, settings, rowStrideInBytes) \
+        schedule(dynamic, 1)
+        for (int by = 0; by < blocksY; ++by) {
+            // Указатель на начало строки блоков (каждая полоса высотой ровно в 1 блок = 4 пикселя)
+            const uint8_t* srcRowPtr = rgbaPixels + (static_cast<size_t>(by) * 4) * rowStrideInBytes;
+
+            // Настраиваем под-поверхность для Intel ядра
+            rgba_surface surface{};
+            surface.ptr = const_cast<uint8_t*>(srcRowPtr);
+            surface.width = width;
+            surface.height = 4; // Высота полосы ВСЕГДА 4 пикселя (1 блок)
+            surface.stride = static_cast<int>(rowStrideInBytes);
+
+            // Указатель на место в общем векторе, куда текущий поток запишет сжатую строку блоков
+            uint8_t* dstBlockPtr = outData.data() + (static_cast<size_t>(by) * blocksX * 16);
+
+            // Тяжелое SIMD (AVX2) сжатие строки блоков силами Intel ISPC
+            CompressBlocksBC7(&surface, dstBlockPtr, &settings);
+        }
+
         return outData;
     }
+
 
 
     std::vector<uint8_t> TextureImporter::compressToBC5(const uint8_t* rgbaPixels, int width, int height) {
-        int blocksX = (width + 3) / 4;
-        int blocksY = (height + 3) / 4;
-        std::vector<uint8_t> outData(blocksX * blocksY * 16);
+        int const blocksX = (width + 3) / 4;
+        int const blocksY = (height + 3) / 4;
 
+        // Формат BC5 занимает ровно 16 байт на блок 4x4 пикселя
+        std::vector<uint8_t> outData(static_cast<size_t>(blocksX) * blocksY * 16);
+
+        size_t const rowStrideInBytes = static_cast<size_t>(width) * 4;
+
+        #pragma omp parallel for default(none) \
+        shared(blocksY, blocksX, width, rgbaPixels, outData, rowStrideInBytes) \
+        schedule(dynamic, 1)
         for (int by = 0; by < blocksY; ++by) {
-            for (int bx = 0; bx < blocksX; ++bx) {
-                uint32_t rgbaBlock[16];
-                get4x4Block(rgbaPixels, width, height, bx, by, rgbaBlock);
-                uint8_t* dst = outData.data() + (by * blocksX + bx) * 16;
-                rgbcx::encode_bc5(dst, reinterpret_cast<const uint8_t*>(rgbaBlock), 0, 1, 4);
-            }
+            // Вычисляем указатель на начало текущей строки блоков (высотой 4 пикселя)
+            const uint8_t* srcRowPtr = rgbaPixels + (static_cast<size_t>(by) * 4) * rowStrideInBytes;
+
+            // Инициализируем структуру поверхности для Intel ядра
+            rgba_surface surface{};
+            surface.ptr = const_cast<uint8_t*>(srcRowPtr);
+            surface.width = width;
+            surface.height = 4; // Высота полосы фиксирована под 1 блок (4 пикселя)
+            surface.stride = static_cast<int>(rowStrideInBytes);
+
+            // Рассчитываем смещение, куда текущий поток запишет сжатые блоки текущей строки
+            uint8_t* dstBlockPtr = outData.data() + (static_cast<size_t>(by) * blocksX * 16);
+
+            // Запуск векторизованного (AVX2) сжатия карты нормалей силами Intel ISPC
+            CompressBlocksBC5(&surface, dstBlockPtr);
         }
+
         return outData;
     }
+
+
 
     bool TextureImporter::importDDS(
         const uint8_t* data,
@@ -244,22 +585,46 @@ namespace shuttle_engine::compiler {
         uint32_t vkFormat = 0; // Маппинг форматов DDS в форматы Vulkan
         auto ddsFormat = dds.GetFormat();
 
-        // Ошибка 1: Исправлено перечисление форматов (DXGI_FORMAT_* не принадлежат tinyddsloader)
-        if (ddsFormat == tinyddsloader::DDSFile::DXGIFormat::BC7_UNorm ||
-            ddsFormat == tinyddsloader::DDSFile::DXGIFormat::BC7_UNorm_SRGB) {
-
-            // Рекомендуется использовать ENUM из vulkan.h, но если передаем числом:
-            vkFormat = 145; // VK_FORMAT_BC7_SRGB_BLOCK
-        }
-        else if (ddsFormat == tinyddsloader::DDSFile::DXGIFormat::BC5_UNorm) {
-            vkFormat = 141; // VK_FORMAT_BC5_UNORM_BLOCK
-        }
-        else if (ddsFormat == tinyddsloader::DDSFile::DXGIFormat::BC5_SNorm) {
-            vkFormat = 142; // VK_FORMAT_BC5_SNORM_BLOCK (Важно разделять UNORM и SNORM!)
-        }
-        else {
-            std::cerr << "[TextureImporter] DDS format not supported (only BC5/BC7 allowed): " << static_cast<int>(ddsFormat) << std::endl;
-            return false;
+        switch (ddsFormat) {
+            case tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm:
+                vkFormat = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm_SRGB:
+                vkFormat = VK_FORMAT_BC1_RGB_SRGB_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC2_UNorm:
+                vkFormat = VK_FORMAT_BC2_UNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC2_UNorm_SRGB:
+                vkFormat = VK_FORMAT_BC2_SRGB_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC3_UNorm:
+                vkFormat = VK_FORMAT_BC3_UNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC3_UNorm_SRGB:
+                vkFormat = VK_FORMAT_BC3_SRGB_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC4_UNorm:
+                vkFormat = VK_FORMAT_BC4_UNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC4_SNorm:
+                vkFormat = VK_FORMAT_BC4_SNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC5_UNorm:
+                vkFormat = VK_FORMAT_BC5_UNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC5_SNorm:
+                vkFormat = VK_FORMAT_BC5_SNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC7_UNorm:
+                vkFormat = VK_FORMAT_BC7_UNORM_BLOCK;
+                break;
+            case tinyddsloader::DDSFile::DXGIFormat::BC7_UNorm_SRGB:
+                vkFormat = VK_FORMAT_BC7_SRGB_BLOCK;
+                break;
+            default:
+                std::cerr << "[TextureImporter] DDS format not supported: " << static_cast<int>(ddsFormat) << std::endl;
+                return false;
         }
 
         outMetaData.width = dds.GetWidth();
@@ -301,134 +666,5 @@ namespace shuttle_engine::compiler {
 
         return true;
     }
-
-    // -----------------------------------------------------------------------------
-    // ПАЙПЛАЙН 3: СКВОЗНОЙ ИМПОРТ KTX/KTX2 (LIBKTX)
-    // -----------------------------------------------------------------------------
-    bool TextureImporter::importKTX(
-        const uint8_t* data,
-        size_t size,
-        format::TextureMetaData& outMetaData,
-        std::vector<uint8_t>& outData
-    ) {
-        ktxTexture* kTexture = nullptr;
-
-        KTX_error_code result = ktxTexture_CreateFromMemory(
-            data,
-            size,
-            KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
-            &kTexture
-        );
-
-        if (result != KTX_SUCCESS) {
-            std::cerr << "[TextureImporter] libktx failed to load: " << data << " with code " << result << std::endl;
-            return false;
-        }
-
-        // Автоматический выбор формата для транскодирования
-        if (kTexture->classId == ktxTexture2_c && ktxTexture2_NeedsTranscoding(reinterpret_cast<ktxTexture2 *>(kTexture))) {
-
-            auto* kTx2 = reinterpret_cast<ktxTexture2 *>(kTexture);
-            ktx_transcode_fmt_e targetFormat{}; // Формат по умолчанию (для цвета)
-
-            // ИСПРАВЛЕНИЕ: Используем официальные поля вместо приватного _protected
-
-            // В KTX2 карты нормалей Basis Universal помечаются через DFD или имеют ровно 2 канала (R и G)
-            // Также можно проверить имя модели распределения данных (colorModel)
-
-            if (uint32_t const numComponents = ktxTexture2_GetNumComponents(kTx2); numComponents == 2) {
-                targetFormat = KTX_TTF_BC5_RG; // Автоматически транскодируем нормали в BC5!
-            }
-            else if (numComponents == 1) {
-                targetFormat = KTX_TTF_BC4_R;  // Если это маска или карта высот (один канал), жмем в BC4
-            }
-            else {
-                // Если это обычный RGB/RGBA цвет, то смотрим на альфа-канал
-                // Если альфы нет, можно выставить KTX_TTF_BC1_RGB (для экономии памяти),
-                // но BC7_RGBA (KTX_TTF_BC7_RGBA) — это универсальный и самый качественный выбор для Vulkan
-                targetFormat = KTX_TTF_BC7_RGBA;
-            }
-
-            // 3. Запускаем транскодирование в автоматически определенный формат
-
-            if (auto const transcodeResult = ktxTexture2_TranscodeBasis(kTx2, targetFormat, 0); transcodeResult != KTX_SUCCESS) {
-                std::cerr << "[TextureImporter] Автоматический транскодинг провален!" << std::endl;
-                ktxTexture_Destroy(kTexture);
-                return false;
-            }
-        }
-
-        // 4. Теперь vkFormat ГАРАНТИРОВАННО вернет правильный нативный формат Vulkan
-        // (145 для BC7, 141 для BC5_UNORM и т.д.), который выбрала сама библиотека после транскодирования!
-        auto const vkFormat = reinterpret_cast<ktxTexture2*>(kTexture)->vkFormat;
-
-        // Добавляем 142 (BC5_SNORM), так как libktx часто используется для нормалей
-        if (vkFormat != 145 && vkFormat != 141 && vkFormat != 142) {
-            std::cerr << "[TextureImporter] KTX format not supported (only BC5/BC7 allowed): " << vkFormat << std::endl;
-            ktxTexture_Destroy(kTexture);
-            return false;
-        }
-
-        // Заполняем метаданные
-        outMetaData.width     = kTexture->baseWidth;
-        outMetaData.height    = kTexture->baseHeight;
-        outMetaData.mipCount  = kTexture->numLevels;
-        outMetaData.numLayers = kTexture->numLayers;
-        outMetaData.isCubemap = kTexture->isCubemap ? 1 : 0;
-        outMetaData.format    = vkFormat;
-
-        // Ошибка: Прямой assign копирует KTX-выравнивание (4-byte padding)
-        // Решение: Считаем чистый размер без выравнивания и собираем данные вручную
-
-        uint32_t numLevels = kTexture->numLevels;
-        uint32_t numLayers = kTexture->numLayers;
-        // Если это кубмапа, libktx хранит грани как "faces", обрабатываем их как слои
-        uint32_t numFaces  = kTexture->numFaces;
-        uint32_t totalLayers = (numLayers > 1) ? numLayers : numFaces;
-
-        // Сначала считаем точный чистый размер данных
-        size_t cleanTotalSize = 0;
-        for (uint32_t mip = 0; mip < numLevels; ++mip) {
-            // Размер одного изображения на данном мип-уровне без учета выравнивания KTX
-            size_t levelSize = ktxTexture_GetImageSize(kTexture, mip);
-            cleanTotalSize += levelSize * totalLayers;
-        }
-
-        outData.clear();
-        outData.reserve(cleanTotalSize);
-
-        // Упаковываем строго по вашей схеме: Mip 0 (все слои), Mip 1 (все слои) и т.д.
-        for (uint32_t mip = 0; mip < numLevels; ++mip) {
-            size_t imageSize = ktxTexture_GetImageSize(kTexture, mip);
-
-            for (uint32_t layer = 0; layer < totalLayers; ++layer) {
-                size_t offset = 0;
-                KTX_error_code r;
-
-                // Находим точное смещение этого изображения внутри KTX (учитывая внутренний паддинг)
-                if (kTexture->isCubemap) {
-                    r = ktxTexture_GetImageOffset(kTexture, mip, 0, layer, &offset);
-                } else {
-                    r = ktxTexture_GetImageOffset(kTexture, mip, layer, 0, &offset);
-                }
-
-                if (r != KTX_SUCCESS) {
-                    std::cerr << "[TextureImporter] Failed to get image offset for Mip " << mip << " Layer " << layer << std::endl;
-                    ktxTexture_Destroy(kTexture);
-                    return false;
-                }
-
-                // Берем указатель на начало чистых данных этого слоя/мипа
-                const uint8_t* imagePtr = ktxTexture_GetData(kTexture) + offset;
-
-                // Копируем ровно imageSize байт (без мусора выравнивания)
-                outData.insert(outData.end(), imagePtr, imagePtr + imageSize);
-            }
-        }
-
-        ktxTexture_Destroy(kTexture);
-        return true;
-    }
-
 
 } // namespace shuttle_engine::compiler

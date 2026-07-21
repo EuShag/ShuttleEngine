@@ -1,4 +1,16 @@
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # CMAKE_SOURCE_DIR всегда указывает на корень ShuttleEngine, где лежат ваши папки
+    set(PRECOMPILED_KERNEL "${CMAKE_CURRENT_SOURCE_DIR}/src/ispc_texcomp/msvc/kernel.obj")
+    add_compile_options(/arch:AVX2 /O2)
+    message(STATUS "[AssetProcessor] Тулчейн MSVC -> Линкуем .obj ядро")
+else()
+    # Сюда заходит ваш MinGW GCC
+    set(PRECOMPILED_KERNEL "${CMAKE_CURRENT_SOURCE_DIR}/src/ispc_texcomp/gcc/kernel.o")
+    add_compile_options(-mavx2 -mfma -O3)
+    message(STATUS "[AssetProcessor] Тулчейн MinGW/GCC -> Линкуем .o ядро")
+endif()
+
 add_executable(AssetProcessor
     include/BlobLayout.hpp
     src/main.cpp
@@ -6,17 +18,32 @@ add_executable(AssetProcessor
     src/TextureImporter/TextureImporter.hpp
     src/SceneImporter/SceneImporter.cpp
     src/SceneImporter/SceneImporter.hpp
+    src/TextureImporter/TextureImporter_init.cpp
+    src/ispc_texcomp/ispc_texcomp.cpp
+    src/ispc_texcomp/ispc_texcomp.h
+    src/ispc_texcomp/kernel_ispc.h
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/rgbcx.cpp"
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/rgbcx.h"
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/bc7enc.h"
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/bc7enc.cpp"
+    ${PRECOMPILED_KERNEL}
 )
+
+if(NOT MSVC)
+    target_link_options(AssetProcessor PRIVATE "-Wl,--defsym,__chkstk=___chkstk_ms")
+endif()
 
 target_include_directories(AssetProcessor SYSTEM PRIVATE ${Vulkan_INCLUDE_DIRS})
 
 target_link_libraries(AssetProcessor PRIVATE
-    ktx
+    assimp
     OpenMP::OpenMP_CXX
+    meshoptimizer
+)
+
+target_compile_definitions(AssetProcessor PRIVATE
+    GLM_ENABLE_EXPERIMENTAL
+    GLM_FORCE_DEPTH_ZERO_TO_ONE
 )
 
 if(OpenMP_CXX_FOUND)
@@ -31,18 +58,15 @@ target_include_directories(AssetProcessor PRIVATE
 
 target_include_directories(AssetProcessor PRIVATE
     "${PROJECT_SOURCE_DIR}/external/tinyddsloader"
-    "${PROJECT_SOURCE_DIR}/external/cgltf"
-    "${PROJECT_SOURCE_DIR}/external/KTX-Software/lib/include"
-    "${PROJECT_SOURCE_DIR}/external/KTX-Software/external/dfdutils"
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo"
     "${PROJECT_SOURCE_DIR}/external/stb"
     "${PROJECT_SOURCE_DIR}/external/assimp/include"
-    "${PROJECT_BINARY_DIR}/external/assimp"
-    "${ASSIMP_GENERATED_DIR}/include"
+    "${PROJECT_BINARY_DIR}/external/assimp/include"
+    "${PROJECT_SOURCE_DIR}/external/meshoptimizer"
+    "${PROJECT_SOURCE_DIR}/external/cmft/include"
     ${Vulkan_INCLUDE_DIRS}
 )
 
 add_dependencies( AssetProcessor
     assimp
-    ktx
 )

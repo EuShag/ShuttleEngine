@@ -23,7 +23,7 @@ namespace shuttle_engine {
         auto vkbSwapchainResult = builder
             .set_old_swapchain(oldSwapchain)
             .set_desired_extent(extent.width, extent.height)
-            .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)
+            .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
             .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)
             .build();
 

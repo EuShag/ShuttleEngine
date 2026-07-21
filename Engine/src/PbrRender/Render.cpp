@@ -1,103 +1,59 @@
-//
+﻿//
 // Created by Shagu on 25.05.2026.
 //
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_LEFT_HANIBO
 #include "Render.hpp"
 
 #include <iostream>
 #include <ostream>
-#include <stack>
 #include <utility>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-#include "assimp/Vertex.h"
 #include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 
 namespace shuttle_engine {
-    void PreparedHostMaterialData::calculateOffsetsAndSize() {
-        // Вспомогательная лямбда для выравнивания (по 4 байта для текстур, 16 для UBO)
-        auto align = [](vk::DeviceSize size, vk::DeviceSize alignment) {
-            return (size + (alignment - 1)) & ~(alignment - 1);
-        };
 
-        vk::DeviceSize current = 0;
-
-        // 1. Uniform Buffer (выравнивание 16 байт)
-        stagingBufferOffsets.propertiesOffset = current;
-        current += align(sizeof(HostMaterialProperties), 16);
-
-        // 2. Текстуры (выравнивание 4 байта)
-        stagingBufferOffsets.albedoOffset = current;
-        current += align(albedoHostImageData.data.size(), 4);
-
-        stagingBufferOffsets.normalOffset = current;
-        current += align(normalHostImageData.data.size(), 4);
-
-        stagingBufferOffsets.ormOffset = current;
-        current += align(ormHostImageData.data.size(), 4);
-
-        stagingBufferOffsets.emissionOffset = current;
-        current += align(emissionHostImageData.data.size(), 4);
-
-        stagingBufferOffsets.heightOffset = current;
-        current += align(heightHostImageData.data.size(), 4);
-
-        // Итоговый размер
-        stagingBufferRequiredSize = current;
-    }
-
+    // =========================================================================
+    // PbrRender::create  (unchanged)
+    // =========================================================================
     vk::ResultValue<PbrRender> PbrRender::create(vk::Device device, vk::ImageLayout finalLayout) {
         PbrRender render;
 
-        // 1. Инициализация RenderPasses
         if (auto res = render.initMainRenderPass(device, finalLayout); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initShadowRenderPass(device); res != vk::Result::eSuccess)
             return {res, {}};
-
-        // 2. Инициализация Descriptor Set Layouts
         if (auto res = render.initPbrMaterialSetLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initSceneDataSetLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initSamplerDescriptorSetLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initModelDataSetLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initSamplers(device); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initSamplerDescriptorSet(device); res != vk::Result::eSuccess)
             return {res, {}};
-
-        // 3. Инициализация Pipeline Layouts (требуют готовых DescriptorSetLayouts)
         if (auto res = render.initMainPipelineLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initShadowPipelineLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
-
-        // 4. Инициализация Pipelines (требуют готовых RenderPasses и PipelineLayouts)
         if (auto res = render.initMainPipeline(device); res != vk::Result::eSuccess)
             return {res, {}};
-
         if (auto res = render.initShadowPipeline(device); res != vk::Result::eSuccess)
             return {res, {}};
 
-        // Возвращаем успешно созданный объект
         return {vk::Result::eSuccess, std::move(render)};
     }
 
+    // =========================================================================
+    // uploadScene  —  BlobSceneData → GPU resources
+    // =========================================================================
     vk::ResultValue<DeviceSceneData> PbrRender::uploadScene(
-        HostSceneData&& hostSceneData,
+        const BlobSceneData& blob,
         vk::Queue transferQueue,
         vk::Device device,
         vk::CommandPool transferCommandPool,
@@ -105,217 +61,430 @@ namespace shuttle_engine {
     {
         DeviceSceneData resultData;
 
-        // 1. ПОДГОТОВКА И СОРТИРОВКА ДАННЫХ ГЕОМЕТРИИ И МАТЕРИАЛОВ (CPU)
-        MeshData hostMeshData = prepareHostMeshData(hostSceneData);
+        // ------------------------------------------------------------------ //
+        // 1. Prepare mesh/draw data from the blob scene graph.
+        // ------------------------------------------------------------------ //
+        MeshData meshData = prepareMeshData(blob);
+        if (meshData.positionData.empty()) return {vk::Result::eSuccess, {}};
 
-        vk::DeviceSize geometryRequiredSize = 0;
-        geometryRequiredSize += hostMeshData.positionData.size() * sizeof(PositionAttribute);
-        geometryRequiredSize += hostMeshData.normalUvTangentData.size() * sizeof(NormalTangentUvAttribute);
-        geometryRequiredSize += hostMeshData.indices.size() * sizeof(uint32_t);
-        geometryRequiredSize += hostMeshData.indirectCommands.size() * sizeof(vk::DrawIndexedIndirectCommand);
-        geometryRequiredSize += hostMeshData.modelDatas.size() * sizeof(ModelData);
-        geometryRequiredSize = alignUp(geometryRequiredSize, static_cast<vk::DeviceSize>(256));
+        const vk::DeviceSize posSize      = meshData.positionData.size();
+        const vk::DeviceSize attrSize     = meshData.attributeData.size();
+        const vk::DeviceSize idxSize      = meshData.indexData.size();
+        const vk::DeviceSize cmdSize      = meshData.indirectCommands.size() * sizeof(vk::DrawIndexedIndirectCommand);
+        const vk::DeviceSize modelSize    = meshData.modelDatas.size() * sizeof(ModelData);
+        const vk::DeviceSize geomRequired = alignUp(posSize + attrSize + idxSize + cmdSize + modelSize, vk::DeviceSize{256});
 
-        auto const matCount = static_cast<uint32_t>(hostSceneData.materials.size());
-        std::vector<PreparedHostMaterialData> preparedMaterials;
-        preparedMaterials.reserve(matCount);
-
-        vk::DeviceSize totalMaterialsStagingSize = 0;
-        for (uint32_t i = 0; i < matCount; ++i) {
-            auto prepared = prepareHostMaterialData(hostSceneData.materials[i]);
-            totalMaterialsStagingSize += alignUp(prepared.stagingBufferRequiredSize, static_cast<vk::DeviceSize>(256));
-            preparedMaterials.push_back(std::move(prepared));
+        // ------------------------------------------------------------------ //
+        // 2. Pre-compute texture layout inside the staging buffer.
+        // ------------------------------------------------------------------ //
+        const uint32_t texCount = static_cast<uint32_t>(blob.textures.size());
+        std::vector<vk::DeviceSize> texStagingOffsets(texCount, 0);
+        vk::DeviceSize totalTexSize = 0;
+        constexpr vk::DeviceSize texAlignment = 16;
+        for (uint32_t i = 0; i < texCount; ++i) {
+            totalTexSize = alignUp(totalTexSize, texAlignment);
+            texStagingOffsets[i] = totalTexSize;
+            uint64_t sz = BlobSceneData::calcTextureDataSize(blob.textures[i]);
+            totalTexSize += alignUp(static_cast<vk::DeviceSize>(sz), texAlignment);
         }
 
-        // 2. ВЫДЕЛЕНИЕ ГЛОБАЛЬНОГО STAGING BUFFER И ЗАПИСЬ ДАННЫХ
-        vk::DeviceSize const totalStagingSize = geometryRequiredSize + totalMaterialsStagingSize;
+        // Fallback pixel data: 5 × 4 bytes
+        constexpr uint32_t kFallbackCount = 5;
+        constexpr vk::DeviceSize kFallbackTexBytes = kFallbackCount * 4;
+        static constexpr std::array<std::array<uint8_t,4>, kFallbackCount> kFallbackPixels{{
+            {255, 255, 255, 255}, // albedo  — white
+            {128, 128, 255, 255}, // normal  — neutral blue
+            {255, 255,   0, 255}, // orm     — AO=1, Roughness=1, Metallic=0
+            {  0,   0,   0, 255}, // emissive— black
+            {255, 255, 255, 255}  // height  — white
+        }};
+        static constexpr std::array<vk::Format, kFallbackCount> kFallbackFormats{{
+            vk::Format::eR8G8B8A8Srgb,   // albedo
+            vk::Format::eR8G8B8A8Unorm,  // normal
+            vk::Format::eR8G8B8A8Unorm,  // orm
+            vk::Format::eR8G8B8A8Srgb,   // emissive
+            vk::Format::eR8G8B8A8Unorm,  // height
+        }};
+
+        // Per-material UBO layout
+        const uint32_t matCount = static_cast<uint32_t>(blob.materials.size());
+        const vk::DeviceSize uboAligned = alignUp(vk::DeviceSize{sizeof(HostMaterialProperties)}, vk::DeviceSize{256});
+        const vk::DeviceSize totalUboSize = matCount * uboAligned;
+
+        // ------------------------------------------------------------------ //
+        // 3. Allocate one global staging buffer.
+        // ------------------------------------------------------------------ //
+        vk::DeviceSize stagingOffset = 0;
+
+        // Block layout inside staging:
+        //   [geometry (pos+attr+idx+cmd+model)] [textures] [fallback pixels] [material UBOs]
+        vk::DeviceSize texBlockOff      = geomRequired;
+        vk::DeviceSize fallbackBlockOff = alignUp(texBlockOff + totalTexSize, texAlignment);
+        vk::DeviceSize uboBlockOff      = alignUp(fallbackBlockOff + kFallbackTexBytes, vk::DeviceSize{256});
+        vk::DeviceSize totalStaging     = uboBlockOff + totalUboSize;
 
         auto [stgRes, stagingBuffer] = allocator.createAndAllocateBufferUnique(
             vk::BufferCreateInfo{
-                .size = totalStagingSize,
+                .size = totalStaging,
                 .usage = vk::BufferUsageFlagBits::eTransferSrc,
                 .sharingMode = vk::SharingMode::eExclusive
-            },
-            resources::MemoryUsage::eCpuOnly
-        );
+            }, resources::MemoryUsage::eCpuOnly);
         if (stgRes != vk::Result::eSuccess) return {stgRes, {}};
 
-        vk::DeviceSize currentStagingOffset = 0;
-
+        // ------------------------------------------------------------------ //
+        // 4. Write geometry into staging.
+        // ------------------------------------------------------------------ //
         auto [stgMeshRes, stagingMeshInfo] = prepareStagingBufferMeshData(
-            hostMeshData, allocator, *stagingBuffer, currentStagingOffset
-        );
+            meshData, allocator, *stagingBuffer, stagingOffset);
         if (stgMeshRes != vk::Result::eSuccess) return {stgMeshRes, {}};
 
-        auto [devMeshRes, deviceMeshData] = prepareDeviceMeshData(stagingMeshInfo, allocator);
+        // ------------------------------------------------------------------ //
+        // 5. Write texture data into staging.
+        // ------------------------------------------------------------------ //
+        for (uint32_t i = 0; i < texCount; ++i) {
+            auto span = blob.getTextureData(i);
+            if (auto r = allocator.writeBufferFromHost({
+                .dstBuffer = *stagingBuffer,
+                .dstBufferOffset = texBlockOff + texStagingOffsets[i],
+                .srcData = span.data(),
+                .dataSize = span.size()
+            }); r != vk::Result::eSuccess) return {r, {}};
+        }
+
+        // ------------------------------------------------------------------ //
+        // 6. Write fallback pixel data into staging.
+        // ------------------------------------------------------------------ //
+        for (uint32_t i = 0; i < kFallbackCount; ++i) {
+            if (auto r = allocator.writeBufferFromHost({
+                .dstBuffer = *stagingBuffer,
+                .dstBufferOffset = fallbackBlockOff + i * 4,
+                .srcData = kFallbackPixels[i].data(),
+                .dataSize = 4
+            }); r != vk::Result::eSuccess) return {r, {}};
+        }
+
+        // ------------------------------------------------------------------ //
+        // 7. Write per-material UBOs into staging.
+        // ------------------------------------------------------------------ //
+        for (uint32_t i = 0; i < matCount; ++i) {
+            const auto& mat = blob.materials[i];
+            HostMaterialProperties props{};
+            props.baseColorFactor  = mat.baseColorFactor;
+            props.metallicFactor   = mat.metallicFactor;
+            props.roughnessFactor  = mat.roughnessFactor;
+            props.occlusionStrength= mat.occlusionStrength;
+            props.emissiveStrength = mat.emissiveStrength;
+            props.emissiveFactor   = glm::vec3(mat.emissiveFactor);
+            if (auto r = allocator.writeBufferFromHost({
+                .dstBuffer = *stagingBuffer,
+                .dstBufferOffset = uboBlockOff + i * uboAligned,
+                .srcData = &props,
+                .dataSize = sizeof(HostMaterialProperties)
+            }); r != vk::Result::eSuccess) return {r, {}};
+        }
+
+        // ------------------------------------------------------------------ //
+        // 8. Create device geometry buffers.
+        // ------------------------------------------------------------------ //
+        auto [devMeshRes, deviceMesh] = prepareDeviceMeshData(stagingMeshInfo, allocator);
         if (devMeshRes != vk::Result::eSuccess) return {devMeshRes, {}};
 
-        resultData.vertexBuffer = std::move(deviceMeshData.vertexBuffer);
-        resultData.positionAttributeOffset = deviceMeshData.positionAttributeOffset;
-        resultData.normalUvTangentAttributeOffset = deviceMeshData.normalUvTangentAttributeOffset;
+        resultData.vertexBuffer                    = std::move(deviceMesh.vertexBuffer);
+        resultData.positionAttributeOffset         = deviceMesh.positionAttributeOffset;
+        resultData.normalUvTangentAttributeOffset  = deviceMesh.normalUvTangentAttributeOffset;
+        resultData.indexBuffer                     = std::move(deviceMesh.indexBuffer);
+        resultData.indexBufferOffset               = deviceMesh.indexBufferOffset;
+        resultData.indirectDrawBuffer              = std::move(deviceMesh.indirectBuffer);
+        resultData.indirectDrawBufferOffset        = deviceMesh.indirectBufferOffset;
+        resultData.indirectDraws                   = std::move(deviceMesh.indirectDraws);
+        resultData.modelSsbo                       = std::move(deviceMesh.modelSsboBuffer);
 
-        resultData.indexBuffer = std::move(deviceMeshData.indexBuffer);
-        resultData.indexBufferOffset = deviceMeshData.indexBufferOffset;
+        // ------------------------------------------------------------------ //
+        // 9. Create device texture images for all blob textures.
+        // ------------------------------------------------------------------ //
+        resultData.textureImages.resize(texCount);
+        resultData.textureViews.resize(texCount);
 
-        resultData.indirectDrawBuffer = std::move(deviceMeshData.indirectBuffer);
-        resultData.indirectDrawBufferOffset = deviceMeshData.indirectBufferOffset;
-        resultData.indirectDraws = std::move(deviceMeshData.indirectDraws);
+        for (uint32_t i = 0; i < texCount; ++i) {
+            const auto& meta = blob.textures[i];
+            vk::ImageCreateInfo imgCI{
+                .imageType   = vk::ImageType::e2D,
+                .format      = static_cast<vk::Format>(meta.format),
+                .extent      = vk::Extent3D{ meta.width, meta.height, 1 },
+                .mipLevels   = meta.mipCount,
+                .arrayLayers = meta.isCubemap ? 6u : 1u,
+                .samples     = vk::SampleCountFlagBits::e1,
+                .tiling      = vk::ImageTiling::eOptimal,
+                .usage       = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                .initialLayout = vk::ImageLayout::eUndefined
+            };
+            auto [ir, img] = allocator.createAndAllocateImageUnique(imgCI, resources::MemoryUsage::eGpuOnly);
+            if (ir != vk::Result::eSuccess) return {ir, {}};
+            resultData.textureImages[i] = std::move(img);
 
-        resultData.modelSsbo = std::move(deviceMeshData.modelSsboBuffer);
+            auto [vr, view] = device.createImageViewUnique(vk::ImageViewCreateInfo{
+                .image    = *resultData.textureImages[i],
+                .viewType = meta.isCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
+                .format   = static_cast<vk::Format>(meta.format),
+                .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, meta.mipCount, 0, meta.isCubemap ? 6u : 1u }
+            });
+            if (vr != vk::Result::eSuccess) return {vr, {}};
+            resultData.textureViews[i] = std::move(view);
+        }
 
-        // 3. СОЗДАНИЕ DESCRIPTOR POOL
-        uint32_t const totalSetsCount = matCount + 1;
+        // ------------------------------------------------------------------ //
+        // 10. Create fallback 1x1 images.
+        // ------------------------------------------------------------------ //
+        for (uint32_t i = 0; i < kFallbackCount; ++i) {
+            auto [ir, img] = allocator.createAndAllocateImageUnique(
+                vk::ImageCreateInfo{
+                    .imageType = vk::ImageType::e2D, .format = kFallbackFormats[i],
+                    .extent = {1, 1, 1}, .mipLevels = 1, .arrayLayers = 1,
+                    .samples = vk::SampleCountFlagBits::e1, .tiling = vk::ImageTiling::eOptimal,
+                    .usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
+                    .initialLayout = vk::ImageLayout::eUndefined
+                }, resources::MemoryUsage::eGpuOnly);
+            if (ir != vk::Result::eSuccess) return {ir, {}};
+            resultData.fallbackImages[i] = std::move(img);
 
+            auto [vr, view] = device.createImageViewUnique(vk::ImageViewCreateInfo{
+                .image = *resultData.fallbackImages[i], .viewType = vk::ImageViewType::e2D,
+                .format = kFallbackFormats[i],
+                .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 }
+            });
+            if (vr != vk::Result::eSuccess) return {vr, {}};
+            resultData.fallbackViews[i] = std::move(view);
+        }
+
+        // ------------------------------------------------------------------ //
+        // 11. Create per-material UBO device buffers.
+        // ------------------------------------------------------------------ //
+        std::vector<resources::UniqueAllocatedBuffer> matUbos(matCount);
+        for (uint32_t i = 0; i < matCount; ++i) {
+            auto [br, buf] = allocator.createAndAllocateBufferUnique(
+                vk::BufferCreateInfo{
+                    .size = sizeof(HostMaterialProperties),
+                    .usage = vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                    .sharingMode = vk::SharingMode::eExclusive
+                }, resources::MemoryUsage::eGpuOnly);
+            if (br != vk::Result::eSuccess) return {br, {}};
+            matUbos[i] = std::move(buf);
+        }
+
+        // ------------------------------------------------------------------ //
+        // 12. Create descriptor pool and allocate sets.
+        // ------------------------------------------------------------------ //
+        uint32_t totalSets = matCount + 1; // +1 for model SSBO
         std::array<vk::DescriptorPoolSize, 3> poolSizes{{
-            { vk::DescriptorType::eUniformBuffer, matCount },
+            { vk::DescriptorType::eUniformBuffer, std::max(1u, matCount) },
             { vk::DescriptorType::eStorageBuffer, 1 },
-            { vk::DescriptorType::eSampledImage,  matCount * 5 }
+            { vk::DescriptorType::eSampledImage,  std::max(1u, matCount * 5) }
         }};
 
-        auto [poolRes, uniqueDescriptorPool] = device.createDescriptorPoolUnique({
+        auto [poolRes, descPool] = device.createDescriptorPoolUnique({
             .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-            .maxSets = totalSetsCount,
+            .maxSets = totalSets,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data()
         });
         if (poolRes != vk::Result::eSuccess) return {poolRes, {}};
 
-        // 4. ПОДГОТОВКА И ЗАПОЛНЕНИЕ ДЕСКРИПТОРОВ МАТЕРИАЛОВ (Set 1)
-        std::vector materialLayouts(matCount, *pbrMaterialSetLayout);
-        auto materialSetsRes = device.allocateDescriptorSets({
-            .descriptorPool = *uniqueDescriptorPool,
-            .descriptorSetCount = matCount,
-            .pSetLayouts = materialLayouts.data()
-        });
-        if (materialSetsRes.result != vk::Result::eSuccess) return {materialSetsRes.result, {}};
-
-        resultData.materials.reserve(matCount);
-        std::vector<StagingBufferMaterialInfo> stagingMatInfos;
-        stagingMatInfos.reserve(matCount);
-
-        for (uint32_t i = 0; i < matCount; ++i) {
-            auto [stgMatRes, stagingMatInfo] = prepareStagingBufferMaterialInfo(
-                std::move(preparedMaterials[i]), allocator, *stagingBuffer, currentStagingOffset
-            );
-            if (stgMatRes != vk::Result::eSuccess) return {stgMatRes, {}};
-
-            auto [devMatRes, deviceMatInfo] = prepareDeviceMaterialInfo(stagingMatInfo, device, allocator);
-            if (devMatRes != vk::Result::eSuccess) return {devMatRes, {}};
-
-            fillDescriptorSet(device, materialSetsRes.value[i], deviceMatInfo);
-
-            DeviceSceneData::RenderMaterialData renderMat{
-                .deviceMaterialInfo = std::move(deviceMatInfo),
-                .materialSet = std::move(materialSetsRes.value[i]),
-            };
-
-            resultData.materials.push_back(std::move(renderMat));
-            stagingMatInfos.push_back(std::move(stagingMatInfo));
+        // Material descriptor sets (set 3 = pbrMaterialSetLayout)
+        std::vector<vk::DescriptorSetLayout> matLayouts(matCount, *pbrMaterialSetLayout);
+        vk::ResultValue<std::vector<vk::DescriptorSet>> matSetsRes{{}, {}};
+        if (matCount > 0) {
+            matSetsRes = device.allocateDescriptorSets({
+                .descriptorPool = *descPool,
+                .descriptorSetCount = matCount,
+                .pSetLayouts = matLayouts.data()
+            });
+            if (matSetsRes.result != vk::Result::eSuccess) return {matSetsRes.result, {}};
         }
 
-        auto [createModelSsboSetResult, modelSsboSet] = device.allocateDescriptorSets(
-            {
-                .descriptorPool = *uniqueDescriptorPool,
-                .descriptorSetCount = 1,
-                .pSetLayouts = &*modelSetLayout
-            }
-        );
-
-        if (createModelSsboSetResult != vk::Result::eSuccess) return {createModelSsboSetResult, {}};
-
-        resultData.modelSsboDescriptorSet = std::move(modelSsboSet[0]);
-        resultData.descriptorPool = std::move(uniqueDescriptorPool);
-
-        vk::DescriptorBufferInfo bufferInfo{
-            .buffer = *resultData.modelSsbo,
-            .offset = 0,
-            .range = vk::WholeSize
-        };
-
-        device.updateDescriptorSets(
-            {
-                vk::WriteDescriptorSet{
-                    .dstSet = resultData.modelSsboDescriptorSet,
-                    .dstBinding = 0,
-                    .dstArrayElement = 0,
-                    .descriptorCount = 1,
-                    .descriptorType = vk::DescriptorType::eStorageBuffer,
-                    .pBufferInfo = &bufferInfo
-                }
-            },
-            {}
-        );
-
-        // 6. СБОРКА И ОТПРАВКА КОМАНД КОПИРОВАНИЯ НА GPU
-        auto [allocateCmdRes, tempCmdBuffers] = device.allocateCommandBuffersUnique({
-            .commandPool = transferCommandPool,
-            .level = vk::CommandBufferLevel::ePrimary,
-            .commandBufferCount = 1
+        // Model SSBO descriptor set (set 1)
+        auto [modelSetRes, modelSets] = device.allocateDescriptorSets({
+            .descriptorPool = *descPool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &*modelSetLayout
         });
-        if (allocateCmdRes != vk::Result::eSuccess) return {allocateCmdRes, {}};
+        if (modelSetRes != vk::Result::eSuccess) return {modelSetRes, {}};
+        resultData.modelSsboDescriptorSet = modelSets[0];
 
-        vk::CommandBuffer cmd = tempCmdBuffers[0].get();
+        vk::DescriptorBufferInfo ssboInfo{ .buffer = *resultData.modelSsbo, .offset = 0, .range = vk::WholeSize };
+        device.updateDescriptorSets(
+            { vk::WriteDescriptorSet{
+                .dstSet = resultData.modelSsboDescriptorSet, .dstBinding = 0,
+                .descriptorCount = 1, .descriptorType = vk::DescriptorType::eStorageBuffer,
+                .pBufferInfo = &ssboInfo
+            }}, {});
+
+        // ------------------------------------------------------------------ //
+        // 13. Record and submit all GPU copies.
+        // ------------------------------------------------------------------ //
+        auto [allocCmdRes, tempCmds] = device.allocateCommandBuffersUnique({
+            .commandPool = transferCommandPool, .level = vk::CommandBufferLevel::ePrimary, .commandBufferCount = 1
+        });
+        if (allocCmdRes != vk::Result::eSuccess) return {allocCmdRes, {}};
+
+        vk::CommandBuffer cmd = tempCmds[0].get();
         cmd.begin({ .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
+        // Copy geometry
         stagingMeshInfo.recordCopyCommandsToBuffer(
             cmd,
             *resultData.vertexBuffer,
             *resultData.indexBuffer,
             *resultData.indirectDrawBuffer,
-            *resultData.modelSsbo
-        );
+            *resultData.modelSsbo);
 
+        // Helper: transition image layout
+        auto transitionImage = [&](vk::Image img, uint32_t mips, uint32_t layers,
+                                   vk::ImageLayout oldL, vk::ImageLayout newL,
+                                   vk::AccessFlags srcA, vk::AccessFlags dstA,
+                                   vk::PipelineStageFlags srcS, vk::PipelineStageFlags dstS)
+        {
+            vk::ImageMemoryBarrier b{
+                .srcAccessMask = srcA, .dstAccessMask = dstA,
+                .oldLayout = oldL, .newLayout = newL,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = img,
+                .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, mips, 0, layers }
+            };
+            cmd.pipelineBarrier(srcS, dstS, {}, nullptr, nullptr, b);
+        };
+
+        // Copy blob textures
+        for (uint32_t i = 0; i < texCount; ++i) {
+            const auto& meta = blob.textures[i];
+            uint32_t layers = meta.isCubemap ? 6u : 1u;
+
+            transitionImage(*resultData.textureImages[i], meta.mipCount, layers,
+                vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+                {}, vk::AccessFlagBits::eTransferWrite,
+                vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
+
+            std::vector<vk::BufferImageCopy> regions;
+            vk::DeviceSize mipOff = 0;
+            for (uint32_t mip = 0; mip < meta.mipCount; ++mip) {
+                uint32_t w = std::max(1u, meta.width  >> mip);
+                uint32_t h = std::max(1u, meta.height >> mip);
+                uint32_t mipBytes = BlobSceneData::calcMipSize(w, h, meta.format);
+                regions.push_back({
+                    .bufferOffset      = texBlockOff + texStagingOffsets[i] + mipOff,
+                    .imageSubresource  = { vk::ImageAspectFlagBits::eColor, mip, 0, layers },
+                    .imageExtent       = { w, h, 1 }
+                });
+                mipOff += mipBytes;
+            }
+            cmd.copyBufferToImage(*stagingBuffer, *resultData.textureImages[i],
+                                  vk::ImageLayout::eTransferDstOptimal, regions);
+
+            transitionImage(*resultData.textureImages[i], meta.mipCount, layers,
+                vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+                vk::AccessFlagBits::eTransferWrite, {},
+                vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe);
+        }
+
+        // Copy fallback textures
+        for (uint32_t i = 0; i < kFallbackCount; ++i) {
+            transitionImage(*resultData.fallbackImages[i], 1, 1,
+                vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
+                {}, vk::AccessFlagBits::eTransferWrite,
+                vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
+
+            vk::BufferImageCopy region{
+                .bufferOffset = fallbackBlockOff + i * 4,
+                .imageSubresource = { vk::ImageAspectFlagBits::eColor, 0, 0, 1 },
+                .imageExtent = { 1, 1, 1 }
+            };
+            cmd.copyBufferToImage(*stagingBuffer, *resultData.fallbackImages[i],
+                                  vk::ImageLayout::eTransferDstOptimal, region);
+
+            transitionImage(*resultData.fallbackImages[i], 1, 1,
+                vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+                vk::AccessFlagBits::eTransferWrite, {},
+                vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe);
+        }
+
+        // Copy material UBOs
         for (uint32_t i = 0; i < matCount; ++i) {
-            stagingMatInfos[i].prepareCopyCommandsToBuffer(
-                cmd,
-                *stagingBuffer,
-                *resultData.materials[i].deviceMaterialInfo.uniformBufferMaterialProperties,
-                *resultData.materials[i].deviceMaterialInfo.albedoImage,
-                *resultData.materials[i].deviceMaterialInfo.normalImage,
-                *resultData.materials[i].deviceMaterialInfo.ormImage,
-                *resultData.materials[i].deviceMaterialInfo.emissionImage,
-                *resultData.materials[i].deviceMaterialInfo.heightImage
-            );
-            resultData.materials[i].deviceMaterialInfo.recordMaterialImagesBarriers(
-                cmd,
-                static_cast<uint32_t>(stagingMatInfos[i].albedoInfo.mipLevels.size()),
-                static_cast<uint32_t>(stagingMatInfos[i].normalInfo.mipLevels.size()),
-                static_cast<uint32_t>(stagingMatInfos[i].ormInfo.mipLevels.size()),
-                static_cast<uint32_t>(stagingMatInfos[i].emissionInfo.mipLevels.size()),
-                static_cast<uint32_t>(stagingMatInfos[i].heightInfo.mipLevels.size()));
+            cmd.copyBuffer(*stagingBuffer, *matUbos[i], {
+                vk::BufferCopy{ .srcOffset = uboBlockOff + i * uboAligned, .dstOffset = 0, .size = sizeof(HostMaterialProperties) }
+            });
         }
 
         cmd.end();
 
-        vk::SubmitInfo submitInfo{
-            .commandBufferCount = 1,
-            .pCommandBuffers = &cmd
+        vk::SubmitInfo submitInfo{ .commandBufferCount = 1, .pCommandBuffers = &cmd };
+        if (auto r = transferQueue.submit(1, &submitInfo, nullptr); r != vk::Result::eSuccess)
+            return {r, {}};
+        transferQueue.waitIdle();
+
+        // ------------------------------------------------------------------ //
+        // 14. Fill material descriptor sets using global texture views.
+        // ------------------------------------------------------------------ //
+        resultData.materials.reserve(matCount);
+        auto getView = [&](int32_t idx, uint32_t fallbackIdx) -> vk::ImageView {
+            if (idx >= 0 && static_cast<uint32_t>(idx) < texCount)
+                return *resultData.textureViews[idx];
+            return *resultData.fallbackViews[fallbackIdx];
         };
 
-        if (auto submitRes = transferQueue.submit(1, &submitInfo, nullptr); submitRes != vk::Result::eSuccess) {
-            return {submitRes, {}};
+        for (uint32_t i = 0; i < matCount; ++i) {
+            const auto& mat = blob.materials[i];
+            std::array<vk::ImageView, 5> views{
+                getView(mat.albedoTexIdx,   0),
+                getView(mat.normalTexIdx,   1),
+                getView(mat.ormTexIdx,      2),
+                getView(mat.emissiveTexIdx, 3),
+                getView(mat.heightTexIdx,   4),
+            };
+            fillDescriptorSet(device, matSetsRes.value[i], *matUbos[i], views);
+
+            resultData.materials.push_back(DeviceSceneData::RenderMaterialData{
+                .deviceMaterialInfo = { std::move(matUbos[i]) },
+                .materialSet        = matSetsRes.value[i]
+            });
         }
 
+        resultData.descriptorPool = std::move(descPool);
+
+        // ------------------------------------------------------------------ //
+        // 15. Build scene lighting from blob.
+        // ------------------------------------------------------------------ //
         resultData.sceneLightingData = SceneLightingData{
-            .ambient = hostSceneData.ambientLight,
-            .directionalLightCount = 1,
-            .pointLightCount = 0,
-            .spotLightCount = 0
+            .ambient              = glm::vec4(20.0f, 50.0f, 70.0f, 0.10f),
+            .directionalLightCount= static_cast<uint32_t>(blob.dirLights.size()),
+            .pointLightCount      = static_cast<uint32_t>(blob.pointLights.size()),
+            .spotLightCount       = static_cast<uint32_t>(blob.spotLights.size()),
         };
 
-        resultData.directionalLightDatas.push_back(
-            {
-                .direction = hostSceneData.sunLight.direction,
-                .color = hostSceneData.sunLight.color,
-                .lightSpaceMatrix = glm::mat4(1.0) // Обновляется при рендеринге
+        for (const auto& dl : blob.dirLights) {
+            glm::vec4 direction{};
+            if (dl.directionAndIntensity == glm::vec4(0.0f, -1.0f, 0.0f, 1.0f)) {
+                direction = glm::vec4{glm::normalize(glm::vec3(0.5f, 1.0f, 0.3f)), 0.0f};
             }
-        );
-
-        transferQueue.waitIdle();
+            else {
+                direction = glm::vec4(dl.directionAndIntensity.x, dl.directionAndIntensity.y, dl.directionAndIntensity.z, dl.directionAndIntensity.w);
+            }
+            resultData.directionalLightDatas.push_back({
+                .direction        = direction,
+                .color            = glm::vec4(dl.color, dl.directionAndIntensity.w),
+                .lightSpaceMatrix = glm::mat4(1.0f)
+            });
+        }
+        if (resultData.directionalLightDatas.empty()) {
+            resultData.directionalLightDatas.push_back({
+                .direction        = glm::vec4{glm::normalize(glm::vec3(0.5f, 1.0f, 0.3f)), 0.0f},
+                .color            = glm::vec4(1.0f, 0.95f, 0.9f, 1.0f),
+                .lightSpaceMatrix = glm::mat4(1.0f)
+            });
+            resultData.sceneLightingData.directionalLightCount = 1;
+        }
 
         return {vk::Result::eSuccess, std::move(resultData)};
     }
-
     void PbrRender::recordRenderFrameCommands(
         DeviceSceneData const& sceneData,
         vk::CommandBuffer cmd,
@@ -465,10 +634,10 @@ namespace shuttle_engine {
         }
     }
 
-    glm::mat4 calculateLightSpaceMatrix(
+    static glm::mat4 calculateLightSpaceMatrix(
         const glm::mat4& viewMatrix,
         const glm::mat4& projMatrix,
-        const glm::vec3& lightDir,
+        const glm::vec4& lightDir,
         float shadowMapResolution) // Передайте сюда размер карты теней, например, 2048.0f
     {
         // Шаг 1: Получаем вершины Frustum камеры в мировых координатах

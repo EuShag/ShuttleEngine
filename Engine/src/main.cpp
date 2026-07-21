@@ -6,6 +6,7 @@
 #include <chrono>
 #include <utility>
 #include <vector>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -18,7 +19,7 @@
 #include "Camera/Camera.hpp"
 #include "CameraController/CameraController.hpp" // Наш новый класс контроля
 #include "PbrRender/Render.hpp"       // Твой рендерер с тенями
-#include "AssimpLoader/AssimpLoader.hpp"           // Предполагаем, что загрузчик готов
+#include "BlobLoader/BlobLoader.hpp"           // Pre-compiled scene loader
 #include "VkBootstrap.h"
 #include "FrameManager/FrameManager.hpp"
 #include "Painters/SunLightControlPanel/SunLightControlPanel.hpp"
@@ -32,8 +33,26 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 using namespace shuttle_engine;
 
-int main(int, char**) {
+int main(int argc, char** argv) {
 	try {
+		std::string sceneBlobPath = ".\\lowe.shscene";
+		for (int i = 1; i < argc; ++i) {
+			const std::string arg = argv[i];
+			if ((arg == "-s" || arg == "--scene") && (i + 1) < argc) {
+				sceneBlobPath = argv[++i];
+				continue;
+			}
+			if (arg == "-h" || arg == "--help") {
+				std::cout << "Usage: ShuttleEngine.exe [--scene <path-to-scene-blob>]\n";
+				return 0;
+			}
+			if (!arg.empty() && arg[0] != '-') {
+				sceneBlobPath = arg;
+			}
+		}
+
+		const std::filesystem::path resolvedScenePath = std::filesystem::absolute(std::filesystem::path(sceneBlobPath));
+
 		// =========================================================================
 		// 1. ИНИЦИАЛИЗАЦИЯ ОКНА И СИСТЕМЫ СИГНАЛОВ
 		// =========================================================================
@@ -177,14 +196,15 @@ int main(int, char**) {
 		}
 
 		// =========================================================================
-		// 6. ЗАГРУЗКА СЦЕНЫ НА GPU ЧЕРЕЗ MULTI-DRAW INDIRECT
+		// 6. LOAD PRE-COMPILED SCENE FROM BLOB FILE
 		// =========================================================================
-		std::cout << "[Scene] Loading 3D mesh via Assimp...\n";
-		AssimpLoader loader;
-		HostSceneData globalScene = loader.loadScene("../assets/models/lowe/scene.gltf");
-		HostSceneData ufo = loader.loadScene("../assets/models/Rigged_UFO_gltf/Rigged_Modular UFO 2.8.glb.gltf");
+		std::cout << "[Scene] Loading pre-compiled .scene blob: " << resolvedScenePath.string() << "\n";
+		BlobSceneData globalScene = BlobLoader::load(resolvedScenePath.string());
+		std::cout << "[Scene] Blob stats: textures=" << globalScene.textures.size()
+			<< " materials=" << globalScene.materials.size()
+			<< " meshes=" << globalScene.meshes.size() << "\n";
 
-		// Generate terrain mesh
+		// Terrain mesh is still generated from a heightmap (separate from blob path).
 		TerrainProperties terrainProperties{
 			.meshResolution = vk::Extent2D{
 				.width = 2096,
@@ -194,31 +214,15 @@ int main(int, char**) {
 			.minHeight = -40.0f,
 			.maxHeight = 40.0f
 		};
+		// NOTE: terrain material loading (loadFromFiles) removed along with the old Image loader.
+		// Terrain geometry generation still works via Image1D16bit + TerrainGeometryGenerator.
+		// To re-enable terrain rendering, upload the HostMeshData separately and add it to the
+		// scene blob via AssetProcessor.
 
-		HostMeshData terrainMesh = TerrainGeometryGenerator::createFromHeightMap(terrainProperties, Image1D16bit("../assets/terrain/novotroitsk_terrain.png"));
-		HostMaterialData terrainMaterial = loadFromFiles(
-			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_albedo.png",
-			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_normal-dx.png",
-			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_roughness.png",
-			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_ao.png",
-			"../assets/material/whispy-grass-meadow-ue/wispy-grass-meadow_metallic.png",
-			""
-		);
-
-		HostSceneData tankSceneData = loader.loadScene("../assets/models/tank/small_lpg_tank_4k.gltf");
-
-		globalScene.merge(tankSceneData,
-			glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -25.0f, 0.0f)) *
-			glm::scale(glm::mat4(1.0f), glm::vec3(10.0f, 10.0f, 10.0f)));
-
-		globalScene.merge(ufo, glm::translate(glm::mat4(1.0f), glm::vec3(30.0f, 10.0f, 60.0f)));
-
-		globalScene.addTerrain(terrainMesh, terrainMaterial, glm::translate(glm::mat4(1), glm::vec3(0.0f, -50.0f, 0.0f)));
-
-		// Загружаем всю геометрию и текстуры на GPU за один вызов
+		// Upload everything to GPU
 		std::cout << "[Scene] Uploading buffers and textures to GPU Local memory...\n";
 		auto [uploadRes, deviceSceneData] = pbrRender.uploadScene(
-			std::move(globalScene),
+			globalScene,
 			transferQueue,
 			*uniqueDevice,
 			*uniqueTransferCommandPool,
@@ -420,7 +424,7 @@ int main(int, char**) {
 				throw std::runtime_error("Fatal: Failed to prepare frame slot");
 			}
 
-			uiRender.drawUi(std::move(FPSCounterPainter{}));
+			uiRender.drawUi(std::move(sunLightControlPanel));
 
 			// CPU-часть синхронизации завершена!
 			// Этот слот кадра гарантированно освободился на GPU -> поджигаем бит в renderMask у пенсионеров
