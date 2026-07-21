@@ -1,7 +1,6 @@
 ﻿//
 // Created by Shagu on 25.05.2026.
 //
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "Render.hpp"
 
 #include <iostream>
@@ -11,6 +10,8 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+#include "EnvironmentBlobLoader/EnvironmentBlobLoader.hpp"
+#include "../../../AssetProcessor/src/EnvironmentBaker/EnvironmentBaker.hpp"
 #include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 
 namespace shuttle_engine {
@@ -18,7 +19,12 @@ namespace shuttle_engine {
     // =========================================================================
     // PbrRender::create  (unchanged)
     // =========================================================================
-    vk::ResultValue<PbrRender> PbrRender::create(vk::Device device, vk::ImageLayout finalLayout) {
+    vk::ResultValue<PbrRender> PbrRender::create(
+        vk::Device device,
+        vk::ImageLayout finalLayout,
+        vk::Queue transferQueue,
+        vk::CommandPool transferCommandPool,
+        resources::DeviceAllocator const& allocator) {
         PbrRender render;
 
         if (auto res = render.initMainRenderPass(device, finalLayout); res != vk::Result::eSuccess)
@@ -26,6 +32,8 @@ namespace shuttle_engine {
         if (auto res = render.initShadowRenderPass(device); res != vk::Result::eSuccess)
             return {res, {}};
         if (auto res = render.initPbrMaterialSetLayout(device); res != vk::Result::eSuccess)
+            return {res, {}};
+        if (auto res = render.initPbrEnvironmentSetLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
         if (auto res = render.initSceneDataSetLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
@@ -39,13 +47,23 @@ namespace shuttle_engine {
             return {res, {}};
         if (auto res = render.initMainPipelineLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
+        if (auto res = render.initSkyboxPipelineLayout(device); res != vk::Result::eSuccess)
+            return {res, {}};
         if (auto res = render.initShadowPipelineLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
         if (auto res = render.initMainPipeline(device); res != vk::Result::eSuccess)
             return {res, {}};
         if (auto res = render.initShadowPipeline(device); res != vk::Result::eSuccess)
             return {res, {}};
-
+        if (auto res = render.initSkyboxPipeline(device); res != vk::Result::eSuccess)
+            return {res, {}};
+        if (auto res = render.initBuiltinResources(
+            device,
+            transferQueue,
+            transferCommandPool,
+            allocator
+        ); res != vk::Result::eSuccess)
+            return {res, {}};
         return {vk::Result::eSuccess, std::move(render)};
     }
 
@@ -54,12 +72,37 @@ namespace shuttle_engine {
     // =========================================================================
     vk::ResultValue<DeviceSceneData> PbrRender::uploadScene(
         const BlobSceneData& blob,
+        const assets::BlobEnvironmentData* environmentBlob,
         vk::Queue transferQueue,
         vk::Device device,
         vk::CommandPool transferCommandPool,
         resources::DeviceAllocator const& allocator)
     {
         DeviceSceneData resultData;
+
+
+
+        bool hasEnvironment =
+            environmentBlob != nullptr &&
+            environmentBlob->valid();
+
+        assets::BlobEnvironmentTexture envSkybox{};
+        assets::BlobEnvironmentTexture envIrradiance{};
+        assets::BlobEnvironmentTexture envRadiance{};
+
+        if (hasEnvironment)
+        {
+            envSkybox = environmentBlob->skybox();
+            envIrradiance = environmentBlob->irradiance();
+            envRadiance = environmentBlob->radiance();
+
+            hasEnvironment =
+                envSkybox.valid() &&
+                envIrradiance.valid() &&
+                envRadiance.valid();
+        }
+
+
 
         // ------------------------------------------------------------------ //
         // 1. Prepare mesh/draw data from the blob scene graph.
@@ -87,6 +130,37 @@ namespace shuttle_engine {
             uint64_t sz = BlobSceneData::calcTextureDataSize(blob.textures[i]);
             totalTexSize += alignUp(static_cast<vk::DeviceSize>(sz), texAlignment);
         }
+
+
+        vk::DeviceSize envSkyboxStagingOffset = 0;
+        vk::DeviceSize envIrradianceStagingOffset = 0;
+        vk::DeviceSize envRadianceStagingOffset = 0;
+        vk::DeviceSize totalEnvironmentSize = 0;
+
+        if (hasEnvironment)
+        {
+            totalEnvironmentSize = alignUp(totalEnvironmentSize, texAlignment);
+            envSkyboxStagingOffset = totalEnvironmentSize;
+            totalEnvironmentSize += alignUp(
+                envSkybox.data.size(),
+                texAlignment
+            );
+
+            totalEnvironmentSize = alignUp(totalEnvironmentSize, texAlignment);
+            envIrradianceStagingOffset = totalEnvironmentSize;
+            totalEnvironmentSize += alignUp(
+                envIrradiance.data.size(),
+                texAlignment
+            );
+
+            totalEnvironmentSize = alignUp(totalEnvironmentSize, texAlignment);
+            envRadianceStagingOffset = totalEnvironmentSize;
+            totalEnvironmentSize += alignUp(
+                envRadiance.data.size(),
+                texAlignment
+            );
+        }
+
 
         // Fallback pixel data: 5 × 4 bytes
         constexpr uint32_t kFallbackCount = 5;
@@ -118,10 +192,22 @@ namespace shuttle_engine {
 
         // Block layout inside staging:
         //   [geometry (pos+attr+idx+cmd+model)] [textures] [fallback pixels] [material UBOs]
-        vk::DeviceSize texBlockOff      = geomRequired;
-        vk::DeviceSize fallbackBlockOff = alignUp(texBlockOff + totalTexSize, texAlignment);
-        vk::DeviceSize uboBlockOff      = alignUp(fallbackBlockOff + kFallbackTexBytes, vk::DeviceSize{256});
-        vk::DeviceSize totalStaging     = uboBlockOff + totalUboSize;
+
+        vk::DeviceSize texBlockOff =
+            geomRequired;
+
+        vk::DeviceSize environmentBlockOff =
+            alignUp(texBlockOff + totalTexSize, texAlignment);
+
+        vk::DeviceSize fallbackBlockOff =
+            alignUp(environmentBlockOff + totalEnvironmentSize, texAlignment);
+
+        vk::DeviceSize uboBlockOff =
+            alignUp(fallbackBlockOff + kFallbackTexBytes, vk::DeviceSize{256});
+
+        vk::DeviceSize totalStaging =
+            uboBlockOff + totalUboSize;
+
 
         auto [stgRes, stagingBuffer] = allocator.createAndAllocateBufferUnique(
             vk::BufferCreateInfo{
@@ -149,6 +235,42 @@ namespace shuttle_engine {
                 .srcData = span.data(),
                 .dataSize = span.size()
             }); r != vk::Result::eSuccess) return {r, {}};
+        }
+
+        // ------------------------------------------------------------------ //
+        // 5.5 Write environment texture data into staging.
+        // ------------------------------------------------------------------ //
+        if (hasEnvironment)
+        {
+            if (auto r = allocator.writeBufferFromHost({
+                .dstBuffer = *stagingBuffer,
+                .dstBufferOffset = environmentBlockOff + envSkyboxStagingOffset,
+                .srcData = envSkybox.data.data(),
+                .dataSize = envSkybox.data.size()
+            }); r != vk::Result::eSuccess)
+            {
+                return {r, {}};
+            }
+
+            if (auto r = allocator.writeBufferFromHost({
+                .dstBuffer = *stagingBuffer,
+                .dstBufferOffset = environmentBlockOff + envIrradianceStagingOffset,
+                .srcData = envIrradiance.data.data(),
+                .dataSize = envIrradiance.data.size()
+            }); r != vk::Result::eSuccess)
+            {
+                return {r, {}};
+            }
+
+            if (auto r = allocator.writeBufferFromHost({
+                .dstBuffer = *stagingBuffer,
+                .dstBufferOffset = environmentBlockOff + envRadianceStagingOffset,
+                .srcData = envRadiance.data.data(),
+                .dataSize = envRadiance.data.size()
+            }); r != vk::Result::eSuccess)
+            {
+                return {r, {}};
+            }
         }
 
         // ------------------------------------------------------------------ //
@@ -222,15 +344,120 @@ namespace shuttle_engine {
             if (ir != vk::Result::eSuccess) return {ir, {}};
             resultData.textureImages[i] = std::move(img);
 
-            auto [vr, view] = device.createImageViewUnique(vk::ImageViewCreateInfo{
+            auto [imageViewCreateResult, view] = device.createImageViewUnique(vk::ImageViewCreateInfo{
                 .image    = *resultData.textureImages[i],
                 .viewType = meta.isCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
                 .format   = static_cast<vk::Format>(meta.format),
                 .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, meta.mipCount, 0, meta.isCubemap ? 6u : 1u }
             });
-            if (vr != vk::Result::eSuccess) return {vr, {}};
+            if (imageViewCreateResult != vk::Result::eSuccess) return {imageViewCreateResult, {}};
             resultData.textureViews[i] = std::move(view);
         }
+        auto createEnvironmentImage = [&allocator, device] (const assets::BlobEnvironmentTexture& texture,
+                                                           resources::UniqueAllocatedImage& outImage,
+                                                           vk::UniqueImageView& outView) -> vk::Result
+        {
+            const auto& meta = *texture.meta;
+
+            vk::ImageCreateFlags flags{};
+
+            if (meta.isCubemap)
+            {
+                flags |= vk::ImageCreateFlagBits::eCubeCompatible;
+            }
+
+            vk::ImageCreateInfo imgCI{
+                .flags = flags,
+                .imageType = vk::ImageType::e2D,
+                .format = static_cast<vk::Format>(meta.format),
+                .extent = vk::Extent3D{
+                    meta.width,
+                    meta.height,
+                    1
+                },
+                .mipLevels = meta.mipCount,
+                .arrayLayers = meta.isCubemap ? 6u : 1u,
+                .samples = vk::SampleCountFlagBits::e1,
+                .tiling = vk::ImageTiling::eOptimal,
+                .usage =
+                    vk::ImageUsageFlagBits::eTransferDst |
+                    vk::ImageUsageFlagBits::eSampled,
+                .initialLayout = vk::ImageLayout::eUndefined
+            };
+
+            auto [ir, img] =
+                allocator.createAndAllocateImageUnique(
+                    imgCI,
+                    resources::MemoryUsage::eGpuOnly
+                );
+
+            if (ir != vk::Result::eSuccess)
+            {
+                return ir;
+            }
+
+            outImage = std::move(img);
+
+            auto [vr, view] =
+                device.createImageViewUnique(vk::ImageViewCreateInfo{
+                    .image = *outImage,
+                    .viewType = meta.isCubemap
+                        ? vk::ImageViewType::eCube
+                        : vk::ImageViewType::e2D,
+                    .format = static_cast<vk::Format>(meta.format),
+                    .subresourceRange = {
+                        vk::ImageAspectFlagBits::eColor,
+                        0,
+                        meta.mipCount,
+                        0,
+                        meta.isCubemap ? 6u : 1u
+                    }
+                });
+
+            if (vr != vk::Result::eSuccess)
+            {
+                return vr;
+            }
+
+            outView = std::move(view);
+
+            return vk::Result::eSuccess;
+        };
+
+
+        // ------------------------------------------------------------------ //
+        // 9.5 Create environment images.
+        // ------------------------------------------------------------------ //
+        if (hasEnvironment)
+        {
+            if (auto r = createEnvironmentImage(
+                envSkybox,
+                resultData.skyboxImage,
+                resultData.skyboxView
+            ); r != vk::Result::eSuccess)
+            {
+                return {r, {}};
+            }
+
+            if (auto r = createEnvironmentImage(
+                envIrradiance,
+                resultData.irradianceImage,
+                resultData.irradianceView
+            ); r != vk::Result::eSuccess)
+            {
+                return {r, {}};
+            }
+
+            if (auto r = createEnvironmentImage(
+                envRadiance,
+                resultData.radianceImage,
+                resultData.radianceView
+            ); r != vk::Result::eSuccess)
+            {
+                return {r, {}};
+            }
+        }
+
 
         // ------------------------------------------------------------------ //
         // 10. Create fallback 1x1 images.
@@ -274,11 +501,23 @@ namespace shuttle_engine {
         // ------------------------------------------------------------------ //
         // 12. Create descriptor pool and allocate sets.
         // ------------------------------------------------------------------ //
-        uint32_t totalSets = matCount + 1; // +1 for model SSBO
+        uint32_t totalSets = matCount + 1 + (hasEnvironment ? 1u : 0u);; // +1 for model SSBO
         std::array<vk::DescriptorPoolSize, 3> poolSizes{{
-            { vk::DescriptorType::eUniformBuffer, std::max(1u, matCount) },
-            { vk::DescriptorType::eStorageBuffer, 1 },
-            { vk::DescriptorType::eSampledImage,  std::max(1u, matCount * 5) }
+            {
+                vk::DescriptorType::eUniformBuffer,
+                std::max(1u, matCount)
+            },
+            {
+                vk::DescriptorType::eStorageBuffer,
+                1
+            },
+            {
+                vk::DescriptorType::eSampledImage,
+                std::max(
+                    1u,
+                    matCount * 5 + (hasEnvironment ? 4u : 0u)
+                )
+            }
         }};
 
         auto [poolRes, descPool] = device.createDescriptorPoolUnique({
@@ -309,7 +548,22 @@ namespace shuttle_engine {
         });
         if (modelSetRes != vk::Result::eSuccess) return {modelSetRes, {}};
         resultData.modelSsboDescriptorSet = modelSets[0];
+        if (hasEnvironment)
+        {
+            auto [envSetRes, envSets] =
+                device.allocateDescriptorSets({
+                    .descriptorPool = *descPool,
+                    .descriptorSetCount = 1,
+                    .pSetLayouts = &*pbrEnvironmentSetLayout
+                });
 
+            if (envSetRes != vk::Result::eSuccess)
+            {
+                return {envSetRes, {}};
+            }
+
+            resultData.environmentDescriptorSet = envSets[0];
+        }
         vk::DescriptorBufferInfo ssboInfo{ .buffer = *resultData.modelSsbo, .offset = 0, .range = vk::WholeSize };
         device.updateDescriptorSets(
             { vk::WriteDescriptorSet{
@@ -317,6 +571,62 @@ namespace shuttle_engine {
                 .descriptorCount = 1, .descriptorType = vk::DescriptorType::eStorageBuffer,
                 .pBufferInfo = &ssboInfo
             }}, {});
+
+        auto makeEnvironmentCopyRegions = [] (
+            const assets::BlobEnvironmentTexture& texture,
+            vk::DeviceSize baseOffset
+            )
+        {
+            std::vector<vk::BufferImageCopy> regions;
+
+            const auto& meta = *texture.meta;
+
+            vk::DeviceSize offset = baseOffset;
+
+            const uint32_t layers =
+                meta.isCubemap ? 6u : 1u;
+
+            for (uint32_t mip = 0; mip < meta.mipCount; ++mip)
+            {
+                const uint32_t w =
+                    std::max(1u, meta.width >> mip);
+
+                const uint32_t h =
+                    std::max(1u, meta.height >> mip);
+
+                const vk::DeviceSize faceSize =
+                    BlobSceneData::calcMipSize(
+                        w,
+                        h,
+                        meta.format
+                    );
+
+                for (uint32_t face = 0; face < layers; ++face)
+                {
+                    regions.push_back(vk::BufferImageCopy{
+                        .bufferOffset = offset + faceSize * face,
+                        .bufferRowLength = 0,
+                        .bufferImageHeight = 0,
+                        .imageSubresource = {
+                            vk::ImageAspectFlagBits::eColor,
+                            mip,
+                            face,
+                            1
+                        },
+                        .imageOffset = {0, 0, 0},
+                        .imageExtent = {
+                            w,
+                            h,
+                            1
+                        }
+                    });
+                }
+
+                offset += faceSize * layers;
+            }
+
+            return regions;
+        };
 
         // ------------------------------------------------------------------ //
         // 13. Record and submit all GPU copies.
@@ -386,6 +696,77 @@ namespace shuttle_engine {
                 vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe);
         }
 
+        // ------------------------------------------------------------------ //
+        // Copy environment textures.
+        // ------------------------------------------------------------------ //
+        if (hasEnvironment) {
+            auto copyEnvironmentTexture = [makeEnvironmentCopyRegions, environmentBlockOff, cmd, &stagingBuffer, transitionImage] (
+                const assets::BlobEnvironmentTexture& texture,
+                    vk::Image image,
+                    vk::DeviceSize stagingOffset
+            ){
+                const auto& meta = *texture.meta;
+
+                const uint32_t layers =
+                    meta.isCubemap ? 6u : 1u;
+
+                transitionImage(
+                    image,
+                    meta.mipCount,
+                    layers,
+                    vk::ImageLayout::eUndefined,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    {},
+                    vk::AccessFlagBits::eTransferWrite,
+                    vk::PipelineStageFlagBits::eTopOfPipe,
+                    vk::PipelineStageFlagBits::eTransfer
+                );
+
+                auto regions =
+                    makeEnvironmentCopyRegions(
+                        texture,
+                        environmentBlockOff + stagingOffset
+                    );
+
+                cmd.copyBufferToImage(
+                    *stagingBuffer,
+                    image,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    regions
+                );
+
+                transitionImage(
+                    image,
+                    meta.mipCount,
+                    layers,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::ImageLayout::eShaderReadOnlyOptimal,
+                    vk::AccessFlagBits::eTransferWrite,
+                    {},
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::PipelineStageFlagBits::eBottomOfPipe
+                );
+            };
+
+            copyEnvironmentTexture(
+                envSkybox,
+                *resultData.skyboxImage,
+                envSkyboxStagingOffset
+            );
+
+            copyEnvironmentTexture(
+                envIrradiance,
+                *resultData.irradianceImage,
+                envIrradianceStagingOffset
+            );
+
+            copyEnvironmentTexture(
+                envRadiance,
+                *resultData.radianceImage,
+                envRadianceStagingOffset
+            );
+        }
+
         // Copy fallback textures
         for (uint32_t i = 0; i < kFallbackCount; ++i) {
             transitionImage(*resultData.fallbackImages[i], 1, 1,
@@ -420,6 +801,64 @@ namespace shuttle_engine {
         if (auto r = transferQueue.submit(1, &submitInfo, nullptr); r != vk::Result::eSuccess)
             return {r, {}};
         transferQueue.waitIdle();
+        if (hasEnvironment)
+        {
+            std::array<vk::DescriptorImageInfo, 4> envInfos{{
+                {
+                    .sampler = nullptr,
+                    .imageView = *resultData.skyboxView,
+                    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+                },
+                {
+                    .sampler = nullptr,
+                    .imageView = *resultData.irradianceView,
+                    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+                },
+                {
+                    .sampler = nullptr,
+                    .imageView = *resultData.radianceView,
+                    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+                },
+                {
+                    .sampler = nullptr,
+                    .imageView = *brdfLutImageView,
+                    .imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+                }
+            }};
+
+            std::array<vk::WriteDescriptorSet, 4> writes{{
+                {
+                    .dstSet = resultData.environmentDescriptorSet,
+                    .dstBinding = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eSampledImage,
+                    .pImageInfo = &envInfos[0]
+                },
+                {
+                    .dstSet = resultData.environmentDescriptorSet,
+                    .dstBinding = 1,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eSampledImage,
+                    .pImageInfo = &envInfos[1]
+                },
+                {
+                    .dstSet = resultData.environmentDescriptorSet,
+                    .dstBinding = 2,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eSampledImage,
+                    .pImageInfo = &envInfos[2]
+                },
+                {
+                    .dstSet = resultData.environmentDescriptorSet,
+                    .dstBinding = 3,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eSampledImage,
+                    .pImageInfo = &envInfos[3]
+                }
+            }};
+
+            device.updateDescriptorSets(writes, {});
+        }
 
         // ------------------------------------------------------------------ //
         // 14. Fill material descriptor sets using global texture views.
@@ -498,15 +937,31 @@ namespace shuttle_engine {
         {
             vk::ClearValue shadowClear{ .depthStencil = { .depth = 1.0f, .stencil = 0 } };
 
-            vk::RenderPassBeginInfo shadowPassBegin{
-                .renderPass = *shadowRenderPass,
-                .framebuffer = *frameData.shadowRenderPassFramebuffer, // Берем актуальный FB из таргетов
-                .renderArea = vk::Rect2D{ {0, 0}, frameData.shadowExtent },
-                .clearValueCount = 1,
-                .pClearValues = &shadowClear
+            vk::RenderingAttachmentInfo shadowAttachment{
+                .imageView = *frameData.shadowMapImageView,
+                .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+                .loadOp = vk::AttachmentLoadOp::eClear,
+                .storeOp = vk::AttachmentStoreOp::eStore,
+                .clearValue = shadowClear
             };
 
-            cmd.beginRenderPass(shadowPassBegin, vk::SubpassContents::eInline);
+            cmd.pipelineBarrier2(
+                vk::DependencyInfo{
+
+                }
+            );
+
+            cmd.beginRendering(
+                vk::RenderingInfo{
+                    .renderArea = vk::Rect2D{.offset = {.x = 0, .y = 0}, .extent = frameData.shadowExtent },
+                    .layerCount = 1,
+                    .viewMask = 0,
+                    .colorAttachmentCount = 0,
+                    .pColorAttachments = nullptr,
+                    .pDepthAttachment = &shadowAttachment,
+                    .pStencilAttachment = nullptr
+                }
+            );
 
             vk::Viewport viewport{
                 .x = 0.0f, .y = 0.0f,
@@ -554,7 +1009,7 @@ namespace shuttle_engine {
                 sizeof(vk::DrawIndexedIndirectCommand)
             );
 
-            cmd.endRenderPass();
+            cmd.endRendering();
         }
 
         // =========================================================================
@@ -592,18 +1047,28 @@ namespace shuttle_engine {
 
             cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *mainPipeline);
 
-            std::array mainRenderingSets {
-                samplersSet,     // Будет доступен как set = 0
-                sceneData.modelSsboDescriptorSet,        // Будет доступен как set = 1
-                frameData.sceneDataSet // Будет доступен как set = 2
+            std::array globalSets{
+                samplersSet,
+                sceneData.modelSsboDescriptorSet,
+                frameData.sceneDataSet
             };
 
-            // Биндим Global Scene Set
             cmd.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics,
                 *mainPipelineLayout,
-                0, mainRenderingSets,
+                0,
+                globalSets,
                 {}
+            );
+
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics,
+                *mainPipelineLayout,
+                4,
+                1,
+                &sceneData.environmentDescriptorSet,
+                0,
+                nullptr
             );
 
             std::array<vk::Buffer, 2> vBuffers{ *sceneData.vertexBuffer, *sceneData.vertexBuffer };
@@ -613,6 +1078,17 @@ namespace shuttle_engine {
 
             // Рисуем все материалы
             for (const auto& indirectDraw : sceneData.indirectDraws) {
+
+                cmd.bindDescriptorSets(
+                    vk::PipelineBindPoint::eGraphics,
+                    *mainPipelineLayout,
+                    3,
+                    1,
+                    &sceneData.materials[indirectDraw.materialIndex].materialSet,
+                    0,
+                    nullptr
+                );
+
                 cmd.bindDescriptorSets(
                     vk::PipelineBindPoint::eGraphics,
                     *mainPipelineLayout,
@@ -627,6 +1103,32 @@ namespace shuttle_engine {
                     sizeof(vk::DrawIndexedIndirectCommand)
                 );
             }
+
+
+            cmd.bindPipeline(
+                vk::PipelineBindPoint::eGraphics,
+                *skyboxPipeline
+            );
+
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics,
+                *skyboxPipelineLayout,
+                0,
+                globalSets,
+                {}
+            );
+
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics,
+                *skyboxPipelineLayout,
+                4,
+                1,
+                &sceneData.environmentDescriptorSet,
+                0,
+                nullptr
+            );
+            cmd.draw(36, 1, 0, 0);
+
 
             additionalCommands(cmd);
 
@@ -742,7 +1244,8 @@ namespace shuttle_engine {
 
         // 2. Обновляем UBO камеры (Set 0, Binding 0)
         CameraUniformData cameraData{
-            .viewProj = projectionMatrix * viewMatrix,
+            .viewMatrix = viewMatrix,
+            .ProjectionMatrix = projectionMatrix,
             .cameraPos = cameraPos
         };
 
@@ -894,7 +1397,7 @@ namespace shuttle_engine {
 
         std::vector layouts{frameCount, *pbrSceneDataSetLayout};
 
-        auto [createSceneSetsResult, uniqueSceneSets] = device.allocateDescriptorSets(
+        auto [createSceneSetsResult, sceneSets] = device.allocateDescriptorSets(
             vk::DescriptorSetAllocateInfo{
                 .descriptorPool = descriptorPool,
                 .descriptorSetCount = frameCount,
@@ -1033,28 +1536,28 @@ namespace shuttle_engine {
 
             std::array sceneDataDescriptorWrites {
                 vk::WriteDescriptorSet {
-                    .dstSet = uniqueSceneSets[i],
+                    .dstSet = sceneSets[i],
                     .dstBinding = 0,
                     .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eUniformBuffer,
                     .pBufferInfo = &cameraUboDescriptorInfo
                 },
                 vk::WriteDescriptorSet {
-                    .dstSet = uniqueSceneSets[i],
+                    .dstSet = sceneSets[i],
                     .dstBinding = 1,
                     .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eUniformBuffer,
                     .pBufferInfo = &sceneLightDataUboDescriptorInfo
                 },
                 vk::WriteDescriptorSet {
-                    .dstSet = uniqueSceneSets[i],
+                    .dstSet = sceneSets[i],
                     .dstBinding = 2,
                     .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eStorageBuffer,
                     .pBufferInfo = &lightSsboDescriptorInfo
                 },
                 vk::WriteDescriptorSet {
-                    .dstSet = uniqueSceneSets[i],
+                    .dstSet = sceneSets[i],
                     .dstBinding = 3,
                     .descriptorCount = 1,
                     .descriptorType = vk::DescriptorType::eSampledImage,
@@ -1076,7 +1579,7 @@ namespace shuttle_engine {
                     .cameraUbo = std::move(uniqueCameraUbo),
                     .lightInfoUbo = std::move(uniqueLightSceneDataUbo),
                     .lightSsbo = std::move(uniqueLightSsbo),
-                    .sceneDataSet = std::move(uniqueSceneSets[i]),
+                    .sceneDataSet = sceneSets[i],
                 }
             );
         }

@@ -1,18 +1,35 @@
-#version 460 core
-// Skybox vertex shader
-layout (location = 0) in vec3 aPos;
+#version 460
 
-layout (location = 0) out vec3 TexCoords;
+layout(location = 0) out vec3 vDirection;
 
-layout (set = 0, binding = 0) uniform UniformBufferObject {
+layout(set = 2, binding = 0) uniform CameraData {
 	mat4 view;
 	mat4 projection;
-} ubo;
+	vec4 cameraPosition;
+} cameraData;
 
-void main()
-{
-	TexCoords = aPos;
-	mat4 view = mat4(mat3(ubo.view));
-	vec4 pos = ubo.projection * view * vec4(aPos, 1.0);
-	gl_Position = pos.xyww; // Set w to the depth value to ensure the skybox is rendered at the far plane
+const vec3 kCubeVertices[36] = {
+vec3(-1,-1,-1), vec3( 1,-1,-1), vec3( 1, 1,-1), vec3( 1, 1,-1), vec3(-1, 1,-1), vec3(-1,-1,-1),
+vec3(-1,-1, 1), vec3( 1,-1, 1), vec3( 1, 1, 1), vec3( 1, 1, 1), vec3(-1, 1, 1), vec3(-1,-1, 1),
+vec3(-1, 1, 1), vec3(-1, 1,-1), vec3(-1,-1,-1), vec3(-1,-1,-1), vec3(-1,-1, 1), vec3(-1, 1, 1),
+vec3( 1, 1, 1), vec3( 1, 1,-1), vec3( 1,-1,-1), vec3( 1,-1,-1), vec3( 1,-1, 1), vec3( 1, 1, 1),
+vec3(-1,-1,-1), vec3( 1,-1,-1), vec3( 1,-1, 1), vec3( 1,-1, 1), vec3(-1,-1, 1), vec3(-1,-1,-1),
+vec3(-1, 1,-1), vec3( 1, 1,-1), vec3( 1, 1, 1), vec3( 1, 1, 1), vec3(-1, 1, 1), vec3(-1, 1,-1)
+};
+
+void main() {
+	vec3 position = kCubeVertices[gl_VertexIndex];
+
+	// ИСПРАВЛЕНИЕ 1: Направление сэмплирования — это сама вершина куба в мировом пространстве!
+	// Vulkan Cubemap ожидает именно чистый вектор направления из центра куба наружу.
+	vDirection = position;
+
+	// Вырезаем трансляцию (смещение) из матрицы view, оставляя только вращение
+	mat4 viewWithoutTranslation = mat4(mat3(cameraData.view));
+
+	// ИСПРАВЛЕНИЕ 2: Перемножаем канонично. Сначала вращаем куб в пространстве камеры, затем проецируем
+	vec4 clipPos = cameraData.projection * viewWithoutTranslation * vec4(position, 1.0);
+
+	// Оставляем твой крутой хак с xyww — он гарантирует, что Z всегда будет равен 1.0 (максимальная глубина)
+	gl_Position = clipPos.xyww;
 }

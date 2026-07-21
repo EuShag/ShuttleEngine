@@ -14,6 +14,7 @@
 #include <SDL2/SDL_vulkan.h>
 #include <vulkan/vulkan.hpp>
 
+#include "EnvironmentBlobLoader/EnvironmentBlobLoader.hpp"
 #include "Sdl.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "Camera/Camera.hpp"
@@ -113,15 +114,75 @@ int main(int argc, char** argv) {
 
 
 		auto vkbPhysicalDeviceResult = vkb::PhysicalDeviceSelector{instanceResult.value(), *uniqueSurface}.
-			set_minimum_version(1, 0).
+			set_minimum_version(1, 4).
 			set_required_features(
 				vk::PhysicalDeviceFeatures{
 					.multiDrawIndirect = vk::True,
 					.samplerAnisotropy = vk::True
 				}
 			).
+			set_required_features_11(
+				vk::PhysicalDeviceVulkan11Features{
+					.multiview = vk::True,
+					.shaderDrawParameters = vk::True,
+				}
+			).
+			set_required_features_12(
+				vk::PhysicalDeviceVulkan12Features{
+					.descriptorIndexing = vk::True,
+					.shaderUniformBufferArrayNonUniformIndexing = vk::True,
+					.shaderSampledImageArrayNonUniformIndexing = vk::True,
+					.shaderStorageBufferArrayNonUniformIndexing = vk::True,
+					.shaderStorageImageArrayNonUniformIndexing = vk::True,
+					.shaderInputAttachmentArrayNonUniformIndexing = vk::True,
+					.descriptorBindingUniformBufferUpdateAfterBind = vk::True,
+					.descriptorBindingSampledImageUpdateAfterBind = vk::True,
+					.descriptorBindingStorageImageUpdateAfterBind = vk::True,
+					.descriptorBindingStorageBufferUpdateAfterBind = vk::True,
+					.descriptorBindingUniformTexelBufferUpdateAfterBind = vk::True,
+					.descriptorBindingStorageTexelBufferUpdateAfterBind = vk::True,
+					.descriptorBindingPartiallyBound = vk::True,
+					.descriptorBindingVariableDescriptorCount = vk::True,
+					.runtimeDescriptorArray = vk::True,
+					.scalarBlockLayout = vk::True,
+					.uniformBufferStandardLayout = vk::True,
+					.timelineSemaphore = vk::True,
+					.bufferDeviceAddress = vk::True,
+					.shaderOutputViewportIndex = vk::True,
+					.shaderOutputLayer = vk::True,
+				}
+			).
+			set_required_features_13(
+				vk::PhysicalDeviceVulkan13Features{
+					.inlineUniformBlock = vk::True,
+					.descriptorBindingInlineUniformBlockUpdateAfterBind = vk::True,
+					.pipelineCreationCacheControl = vk::True,
+					.shaderDemoteToHelperInvocation = vk::True,
+					.shaderTerminateInvocation = vk::True,
+					.subgroupSizeControl = vk::True,
+					.computeFullSubgroups = vk::True,
+					.synchronization2 = vk::True,
+					.shaderZeroInitializeWorkgroupMemory = vk::True,
+					.dynamicRendering = vk::True,
+					.shaderIntegerDotProduct = vk::True,
+					.maintenance4 = vk::True,
+				}
+			).
+			set_required_features_14(
+				vk::PhysicalDeviceVulkan14Features{
+					.shaderSubgroupRotate = vk::True,
+					.shaderSubgroupRotateClustered = vk::True,
+					.shaderExpectAssume = vk::True,
+					.indexTypeUint8 = vk::True,
+					.dynamicRenderingLocalRead = vk::True,
+					.maintenance5 = vk::True,
+					.maintenance6 = vk::True,
+					.pipelineRobustness = vk::True,
+					.pushDescriptor = vk::True,
+				}
+			).
 			add_required_extension(vk::KHRSwapchainExtensionName).
-			select();
+		select();
 
 		if (!vkbPhysicalDeviceResult.has_value()) {
 			throw std::runtime_error("Failed to select physical device: " + vkbPhysicalDeviceResult.error().message());
@@ -190,7 +251,12 @@ int main(int argc, char** argv) {
 		// 5. ИНИЦИАЛИЗАЦИЯ ИНДУСТРИАЛЬНОГО РЕНДЕРЕРА SHUTTLE ENGINE
 		// =========================================================================
 		std::cout << "[Init] Initializing PbrRender pipeline...\n";
-		auto [pbrRes, pbrRender] = PbrRender::create(*uniqueDevice, vk::ImageLayout::ePresentSrcKHR);
+		auto [pbrRes, pbrRender] = PbrRender::create(
+			*uniqueDevice, vk::ImageLayout::ePresentSrcKHR,
+			transferQueue,
+			*uniqueTransferCommandPool,
+			allocator
+		);
 		if (pbrRes != vk::Result::eSuccess) {
 			throw std::runtime_error("Failed to create PbrRender system");
 		}
@@ -200,6 +266,8 @@ int main(int argc, char** argv) {
 		// =========================================================================
 		std::cout << "[Scene] Loading pre-compiled .scene blob: " << resolvedScenePath.string() << "\n";
 		BlobSceneData globalScene = BlobLoader::load(resolvedScenePath.string());
+		auto environment = assets::BlobEnvironmentData::loadFromFile("studio.envb");
+
 		std::cout << "[Scene] Blob stats: textures=" << globalScene.textures.size()
 			<< " materials=" << globalScene.materials.size()
 			<< " meshes=" << globalScene.meshes.size() << "\n";
@@ -219,10 +287,15 @@ int main(int argc, char** argv) {
 		// To re-enable terrain rendering, upload the HostMeshData separately and add it to the
 		// scene blob via AssetProcessor.
 
+		std::cout << "Skybox size: " << environment.skybox().data.size() << std::endl;
+		std::cout << "Irradiance size: " << environment.irradiance().data.size() << std::endl;
+		std::cout << "Radiance size: " << environment.radiance().data.size() << std::endl;
+
 		// Upload everything to GPU
 		std::cout << "[Scene] Uploading buffers and textures to GPU Local memory...\n";
 		auto [uploadRes, deviceSceneData] = pbrRender.uploadScene(
 			globalScene,
+			&environment,
 			transferQueue,
 			*uniqueDevice,
 			*uniqueTransferCommandPool,

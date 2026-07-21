@@ -8,6 +8,8 @@
 #include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+#define TINYDDSLOADER_IMPLEMENTATION
+#include <tinyddsloader.h>
 
 namespace shuttle_engine {
 
@@ -225,6 +227,305 @@ namespace shuttle_engine {
                 .indirectDrawCalls                               = meshData.indirectDrawCalls
             }
         };
+    }
+
+    vk::Result PbrRender::initBuiltinResources(
+        vk::Device device,
+        vk::Queue transferQueue,
+        vk::CommandPool transferCommandPool,
+        resources::DeviceAllocator const& allocator)
+    {
+        const std::filesystem::path brdfPath =
+            std::filesystem::current_path() /
+            "Resources" /
+            "Engine" /
+            "brdf_lut.dds";
+
+        std::cout << "[PbrRender] Loading BRDF LUT: "
+                  << brdfPath.string()
+                  << std::endl;
+
+        tinyddsloader::DDSFile brdfFile;
+        auto result = brdfFile.Load(R"(..\resources\engine\brdf_lut.dds)");
+
+        if (result != tinyddsloader::Result::Success)
+        {
+            std::cerr << "[PbrRender] Failed to load BRDF LUT DDS."
+                      << std::endl;
+            return vk::Result::eErrorInitializationFailed;
+        }
+
+        const uint32_t width = brdfFile.GetWidth();
+        const uint32_t height = brdfFile.GetHeight();
+        const uint32_t mipCount = brdfFile.GetMipCount();
+
+        const vk::Format format = vk::Format::eR16G16Sfloat;
+
+        assert(
+            brdfFile.GetFormat() ==
+            tinyddsloader::DDSFile::DXGIFormat::R16G16_Float
+        );
+
+
+        const auto* imageData =
+            brdfFile.GetImageData(0, 0);
+
+        vk::DeviceSize offset = 0;
+
+        for (uint32_t mip = 0; mip < brdfFile.GetMipCount(); ++mip)
+        {
+            for (uint32_t face = 0; face < brdfFile.GetArraySize(); ++face)
+            {
+                const auto* img =
+                    brdfFile.GetImageData(mip, face);
+
+                // region.bufferOffset = offset
+
+                offset += img->m_memSlicePitch;
+            }
+        }
+
+        const vk::DeviceSize dataSize = offset;
+
+        auto [stgRes, stagingBuffer] =
+            allocator.createAndAllocateBufferUnique(
+                vk::BufferCreateInfo{
+                    .size = dataSize,
+                    .usage = vk::BufferUsageFlagBits::eTransferSrc,
+                    .sharingMode = vk::SharingMode::eExclusive
+                },
+                resources::MemoryUsage::eCpuOnly
+            );
+
+        if (stgRes != vk::Result::eSuccess)
+            return stgRes;
+
+        std::vector<std::byte> textureData;
+        textureData.resize(dataSize);
+
+        std::byte* dst = textureData.data();
+
+        for (uint32_t mip = 0; mip < brdfFile.GetMipCount(); ++mip)
+        {
+            for (uint32_t array = 0; array < brdfFile.GetArraySize(); ++array)
+            {
+                const auto* img =
+                    brdfFile.GetImageData(mip, array);
+
+                std::memcpy(
+                    dst,
+                    img->m_mem,
+                    img->m_memSlicePitch
+                );
+
+                dst += img->m_memSlicePitch;
+            }
+        }
+
+        if (auto r = allocator.writeBufferFromHost({
+            .dstBuffer = *stagingBuffer,
+            .dstBufferOffset = 0,
+            .srcData = textureData.data(),
+            .dataSize = textureData.size(),
+        }); r != vk::Result::eSuccess)
+        {
+            return r;
+        }
+
+        auto [imgRes, image] =
+            allocator.createAndAllocateImageUnique(
+                vk::ImageCreateInfo{
+                    .imageType = vk::ImageType::e2D,
+                    .format = format,
+                    .extent = vk::Extent3D{
+                        width,
+                        height,
+                        1
+                    },
+                    .mipLevels = mipCount,
+                    .arrayLayers = 1,
+                    .samples = vk::SampleCountFlagBits::e1,
+                    .tiling = vk::ImageTiling::eOptimal,
+                    .usage =
+                        vk::ImageUsageFlagBits::eTransferDst |
+                        vk::ImageUsageFlagBits::eSampled,
+                    .initialLayout = vk::ImageLayout::eUndefined
+                },
+                resources::MemoryUsage::eGpuOnly
+            );
+
+        if (imgRes != vk::Result::eSuccess)
+            return imgRes;
+
+        brdfLutImage = std::move(image);
+
+        auto [viewRes, view] =
+            device.createImageViewUnique(
+                vk::ImageViewCreateInfo{
+                    .image = *brdfLutImage,
+                    .viewType = vk::ImageViewType::e2D,
+                    .format = format,
+                    .subresourceRange = {
+                        vk::ImageAspectFlagBits::eColor,
+                        0,
+                        mipCount,
+                        0,
+                        1
+                    }
+                }
+            );
+
+        if (viewRes != vk::Result::eSuccess)
+            return viewRes;
+
+        brdfLutImageView = std::move(view);
+
+        auto [cmdRes, tempCmds] =
+            device.allocateCommandBuffersUnique({
+                .commandPool = transferCommandPool,
+                .level = vk::CommandBufferLevel::ePrimary,
+                .commandBufferCount = 1
+            });
+
+        if (cmdRes != vk::Result::eSuccess)
+            return cmdRes;
+
+        vk::CommandBuffer cmd = tempCmds[0].get();
+
+        cmd.begin({
+            .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+        });
+
+        auto transitionImage = [&](vk::Image img,
+            vk::ImageLayout oldLayout,
+            vk::ImageLayout newLayout,
+            vk::AccessFlags srcAccess,
+            vk::AccessFlags dstAccess,
+            vk::PipelineStageFlags srcStage,
+            vk::PipelineStageFlags dstStage)
+        {
+            vk::ImageMemoryBarrier barrier{
+                .srcAccessMask = srcAccess,
+                .dstAccessMask = dstAccess,
+                .oldLayout = oldLayout,
+                .newLayout = newLayout,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = img,
+                .subresourceRange = {
+                    vk::ImageAspectFlagBits::eColor,
+                    0,
+                    mipCount,
+                    0,
+                    1
+                }
+            };
+
+            cmd.pipelineBarrier(
+                srcStage,
+                dstStage,
+                {},
+                nullptr,
+                nullptr,
+                barrier
+            );
+        };
+
+        transitionImage(
+            *brdfLutImage,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eTransferDstOptimal,
+            {},
+            vk::AccessFlagBits::eTransferWrite,
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            vk::PipelineStageFlagBits::eTransfer
+        );
+
+        std::vector<vk::BufferImageCopy> regions;
+
+        offset = 0;
+
+        for (uint32_t mip = 0; mip < mipCount; ++mip)
+        {
+            const uint32_t mipWidth =
+                std::max(1u, width >> mip);
+
+            const uint32_t mipHeight =
+                std::max(1u, height >> mip);
+
+            const vk::DeviceSize mipSize =
+                static_cast<vk::DeviceSize>(mipWidth) *
+                static_cast<vk::DeviceSize>(mipHeight) *
+                4; // R16G16_SFLOAT = 4 bytes/pixel
+
+            regions.push_back(vk::BufferImageCopy{
+                .bufferOffset = offset,
+                .bufferRowLength = 0,
+                .bufferImageHeight = 0,
+                .imageSubresource = {
+                    vk::ImageAspectFlagBits::eColor,
+                    mip,
+                    0,
+                    1
+                },
+                .imageOffset = {0, 0, 0},
+                .imageExtent = {
+                    mipWidth,
+                    mipHeight,
+                    1
+                }
+            });
+
+            offset += mipSize;
+        }
+
+        cmd.copyBufferToImage(
+            *stagingBuffer,
+            *brdfLutImage,
+            vk::ImageLayout::eTransferDstOptimal,
+            regions
+        );
+
+        transitionImage(
+            *brdfLutImage,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::AccessFlagBits::eTransferWrite,
+            {},
+            vk::PipelineStageFlagBits::eTransfer,
+            vk::PipelineStageFlagBits::eBottomOfPipe
+        );
+
+        cmd.end();
+
+        vk::SubmitInfo submitInfo{
+            .commandBufferCount = 1,
+            .pCommandBuffers = &cmd
+        };
+
+        if (auto r = transferQueue.submit(1, &submitInfo, nullptr);
+            r != vk::Result::eSuccess)
+        {
+            return r;
+        }
+
+        transferQueue.waitIdle();
+
+        std::cout << "[PbrRender] BRDF LUT uploaded successfully."
+                  << std::endl;
+
+        std::cout
+            << "[PbrRender] BRDF LUT "
+            << width
+            << "x"
+            << height
+            << " mips="
+            << mipCount
+            << " bytes="
+            << dataSize
+            << std::endl;
+
+        return vk::Result::eSuccess;
     }
 
     void StagingBufferMeshData::recordCopyCommandsToBuffer(

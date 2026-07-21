@@ -14,7 +14,8 @@ layout(set = 0, binding = 1) uniform sampler shadowSampler;
 
 // Камера и Свет (набор 2)
 layout(set = 2, binding = 0) uniform CameraUBO {
-    mat4 viewProj;
+    mat4 view;
+    mat4 proj;
     vec3 cameraPos;
 } camera;
 
@@ -54,7 +55,26 @@ layout(set = 3, binding = 3) uniform texture2D ormMap;
 layout(set = 3, binding = 4) uniform texture2D emissiveMap;
 layout(set = 3, binding = 5) uniform texture2D heightMap;
 
+// Environment (set = 4)
+
+layout(set = 4, binding = 0) uniform textureCube skyboxMap;
+layout(set = 4, binding = 1) uniform textureCube irradianceMap;
+layout(set = 4, binding = 2) uniform textureCube radianceMap;
+layout(set = 4, binding = 3) uniform texture2D brdfLut;
+
 const float PI = 3.14159265359;
+
+
+vec3 fresnelSchlickRoughness(
+        float cosTheta,
+        vec3 F0,
+        float roughness)
+{
+    return F0 +
+    (max(vec3(1.0 - roughness), F0) - F0) *
+    pow(1.0 - cosTheta, 5.0);
+}
+
 
 // ----------- ТЕНИ (PCF) -----------
 float calculateShadow(vec4 shadowCoord, vec3 geoNormal, vec3 L) {
@@ -123,6 +143,7 @@ void main() {
     if (dot(inTangent.xyz, inTangent.xyz) > 1e-8 && abs(inTangent.w) > 1e-5) {
         // Читаем ТОЛЬКО R и G каналы (так как это BC5) и переводим из [0..1] в [-1..1]
         vec2 normalXY = texture(sampler2D(normalMap, materialSampler), inUv).rg * 2.0 - 1.0;
+        normalXY.y = -normalXY.y;
 
         // Математически восстанавливаем Z-канал.
         // max(0.0, ...) защищает от получения отрицательного числа под корнем (NaN)
@@ -170,11 +191,34 @@ void main() {
         }
     }
 
+    float NdotV = max(dot(WorldNormal, V), 0.0);
+
+    vec3 F = fresnelSchlickRoughness(NdotV, F0, roughness);
+
+    vec3 kS = F;
+
+    vec3 kD = (vec3(1.0) - kS) * (1.0 - metallic);
+
+    vec3 irradiance = texture(samplerCube(irradianceMap, materialSampler), WorldNormal).rgb;
+
+    vec3 diffuseIBL = irradiance * albedo;
+
+    vec3 R = reflect(-V, WorldNormal);
+
+    const float MAX_REFLECTION_LOD = 5.0;
+
+    vec3 prefilteredColor = textureLod(samplerCube(radianceMap, materialSampler), R, roughness * MAX_REFLECTION_LOD).rgb;
+
+    vec2 brdf = texture(sampler2D(brdfLut, materialSampler), vec2(NdotV, roughness)).rg;
+
+    vec3 specularIBL = prefilteredColor * (F * brdf.x + brdf.y);
+
+
+    vec3 ambient = (kD * diffuseIBL + specularIBL);
+
+
     // Если текстуры свечения пока нет, берем базовый вектор цвета и умножаем на силу интенсивности!
     vec3 finalEmissive = material.emissiveFactor.rgb * material.emissiveStrength;
-
-    // 4. Эмбиент (пока просто Ambient Color из UBO)
-    vec3 ambient = sceneLight.ambientColor.rgb * sceneLight.ambientColor.a * albedo * 1.0f;
 
     // ВНУТРИ main() ТВОЕГО ФРАГМЕНТНОГО ШЕЙДЕРА:
     // ВНУТРИ ТВОЕГО ФРАГМЕНТНОГО ШЕЙДЕРА:
@@ -182,7 +226,7 @@ void main() {
 
     // ХАК ДЛЯ ВИРТУАЛЬНОЙ ДИАФРАГМЫ (ЭКСПОЗИЦИЯ ДВИЖКА):
     // Подкручивая этот float, ты можешь делать сцену темнее или светлее, как в настоящей камере!
-    float exposure = 0.005f;
+    float exposure = 0.030;
     vec3 exposedColor = finalColor * exposure;
 
     // Тональное отображение ACES теперь применяем к EXPOSED цвету! [1.4]

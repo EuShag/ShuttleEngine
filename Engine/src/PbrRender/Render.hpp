@@ -8,6 +8,7 @@
 #include "../HostRenderData/HostRenderData.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "BlobLoader/BlobLoader.hpp"
+#include "EnvironmentBlobLoader/EnvironmentBlobLoader.hpp"
 
 namespace shuttle_engine{
 
@@ -27,7 +28,8 @@ namespace shuttle_engine{
     };  // total 36 bytes
 
     struct CameraUniformData {
-        glm::mat4 viewProj;
+        glm::mat4 viewMatrix;
+        glm::mat4 ProjectionMatrix;
         alignas(16) glm::vec3 cameraPos;
     };
 
@@ -198,6 +200,19 @@ namespace shuttle_engine{
         std::array<resources::UniqueAllocatedImage, 5> fallbackImages;
         std::array<vk::UniqueImageView, 5> fallbackViews;
 
+        // Environment maps
+        resources::UniqueAllocatedImage skyboxImage;
+        vk::UniqueImageView skyboxView;
+
+        resources::UniqueAllocatedImage irradianceImage;
+        vk::UniqueImageView irradianceView;
+
+        resources::UniqueAllocatedImage radianceImage;
+        vk::UniqueImageView radianceView;
+
+        vk::DescriptorSet environmentDescriptorSet;
+
+
         vk::UniqueDescriptorPool descriptorPool;
     };
 
@@ -228,10 +243,14 @@ namespace shuttle_engine{
 
     class PbrRender {
     public:
-        static vk::ResultValue<PbrRender> create(vk::Device device, vk::ImageLayout finalColorLayout);
+
+        static vk::ResultValue<PbrRender> create(vk::Device device, vk::ImageLayout finalLayout, vk::Queue transferQueue,
+                                          vk::CommandPool transferCommandPool,
+                                          resources::DeviceAllocator const &allocator);
 
         vk::ResultValue<DeviceSceneData> uploadScene(
             const BlobSceneData& blob,
+            const assets::BlobEnvironmentData* environment,
             vk::Queue transferQueue,
             vk::Device device,
             vk::CommandPool transferCommandPool,
@@ -284,11 +303,18 @@ namespace shuttle_engine{
         vk::Result initMainRenderPass(vk::Device device, vk::ImageLayout finalColorLayout);
         vk::Result initShadowRenderPass(vk::Device device);
         vk::Result initPbrMaterialSetLayout(vk::Device device);
+        vk::Result initPbrEnvironmentSetLayout(vk::Device device);
         vk::Result initSceneDataSetLayout(vk::Device device);
         vk::Result initMainPipelineLayout(vk::Device device);
         vk::Result initShadowPipelineLayout(vk::Device device);
+
+        vk::Result initSkyboxPipelineLayout(vk::Device device);
+
         vk::Result initMainPipeline(vk::Device device);
         vk::Result initShadowPipeline(vk::Device device);
+
+        vk::Result initSkyboxPipeline(vk::Device device);
+
         vk::Result initSamplers(vk::Device device);
         vk::Result initSamplerDescriptorSet(vk::Device device);
         vk::Result initSamplerDescriptorSetLayout(vk::Device device);
@@ -302,6 +328,14 @@ namespace shuttle_engine{
             resources::AllocatedBuffer stagingBuffer,
             vk::DeviceSize& stagingBufferOffset
         );
+
+        vk::Result initBuiltinResources(
+            vk::Device device,
+            vk::Queue transferQueue,
+            vk::CommandPool transferCommandPool,
+            resources::DeviceAllocator const& allocator
+        );
+
 
         static vk::ResultValue<DeviceMeshData> prepareDeviceMeshData(
             const StagingBufferMeshData& stagingInfo,
@@ -320,19 +354,25 @@ namespace shuttle_engine{
 
         vk::UniquePipeline mainPipeline;
         vk::UniquePipeline shadowPipeline;
+        vk::UniquePipeline skyboxPipeline;
 
         vk::UniquePipelineLayout mainPipelineLayout;
         vk::UniquePipelineLayout shadowPipelineLayout;
+        vk::UniquePipelineLayout skyboxPipelineLayout;
 
         vk::UniqueDescriptorSetLayout pbrSceneDataSetLayout;
         vk::UniqueDescriptorSetLayout pbrMaterialSetLayout;
         vk::UniqueDescriptorSetLayout modelSetLayout;
+        vk::UniqueDescriptorSetLayout pbrEnvironmentSetLayout;
 
         vk::UniqueSampler shadowSampler;
         vk::UniqueSampler materialSampler;
         vk::UniqueDescriptorPool samplerDescriptorPool;
         vk::UniqueDescriptorSetLayout samplersSetLayout;
         vk::DescriptorSet samplersSet;
+
+        resources::UniqueAllocatedImage brdfLutImage;
+        vk::UniqueImageView brdfLutImageView;
     };
 }
 

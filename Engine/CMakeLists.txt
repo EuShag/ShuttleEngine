@@ -44,6 +44,8 @@ add_executable(Engine
         "src/SwapchainFactory/SwapchainFactory.hpp"
         "src/RetireController/RetireController.cpp"
         "src/RetireController/RetireController.hpp"
+        "src/EnvironmentBlobLoader/EnvironmentBlobLoader.cpp"
+        "src/EnvironmentBlobLoader/EnvironmentBlobLoader.hpp"
 )
 
 target_include_directories(Engine PRIVATE ${Vulkan_INCLUDE_DIRS})
@@ -61,14 +63,16 @@ target_compile_definitions(Engine
 
 target_link_libraries(Engine PRIVATE vk-bootstrap::vk-bootstrap)
 target_link_libraries(Engine PRIVATE ${SDL2Libraries})
-target_include_directories(Engine PRIVATE "${Vulkan_INCLUDE_DIRS}/SDL2")
-target_include_directories(Engine PRIVATE "${PROJECT_SOURCE_DIR}/external/imgui")
-target_include_directories(Engine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_include_directories(Engine PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_include_directories(Engine PRIVATE "${PROJECT_SOURCE_DIR}/AssetProcessor/include")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/VulkanMemoryAllocator/include")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/stb")
-target_include_directories(Engine SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/external/vk-bootstrap/src")
+target_include_directories(Engine PRIVATE "${Vulkan_INCLUDE_DIRS}/SDL2"
+                                            "${PROJECT_SOURCE_DIR}/external/imgui"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/src"
+                                            "${PROJECT_SOURCE_DIR}/external/cmft/include"
+                                            "${PROJECT_SOURCE_DIR}/AssetProcessor/include"
+                                            "${PROJECT_SOURCE_DIR}/external/VulkanMemoryAllocator/include"
+                                            "${PROJECT_SOURCE_DIR}/external/stb"
+                                            "${PROJECT_SOURCE_DIR}/external/vk-bootstrap/src"
+                                            "${PROJECT_SOURCE_DIR}/external/tinyddsloader")
 
 add_dependencies(Engine CopyAssets)
 add_dependencies(Engine CompileShaders)

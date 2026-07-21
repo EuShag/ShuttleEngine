@@ -391,6 +391,143 @@ namespace shuttle_engine {
         return vk::Result::eSuccess;
     }
 
+    vk::Result PbrRender::initSkyboxPipeline(
+    vk::Device device)
+    {
+        auto vertModule =
+            loadAndCreateShaderModuleUnique(
+                device,
+                "../shaders/skybox.vert.spv"
+            );
+
+        auto fragModule =
+            loadAndCreateShaderModuleUnique(
+                device,
+                "../shaders/skybox.frag.spv"
+            );
+
+        vk::PipelineShaderStageCreateInfo shaderStages[] =
+        {
+            {
+                .stage = vk::ShaderStageFlagBits::eVertex,
+                .module = *vertModule.value,
+                .pName = "main"
+            },
+            {
+                .stage = vk::ShaderStageFlagBits::eFragment,
+                .module = *fragModule.value,
+                .pName = "main"
+            }
+        };
+        //
+        // Skybox рисуем через*gl_VertexIndex,
+        // вершинных б*феров нет.
+        //
+
+        vk::PipelineVertexInputStateCreateInfo vertexInput{};
+
+        vk::PipelineInputAssemblyStateCreateInfo inputAssembly{
+            .topology = vk::PrimitiveTopology::eTriangleList,
+            .primitiveRestartEnable = VK_FALSE
+        };
+
+        vk::PipelineViewportStateCreateInfo viewportState{
+            .viewportCount = 1,
+            .scissorCount = 1
+        };
+
+        vk::PipelineRasterizationStateCreateInfo rasterizer{
+            .depthClampEnable = VK_FALSE,
+            .rasterizerDiscardEnable = VK_FALSE,
+            .polygonMode = vk::PolygonMode::eFill,
+            //
+            // Камера внутри куба.
+            //
+            .cullMode = vk::CullModeFlagBits::eNone,
+            .frontFace = vk::FrontFace::eCounterClockwise,
+            .depthBiasEnable = VK_FALSE,
+            .lineWidth = 1.0f
+        };
+
+        vk::PipelineMultisampleStateCreateInfo multisampling{
+            .rasterizationSamples = vk::SampleCountFlagBits::e1,
+            .sampleShadingEnable = VK_FALSE
+        };
+
+        //
+        // Skybox рисуем*ПОСЛЕ геометрии.
+        //
+
+        vk::PipelineDepthStencilStateCreateInfo depthStencil{
+            .depthTestEnable = VK_TRUE,
+            .depthWriteEnable = VK_FALSE,
+            .depthCompareOp = vk::CompareOp::eLessOrEqual,
+            .depthBoundsTestEnable = VK_FALSE,
+            .stencilTestEnable = VK_FALSE
+        };
+
+        vk::PipelineColorBlendAttachmentState colorBlendAttachment {
+                .blendEnable = VK_FALSE,
+                .colorWriteMask =
+                    vk::ColorComponentFlagBits::eR |
+                    vk::ColorComponentFlagBits::eG |
+                    vk::ColorComponentFlagBits::eB |
+                    vk::ColorComponentFlagBits::eA
+            };
+
+        vk::PipelineColorBlendStateCreateInfo colorBlending{
+            .logicOpEnable = VK_FALSE,
+            .attachmentCount = 1,
+            .pAttachments = &colorBlendAttachment
+            };
+
+        std::array dynamicStates{
+            vk::DynamicState::eViewport,
+            vk::DynamicState::eScissor
+        };
+
+        vk::PipelineDynamicStateCreateInfo dynamicState{
+            .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
+            .pDynamicStates = dynamicStates.data()
+        };
+
+        vk::GraphicsPipelineCreateInfo pipelineCreateInfo{
+            .stageCount = 2,
+            .pStages = shaderStages,
+
+            .pVertexInputState = &vertexInput,
+            .pInputAssemblyState = &inputAssembly,
+            .pViewportState = &viewportState,
+            .pRasterizationState = &rasterizer,
+            .pMultisampleState = &multisampling,
+            .pDepthStencilState = &depthStencil,
+            .pColorBlendState = &colorBlending,
+            .pDynamicState = &dynamicState,
+
+            .layout =
+                skyboxPipelineLayout.get(),
+
+            .renderPass =
+                mainRenderPass.get()
+        };
+
+        auto result =
+            device.createGraphicsPipelineUnique(
+                nullptr,
+                pipelineCreateInfo
+            );
+
+        if (result.result != vk::Result::eSuccess)
+        {
+            return result.result;
+        }
+
+        skyboxPipeline =
+            std::move(result.value);
+
+        return vk::Result::eSuccess;
+    }
+
     vk::Result PbrRender::initSamplers(vk::Device device) {
         auto [createShadowSamplerResult, uniqueShadowSampler] = device.createSamplerUnique(
             vk::SamplerCreateInfo {
@@ -658,13 +795,72 @@ namespace shuttle_engine {
         return vk::Result::eSuccess;
     }
 
+
+    vk::Result PbrRender::initPbrEnvironmentSetLayout(
+    vk::Device device)
+    {
+        std::array bindings{
+            vk::DescriptorSetLayoutBinding{
+                .binding = 0,
+                .descriptorType = vk::DescriptorType::eSampledImage,
+                .descriptorCount = 1,
+                .stageFlags = vk::ShaderStageFlagBits::eFragment
+            },
+
+            vk::DescriptorSetLayoutBinding{
+                .binding = 1,
+                .descriptorType = vk::DescriptorType::eSampledImage,
+                .descriptorCount = 1,
+                .stageFlags = vk::ShaderStageFlagBits::eFragment
+            },
+
+            vk::DescriptorSetLayoutBinding{
+                .binding = 2,
+                .descriptorType = vk::DescriptorType::eSampledImage,
+                .descriptorCount = 1,
+                .stageFlags = vk::ShaderStageFlagBits::eFragment
+            },
+
+            vk::DescriptorSetLayoutBinding{
+                .binding = 3,
+                .descriptorType = vk::DescriptorType::eSampledImage,
+                .descriptorCount = 1,
+                .stageFlags = vk::ShaderStageFlagBits::eFragment
+            }
+        };
+
+        vk::DescriptorSetLayoutCreateInfo createInfo{
+            .bindingCount =
+                static_cast<uint32_t>(bindings.size()),
+            .pBindings =
+                bindings.data()
+        };
+
+        auto res =
+            device.createDescriptorSetLayoutUnique(
+                createInfo
+            );
+
+        if (res.result != vk::Result::eSuccess)
+        {
+            return res.result;
+        }
+
+        pbrEnvironmentSetLayout =
+            std::move(res.value);
+
+        return vk::Result::eSuccess;
+    }
+
+
     vk::Result PbrRender::initMainPipelineLayout(vk::Device device) {
         // ВАЖНО: порядок в массиве определяет номер set в шейдере: layout(set = 0, binding = X) и layout(set = 1, binding = Y)
         vk::DescriptorSetLayout const layouts[] = {
-            samplersSetLayout.get(),     // Будет доступен как set = 0
-            modelSetLayout.get(),        // Будет доступен как set = 1
-            pbrSceneDataSetLayout.get(), // Будет доступен как set = 2
-            pbrMaterialSetLayout.get(),  // Будет доступен как set = 3
+            samplersSetLayout.get(),      // Будет доступен как set = 0
+            modelSetLayout.get(),         // Будет доступен как set = 1
+            pbrSceneDataSetLayout.get(),  // Будет доступен как set = 2
+            pbrMaterialSetLayout.get(),   // Будет доступен как set = 3
+            pbrEnvironmentSetLayout.get() // Будет доступен как set = 4
         };
 
         vk::PipelineLayoutCreateInfo const createInfo{
@@ -695,6 +891,37 @@ namespace shuttle_engine {
         if (res.result != vk::Result::eSuccess) return res.result;
 
         shadowPipelineLayout = std::move(res.value);
+        return vk::Result::eSuccess;
+    }
+
+    vk::Result PbrRender::initSkyboxPipelineLayout(vk::Device device)
+    {
+        vk::DescriptorSetLayout const layouts[] = {
+            samplersSetLayout.get(),
+            modelSetLayout.get(),
+            pbrSceneDataSetLayout.get(),
+            pbrMaterialSetLayout.get(),
+            pbrEnvironmentSetLayout.get()
+        };
+
+        vk::PipelineLayoutCreateInfo createInfo{
+            .setLayoutCount =
+                static_cast<uint32_t>(std::size(layouts)),
+            .pSetLayouts =
+                layouts
+        };
+
+        auto res =
+            device.createPipelineLayoutUnique(
+                createInfo
+            );
+
+        if (res.result != vk::Result::eSuccess)
+        {
+            return res.result;
+        }
+
+        skyboxPipelineLayout = std::move(res.value);
         return vk::Result::eSuccess;
     }
 }

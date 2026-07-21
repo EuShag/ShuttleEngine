@@ -6,7 +6,8 @@ layout(location = 2) in vec2 inUv;
 layout(location = 3) in vec4 inTangent;
 
 layout(set = 2, binding = 0) uniform CameraUBO {
-    mat4 viewProj;
+    mat4 view;
+    mat4 proj;
     vec3 cameraPos;
 } camera;
 
@@ -61,5 +62,5 @@ void main() {
         outShadowCoord = vec4(0.0);
     }
 
-    gl_Position = camera.viewProj * worldPos;
+    gl_Position = camera.proj * camera.view * worldPos;
 }

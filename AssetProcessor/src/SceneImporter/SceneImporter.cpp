@@ -20,9 +20,21 @@
 #include "../TextureImporter/TextureImporter.hpp"
 #include <filesystem>
 #include <omp.h>
+#include "EnvironmentFormat.hpp"
 
 namespace shuttle_engine::assets {
 
+
+
+    // Вспомогательная функция для конвертации матриц Assimp в GLM
+    static inline glm::mat4 convertMatrix4x4(const aiMatrix4x4& from) {
+        glm::mat4 to;
+        to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
+        to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
+        to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
+        to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
+        return to;
+    }
     // =============================================================================
     // FNV-1a хэширование для имён нод и клипов
     // =============================================================================
@@ -93,6 +105,8 @@ void SceneImporter::parseSceneGraph(
 
             aiNode* aNode = current.assimpNode;
             std::string nodeName(aNode->mName.C_Str());
+
+            std::cout << nodeName << std::endl; // Получаем имя ноды в виде std::string
 
             // Извлекаем локальные TRS компоненты из матрицы Assimp
             aiVector3D localScale;
@@ -819,6 +833,13 @@ void SceneImporter::parseLights(
 
     for (uint32_t i = 0; i < scene->mNumLights; ++i) {
         aiLight* aiLt = scene->mLights[i];
+        aiMatrix4x4 aiLightTransform;
+        for (auto lightNode = scene->mRootNode->FindNode(aiLt->mName.C_Str()); lightNode != nullptr; lightNode = lightNode->mParent) {
+            aiLightTransform = lightNode->mTransformation * aiLightTransform;
+
+        }
+        glm::mat4 lightTransform = convertMatrix4x4(aiLightTransform);
+
         // Переводим цвета и интенсивность из Assimp в единый вектор цвета
         glm::vec3 color(aiLt->mColorDiffuse.r, aiLt->mColorDiffuse.g, aiLt->mColorDiffuse.b);
 
@@ -832,7 +853,18 @@ void SceneImporter::parseLights(
             // =========================================================================
             case aiLightSource_DIRECTIONAL: {
                 format::DirectionalLight dLt{};
-                dLt.directionAndIntensity = glm::vec4(glm::normalize(dir), 1.0); // Интенсивность зашиваем в W
+
+                // 2. Извлекаем подматрицу вращения 3х3
+                auto rotationMatrix = glm::mat3(lightTransform);
+
+                // 3. Базовый вектор направления в FBX/Assimp
+                auto localDirection = glm::vec3(aiLt->mDirection.x, std::abs(aiLt->mDirection.y), aiLt->mDirection.z);
+
+                // 4. Получаем мировое направление и обязательно НОРМАЛИЗУЕМ его
+                // (чтобы исключить влияние масштабирования (Scale) из матрицы)
+                auto worldDirection = glm::normalize(rotationMatrix * localDirection);
+
+                dLt.directionAndIntensity = glm::vec4(glm::normalize(worldDirection), 1.0); // Интенсивность зашиваем в W
                 dLt.color = glm::vec4(color, 1.0f);
                 outDirLights.push_back(dLt);
                 break;
@@ -1114,16 +1146,6 @@ void SceneImporter::processGeometry(
     std::cout << "[AssetProcessor] Геометрия успешно запечена в блоб через meshoptimizer!" << std::endl;
     std::cout << "  -> Всего мeshей упаковано: " << outMeshes.size() << std::endl;
     std::cout << "  -> Общий вес сырой геометрии: " << (static_cast<double>(globalBulkData.size()) / (1024.0 * 1024.0)) << " МБ." << std::endl;
-}
-
-// Вспомогательная функция для конвертации матриц Assimp в GLM
-static inline glm::mat4 convertMatrix4x4(const aiMatrix4x4& from) {
-    glm::mat4 to;
-    to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
-    to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
-    to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
-    to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
-    return to;
 }
 
 void SceneImporter::parseAnimations(

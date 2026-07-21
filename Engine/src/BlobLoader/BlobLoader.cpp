@@ -1,6 +1,7 @@
 #include "BlobLoader.hpp"
 #include <fstream>
 #include <algorithm>
+#include <vulkan/vulkan.hpp>
 
 namespace shuttle_engine {
 
@@ -8,28 +9,63 @@ namespace shuttle_engine {
     // mip size calculation
     // =========================================================================
 
-    uint32_t BlobSceneData::calcMipSize(uint32_t w, uint32_t h, uint32_t format_vk) {
-        // VkFormat BC range starts at 131 (BC1_RGB_UNORM_BLOCK).
-        // BC1 (131-134) and BC4 (139-140) use 8 bytes per 4x4 block; all others use 16.
-        constexpr uint32_t VK_FORMAT_BC1_RGB_UNORM_BLOCK  = 131;
-        constexpr uint32_t VK_FORMAT_BC1_RGBA_SRGB_BLOCK  = 134;
-        constexpr uint32_t VK_FORMAT_BC4_UNORM_BLOCK      = 139;
-        constexpr uint32_t VK_FORMAT_BC4_SNORM_BLOCK      = 140;
+    uint32_t BlobSceneData::calcMipSize(
+    uint32_t w,
+    uint32_t h,
+    uint32_t format_vk)
+    {
+        // BC compressed formats
+        constexpr uint32_t VK_FORMAT_BC1_RGB_UNORM_BLOCK = 131;
+        constexpr uint32_t VK_FORMAT_BC1_RGBA_SRGB_BLOCK = 134;
+        constexpr uint32_t VK_FORMAT_BC4_UNORM_BLOCK     = 139;
+        constexpr uint32_t VK_FORMAT_BC4_SNORM_BLOCK     = 140;
 
-        if (format_vk >= VK_FORMAT_BC1_RGB_UNORM_BLOCK) {
-            // Block-compressed format
+        if (format_vk >= VK_FORMAT_BC1_RGB_UNORM_BLOCK)
+        {
             uint32_t blockBytes = 16;
+
             if ((format_vk <= VK_FORMAT_BC1_RGBA_SRGB_BLOCK) ||
-                (format_vk == VK_FORMAT_BC4_UNORM_BLOCK || format_vk == VK_FORMAT_BC4_SNORM_BLOCK)) {
+                (format_vk == VK_FORMAT_BC4_UNORM_BLOCK) ||
+                (format_vk == VK_FORMAT_BC4_SNORM_BLOCK))
+            {
                 blockBytes = 8;
             }
-            uint32_t blocksX = (w + 3) / 4;
-            uint32_t blocksY = (h + 3) / 4;
+
+            const uint32_t blocksX = (w + 3) / 4;
+            const uint32_t blocksY = (h + 3) / 4;
+
             return blocksX * blocksY * blockBytes;
         }
 
-        // Uncompressed: assume 4 bytes per pixel (R8G8B8A8 family).
-        return w * h * 4;
+        switch (static_cast<vk::Format>(format_vk))
+        {
+            case vk::Format::eR8Unorm:
+                return w * h;
+
+            case vk::Format::eR8G8Unorm:
+                return w * h * 2;
+
+            case vk::Format::eR8G8B8A8Unorm:
+            case vk::Format::eR8G8B8A8Srgb:
+                return w * h * 4;
+
+            case vk::Format::eR16G16Sfloat:
+                return w * h * 4;
+
+            case vk::Format::eR16G16B16A16Sfloat:
+                return w * h * 8;
+
+            case vk::Format::eR32G32Sfloat:
+                return w * h * 8;
+
+            case vk::Format::eR32G32B32A32Sfloat:
+                return w * h * 16;
+
+            default:
+                throw std::runtime_error(
+                    "BlobSceneData::calcMipSize(): Unsupported format."
+                );
+        }
     }
 
     uint64_t BlobSceneData::calcTextureDataSize(const format::TextureMetaData& meta) {

@@ -13,6 +13,7 @@ endif()
 
 add_executable(AssetProcessor
     include/BlobLayout.hpp
+    include/EnvironmentFormat.hpp
     src/main.cpp
     src/TextureImporter/TextureImporter.cpp
     src/TextureImporter/TextureImporter.hpp
@@ -22,6 +23,8 @@ add_executable(AssetProcessor
     src/ispc_texcomp/ispc_texcomp.cpp
     src/ispc_texcomp/ispc_texcomp.h
     src/ispc_texcomp/kernel_ispc.h
+    src/EnvironmentBlobWriter/EnvironmentBlobWriter.cpp
+    src/EnvironmentBlobWriter/EnvironmentBlobWriter.hpp
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/rgbcx.cpp"
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/rgbcx.h"
     "${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/bc7enc.h"
@@ -33,12 +36,31 @@ if(NOT MSVC)
     target_link_options(AssetProcessor PRIVATE "-Wl,--defsym,__chkstk=___chkstk_ms")
 endif()
 
-target_include_directories(AssetProcessor SYSTEM PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_include_directories(AssetProcessor PRIVATE include)
 
 target_link_libraries(AssetProcessor PRIVATE
     assimp
     OpenMP::OpenMP_CXX
     meshoptimizer
+)
+
+add_executable(cmft_test
+        tests/CmftTest.cpp
+        src/EnvironmentBlobWriter/EnvironmentBlobWriter.cpp
+        src/EnvironmentBaker/EnvironmentBaker.cpp
+)
+
+target_link_libraries(
+        cmft_test
+        PRIVATE
+        cmft
+)
+
+target_include_directories(
+        cmft_test
+        PRIVATE
+        include
+        ${Vulkan_INCLUDE_DIRS}
 )
 
 target_compile_definitions(AssetProcessor PRIVATE
