@@ -27,10 +27,6 @@ namespace shuttle_engine {
         resources::DeviceAllocator const& allocator) {
         PbrRender render;
 
-        if (auto res = render.initMainRenderPass(device, finalLayout); res != vk::Result::eSuccess)
-            return {res, {}};
-        if (auto res = render.initShadowRenderPass(device); res != vk::Result::eSuccess)
-            return {res, {}};
         if (auto res = render.initPbrMaterialSetLayout(device); res != vk::Result::eSuccess)
             return {res, {}};
         if (auto res = render.initPbrEnvironmentSetLayout(device); res != vk::Result::eSuccess)
@@ -929,7 +925,8 @@ namespace shuttle_engine {
         vk::CommandBuffer cmd,
         FrameData const& frameData,
         RenderTargets const& targets,
-        std::function<void(vk::CommandBuffer)> const& additionalCommands) const
+        std::function<void(vk::CommandBuffer)> const& additionalCommands,
+        bool needsMakeScreenshot) const
     {
         // =========================================================================
         // ПАСС 1: РЕНДЕРИНГ В КАРТУ ТЕНЕЙ (SHADOW PASS)
@@ -939,15 +936,35 @@ namespace shuttle_engine {
 
             vk::RenderingAttachmentInfo shadowAttachment{
                 .imageView = *frameData.shadowMapImageView,
-                .imageLayout = vk::ImageLayout::eDepthAttachmentOptimal,
+                .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
                 .clearValue = shadowClear
             };
 
+            vk::ImageMemoryBarrier2 shadowMapBarrier{
+                .srcStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                .srcAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
+                .dstStageMask = vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+                .dstAccessMask = vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+                .oldLayout = vk::ImageLayout::eUndefined,
+                .newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = *frameData.shadowMapImage,
+                .subresourceRange = vk::ImageSubresourceRange{
+                    .aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+                }
+            };
+
             cmd.pipelineBarrier2(
                 vk::DependencyInfo{
-
+                    .imageMemoryBarrierCount = 1,
+                    .pImageMemoryBarriers = &shadowMapBarrier
                 }
             );
 
@@ -1010,6 +1027,69 @@ namespace shuttle_engine {
             );
 
             cmd.endRendering();
+            std::array imageMemoryBarriers{
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eLateFragmentTests,
+                    .srcAccessMask = vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                    .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
+                    .oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                    .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *frameData.shadowMapImage,
+                    .subresourceRange = vk::ImageSubresourceRange{
+                        .aspectMask = vk::ImageAspectFlagBits::eStencil | vk::ImageAspectFlagBits::eDepth,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    }
+                },
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    .dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = targets.colorAttachmentImage,
+                    .subresourceRange = vk::ImageSubresourceRange{
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    }
+                },
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests,
+                    .dstAccessMask = vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *targets.depthBufferImage,
+                    .subresourceRange = vk::ImageSubresourceRange{
+                        .aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    }
+                }
+            };
+
+            cmd.pipelineBarrier2(
+                vk::DependencyInfo{
+                    .imageMemoryBarrierCount = static_cast<uint32_t>(imageMemoryBarriers.size()),
+                    .pImageMemoryBarriers = imageMemoryBarriers.data()
+                }
+            );
         }
 
         // =========================================================================
@@ -1017,19 +1097,41 @@ namespace shuttle_engine {
         // =========================================================================
         {
             std::array clearValues{
-                vk::ClearValue{ .color = vk::ClearColorValue{.float32 = std::array{sceneData.sceneLightingData.ambient.r, sceneData.sceneLightingData.ambient.g, sceneData.sceneLightingData.ambient.b, 1.0f} } },
-                vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{ 1.0f, 0 } }
+                vk::ClearValue{ .color = vk::ClearColorValue{ .float32 = std::array{0.0f, 0.0f, 0.0f, 1.0f} } },
+                vk::ClearValue{ .depthStencil = vk::ClearDepthStencilValue{ .depth = 1.0f, .stencil = 0 } }
             };
 
-            vk::RenderPassBeginInfo mainPassBegin{
-                .renderPass = *mainRenderPass,
-                .framebuffer = *targets.mainRenderPassFramebuffer, // Берем FB по индексу кадра
-                .renderArea = vk::Rect2D{ {0, 0}, targets.renderTargetExtent },
-                .clearValueCount = static_cast<uint32_t>(clearValues.size()),
-                .pClearValues = clearValues.data()
+            vk::RenderingAttachmentInfo mainRenderingColorAttachmentInfo{
+                .imageView = *targets.colorAttachmentImageView,
+                .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .resolveMode = vk::ResolveModeFlagBits::eNone,
+                .resolveImageView = nullptr,
+                .resolveImageLayout = vk::ImageLayout::eUndefined,
+                .loadOp = vk::AttachmentLoadOp::eClear,
+                .storeOp = vk::AttachmentStoreOp::eStore,
+                .clearValue = clearValues[0]
+            };
+            vk::RenderingAttachmentInfo mainRenderingDepthAttachmentInfo{
+                .imageView = *targets.depthBufferImageView,
+                .imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                .resolveMode = vk::ResolveModeFlagBits::eNone,
+                .resolveImageView = nullptr,
+                .resolveImageLayout = vk::ImageLayout::eUndefined,
+                .loadOp = vk::AttachmentLoadOp::eClear,
+                .storeOp = vk::AttachmentStoreOp::eStore,
+                .clearValue = clearValues[1]
             };
 
-            cmd.beginRenderPass(mainPassBegin, vk::SubpassContents::eInline);
+            cmd.beginRendering(
+                vk::RenderingInfo {
+                    .renderArea = vk::Rect2D{ .offset = {.x = 0, .y = 0}, .extent = targets.renderTargetExtent },
+                    .layerCount = 1,
+                    .colorAttachmentCount = 1,
+                    .pColorAttachments = &mainRenderingColorAttachmentInfo,
+                    .pDepthAttachment = &mainRenderingDepthAttachmentInfo,
+                    .pStencilAttachment = nullptr
+                }
+            );
 
             vk::Viewport viewport{
                 .x = 0.0f, .y = 0.0f,
@@ -1132,7 +1234,96 @@ namespace shuttle_engine {
 
             additionalCommands(cmd);
 
-            cmd.endRenderPass();
+            cmd.endRendering();
+
+            std::array endRenderingImageBarriers {
+                // Color Attachment Barrier
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                    .srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
+                    .dstStageMask = needsMakeScreenshot ? vk::PipelineStageFlagBits2::eTransfer : vk::PipelineStageFlagBits2::eNone,
+                    .dstAccessMask = needsMakeScreenshot ? vk::AccessFlagBits2::eTransferRead : vk::AccessFlagBits2::eNone,
+                    .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .newLayout = needsMakeScreenshot ? vk::ImageLayout::eTransferSrcOptimal : vk::ImageLayout::ePresentSrcKHR,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = targets.colorAttachmentImage,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    }
+                },
+                // Depth Stencil Attachment Barrier
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eLateFragmentTests,
+                    .srcAccessMask = vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .dstAccessMask = vk::AccessFlagBits2::eNone,
+                    .oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                    .newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *targets.depthBufferImage,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    }
+                }
+            };
+            cmd.pipelineBarrier2(
+                {
+                    .imageMemoryBarrierCount = static_cast<uint32_t>(endRenderingImageBarriers.size()),
+                    .pImageMemoryBarriers = endRenderingImageBarriers.data()
+                }
+            );
+
+            if (needsMakeScreenshot) {
+                cmd.copyImageToBuffer(
+                    targets.colorAttachmentImage,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    *frameData.screenshotBuffer,
+                    vk::BufferImageCopy{
+                        .bufferOffset = 0,
+                        .bufferRowLength = 0,
+                        .bufferImageHeight = 0,
+                        .imageSubresource = { .aspectMask = vk::ImageAspectFlagBits::eColor, .mipLevel = 0, .baseArrayLayer = 0, .layerCount = 1 },
+                        .imageOffset = { .x = 0, .y = 0, .z = 0 },
+                        .imageExtent = { .width = targets.renderTargetExtent.width, .height = targets.renderTargetExtent.height, .depth = 1 }
+                    }
+                );
+
+                vk::ImageMemoryBarrier2 colorAttachmentBarrier {
+                    .srcStageMask = vk::PipelineStageFlagBits2::eTransfer,
+                    .srcAccessMask = vk::AccessFlagBits2::eTransferRead,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .dstAccessMask = vk::AccessFlagBits2::eNone,
+                    .oldLayout = vk::ImageLayout::eTransferSrcOptimal,
+                    .newLayout = vk::ImageLayout::ePresentSrcKHR,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = targets.colorAttachmentImage,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    }
+                };
+
+                cmd.pipelineBarrier2(
+                    vk::DependencyInfo{
+                        .imageMemoryBarrierCount = 1,
+                        .pImageMemoryBarriers = &colorAttachmentBarrier
+                    }
+                );
+            }
         }
     }
 
@@ -1361,24 +1552,11 @@ namespace shuttle_engine {
                 *uniqueDepthBufferImageView
             };
 
-            auto [framebufferCreateResult, uniqueFramebuffer] = device.createFramebufferUnique(
-                vk::FramebufferCreateInfo{
-                    .renderPass = *mainRenderPass,
-                    .attachmentCount = 2,
-                    .pAttachments = attachments.data(),
-                    .width = renderTargetExtent.width,
-                    .height = renderTargetExtent.height,
-                    .layers = 1
-                }
-            );
-
-            if (framebufferCreateResult != vk::Result::eSuccess) return {framebufferCreateResult, {}};
-
             result.emplace_back(RenderTargets{
                 .depthBufferImage = std::move(uniqueDepthBuffer),
                 .depthBufferImageView = std::move(uniqueDepthBufferImageView),
+                .colorAttachmentImage = target,
                 .colorAttachmentImageView = std::move(uniqueColorImageView),
-                .mainRenderPassFramebuffer = std::move(uniqueFramebuffer),
                 .renderTargetExtent = renderTargetExtent
             });
         }
@@ -1389,6 +1567,7 @@ namespace shuttle_engine {
         vk::Device device,
         resources::DeviceAllocator const &allocator,
         vk::Extent2D shadowMapExtent,
+        vk::Extent2D renderTargetExtent,
         vk::DescriptorPool descriptorPool,
         uint32_t frameCount
     ) const {
@@ -1455,19 +1634,6 @@ namespace shuttle_engine {
             std::array attachments {
                 *uniqueShadowMapImageView
             };
-
-            auto [framebufferCreateResult, uniqueFramebuffer] = device.createFramebufferUnique(
-                vk::FramebufferCreateInfo{
-                    .renderPass = *shadowRenderPass,
-                    .attachmentCount = 1,
-                    .pAttachments = attachments.data(),
-                    .width = shadowMapExtent.width,
-                    .height = shadowMapExtent.height,
-                    .layers = 1
-                }
-            );
-
-            if (framebufferCreateResult != vk::Result::eSuccess) return {framebufferCreateResult, {}};
 
             auto [lightSceneDataUboCreateResult, uniqueLightSceneDataUbo] = allocator.createAndAllocateBufferUnique(
                 vk::BufferCreateInfo{
@@ -1570,16 +1736,29 @@ namespace shuttle_engine {
                 {}
             );
 
+            auto [createScreenshotBufferResult, uniqueScreenshotBuffer] = allocator.createAndAllocateBufferUnique(
+                {
+                    .size = renderTargetExtent.width * renderTargetExtent.height * 4, // Assuming 4 bytes per pixel (e.g., RGBA8)
+                    .usage = vk::BufferUsageFlagBits::eTransferDst
+                },
+                resources::MemoryUsage::eGpuToCpu,
+                resources::AllocationCreateFlags {
+                    static_cast<uint32_t>(resources::AllocationCreateFlagBits::eHostAccessRandom) |
+                    static_cast<uint32_t>(resources::AllocationCreateFlagBits::eMapped)
+                }
+            );
+            if (createScreenshotBufferResult != vk::Result::eSuccess) return {createScreenshotBufferResult, {}};
+
             result.emplace_back(
                 FrameData{
                     .shadowMapImage = std::move(uniqueShadowMapImage),
                     .shadowMapImageView = std::move(uniqueShadowMapImageView),
-                    .shadowRenderPassFramebuffer = std::move(uniqueFramebuffer),
                     .shadowExtent = shadowMapExtent,
                     .cameraUbo = std::move(uniqueCameraUbo),
                     .lightInfoUbo = std::move(uniqueLightSceneDataUbo),
                     .lightSsbo = std::move(uniqueLightSsbo),
                     .sceneDataSet = sceneSets[i],
+                    .screenshotBuffer = std::move(uniqueScreenshotBuffer)
                 }
             );
         }

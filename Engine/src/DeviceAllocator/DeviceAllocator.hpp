@@ -231,6 +231,7 @@ namespace shuttle_engine::resources {
 		[[nodiscard]] vk::Result readBufferToHostStride(StrideCopyBufferToHostInfo const& readInfos) const noexcept;
 		[[nodiscard]] vk::Result writeBufferFromHost(CopyHostToBufferInfo const& writeInfo) const noexcept;
 		[[nodiscard]] vk::Result readBufferToHost(CopyBufferToHostInfo const& readInfo) const noexcept;
+		[[nodiscard]] void* getMappedPointer(AllocatedBuffer buffer) const noexcept;
 
 		DeviceAllocator& operator=(DeviceAllocator const& other) = default;
 

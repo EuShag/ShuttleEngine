@@ -253,6 +253,14 @@ namespace shuttle_engine::resources {
 		return vk::Result::eSuccess;
 	}
 
+	void * DeviceAllocator::getMappedPointer(AllocatedBuffer buffer) const noexcept {
+		auto&& allocator = static_cast<VmaAllocator>(handle);
+		auto&& allocationHandle = static_cast<VmaAllocation>(buffer.getAllocation());
+		VmaAllocationInfo allocationInfo;
+		vmaGetAllocationInfo(allocator, allocationHandle, &allocationInfo);
+		return allocationInfo.pMappedData;
+	}
+
 	vk::Result DeviceAllocator::readBufferToHostStride(StrideCopyBufferToHostInfo const &readInfos) const noexcept {
 		auto&& allocator = static_cast<VmaAllocator>(handle);
 		auto&& allocationHandle = static_cast<VmaAllocation>(readInfos.srcBuffer.getAllocation());

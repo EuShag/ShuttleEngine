@@ -1,5 +1,48 @@
 #include "VulkanHelperFunctions.hpp"
+
+#include <chrono>
 #include <fstream>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <filesystem>
+#include <iostream>
+#include <stb_image_write.h>
+
+namespace {
+
+	std::filesystem::path makeScreenshotFileName()
+	{
+		namespace fs = std::filesystem;
+
+		fs::create_directories("../resources/screenshots");
+
+		auto now =
+			std::chrono::system_clock::now();
+
+		auto time =
+			std::chrono::system_clock::to_time_t(now);
+
+		std::tm localTime{};
+
+		#ifdef _WIN32
+		localtime_s(&localTime, &time);
+		#else
+		localtime_r(&time, &localTime);
+		#endif
+
+		std::stringstream ss;
+
+		ss
+			<< "../resources/screenshots"
+			<< std::put_time(
+				   &localTime,
+				   "%Y-%m-%d_%H-%M-%S"
+			   )
+			<< ".png";
+
+		return ss.str();
+	}
+
+}
 
 vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Device const& device, char const* filePath) {
 	std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
@@ -102,5 +145,36 @@ void strideCopy(void *dst, void const *src, size_t elementSize, size_t elementCo
 		std::memcpy(dstChar, srcChar, elementSize);
 		dstChar += dstStride;
 		srcChar += srcStride;
+	}
+}
+
+void safeScreenshot(void* screenshotBuffer, uint32_t width, uint32_t height) {
+	auto filepath = makeScreenshotFileName();
+	// Здесь можно добавить код для сохранения скриншота в файл с именем filename
+	// Создадим файл по новому пути
+
+	auto _width = static_cast<int32_t>(width);
+	auto _height = static_cast<int32_t>(height);
+
+	std::cout << "Safe Screenshot (" << _width << "x" << _height << ")" << "To" << filepath << " From " << screenshotBuffer << std::endl;
+
+
+	for (size_t i = 0; i < width * height; ++i)
+	{
+		std::swap(
+			static_cast<uint8_t*>(screenshotBuffer)[4 * i + 0],
+			static_cast<uint8_t*>(screenshotBuffer)[4 * i + 2]
+		);
+	}
+
+
+	auto result = stbi_write_png(
+		filepath.string().c_str(),
+		_width, _height, 4,
+		screenshotBuffer,
+		_width * 4
+	);
+	if (result == 0) {
+		std::cerr << "Failed to save screenshot to " << filepath << std::endl;
 	}
 }

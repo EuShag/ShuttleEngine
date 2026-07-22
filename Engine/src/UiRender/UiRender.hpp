@@ -83,8 +83,7 @@ namespace shuttle_engine {
             vk::Device device,
             uint32_t queueFamilyIndex,
             vk::Queue queue,
-            uint32_t imageCount,
-            vk::RenderPass renderPass
+            uint32_t imageCount
         );
 
         void bindInputEventHandler(SdlLibrary& library);

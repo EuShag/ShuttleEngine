@@ -40,24 +40,36 @@ namespace shuttle_engine {
         vk::Device device,
         vk::SwapchainKHR swapchain,
         uint32_t frameIndex) {
-        return device.acquireNextImageKHR(swapchain, UINT64_MAX, *uniqueImageAvailableSemaphores[frameIndex]);
+        return device.acquireNextImageKHR(swapchain, 0, *uniqueImageAvailableSemaphores[frameIndex]);
     }
 
     vk::Result FrameManager::submitRenderCommands(vk::Queue graphicsQueue, vk::CommandBuffer cmd, uint32_t frameIndex,
         uint32_t imageIndex) {
 
-        vk::PipelineStageFlags pipelineStagesMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        constexpr vk::PipelineStageFlags2 waitPipelineStagesMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+        constexpr vk::PipelineStageFlags2 signalPipelineStagesMask = vk::PipelineStageFlagBits2::eAllCommands;
+        vk::SemaphoreSubmitInfo waitSemaphoreInfo{
+            .semaphore = *uniqueImageAvailableSemaphores[frameIndex],
+            .stageMask = waitPipelineStagesMask
+        };
+        vk::SemaphoreSubmitInfo signalSemaphoreInfo{
+            .semaphore = *uniqueRenderFinishedSemaphores[imageIndex],
+            .stageMask = signalPipelineStagesMask
+        };
+        vk::CommandBufferSubmitInfo commandBufferSubmitInfo{
+            .commandBuffer = cmd,
+            .deviceMask = 1
+        };
 
-        return graphicsQueue.submit(
+        return graphicsQueue.submit2(
             {
                 {
-                    .waitSemaphoreCount = 1,
-                    .pWaitSemaphores = &*uniqueImageAvailableSemaphores[frameIndex],
-                    .pWaitDstStageMask = &pipelineStagesMask,
-                    .commandBufferCount = 1,
-                    .pCommandBuffers = &cmd,
-                    .signalSemaphoreCount = 1,
-                    .pSignalSemaphores = &*uniqueRenderFinishedSemaphores[imageIndex]
+                    .waitSemaphoreInfoCount = 1,
+                    .pWaitSemaphoreInfos = &waitSemaphoreInfo,
+                    .commandBufferInfoCount = 1,
+                    .pCommandBufferInfos = &commandBufferSubmitInfo,
+                    .signalSemaphoreInfoCount = 1,
+                    .pSignalSemaphoreInfos = &signalSemaphoreInfo
                 }
             },
             *uniqueInFlightFences[frameIndex]

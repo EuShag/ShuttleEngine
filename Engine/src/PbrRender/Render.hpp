@@ -224,6 +224,7 @@ namespace shuttle_engine{
     struct RenderTargets {
         resources::UniqueAllocatedImage depthBufferImage;
         vk::UniqueImageView depthBufferImageView;
+        vk::Image colorAttachmentImage;
         vk::UniqueImageView colorAttachmentImageView;
         vk::UniqueFramebuffer mainRenderPassFramebuffer;
         vk::Extent2D renderTargetExtent;
@@ -232,13 +233,13 @@ namespace shuttle_engine{
     struct FrameData {
         resources::UniqueAllocatedImage shadowMapImage;
         vk::UniqueImageView shadowMapImageView;
-        vk::UniqueFramebuffer shadowRenderPassFramebuffer;
         vk::Extent2D shadowExtent;
 
         resources::UniqueAllocatedBuffer cameraUbo;
         resources::UniqueAllocatedBuffer lightInfoUbo;
         resources::UniqueAllocatedBuffer lightSsbo;
         vk::DescriptorSet sceneDataSet;
+        resources::UniqueAllocatedBuffer screenshotBuffer;
     };
 
     class PbrRender {
@@ -278,6 +279,7 @@ namespace shuttle_engine{
             vk::Device device,
             resources::DeviceAllocator const& allocator,
             vk::Extent2D shadowMapExtent,
+            vk::Extent2D renderTargetExtent,
             vk::DescriptorPool descriptorPool,
             uint32_t frameCount
         ) const;
@@ -287,9 +289,8 @@ namespace shuttle_engine{
             vk::CommandBuffer cmd,
             FrameData const& frameData,
             RenderTargets const& targets,
-            std::function<void(vk::CommandBuffer)> const& additionalCommands) const;
-
-        vk::RenderPass getMainRenderPass(){ return *mainRenderPass; }
+            std::function<void(vk::CommandBuffer)> const& additionalCommands,
+            bool needsMakeScreenshot) const;
 
         PbrRender(const PbrRender&) = delete;
         PbrRender& operator=(const PbrRender&) = delete;
@@ -300,8 +301,6 @@ namespace shuttle_engine{
         ~PbrRender() = default;
 
     private:
-        vk::Result initMainRenderPass(vk::Device device, vk::ImageLayout finalColorLayout);
-        vk::Result initShadowRenderPass(vk::Device device);
         vk::Result initPbrMaterialSetLayout(vk::Device device);
         vk::Result initPbrEnvironmentSetLayout(vk::Device device);
         vk::Result initSceneDataSetLayout(vk::Device device);
@@ -348,9 +347,6 @@ namespace shuttle_engine{
             std::array<vk::ImageView, 5> const& textureViews);
 
         PbrRender() = default;
-
-        vk::UniqueRenderPass mainRenderPass;
-        vk::UniqueRenderPass shadowRenderPass;
 
         vk::UniquePipeline mainPipeline;
         vk::UniquePipeline shadowPipeline;

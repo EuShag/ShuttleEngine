@@ -6,7 +6,7 @@ int main()
     shuttle_engine::assets::EnvironmentBaker baker;
 
     auto result =
-        baker.bake(R"(C:\Users\Shagu\Desktop\Bistro_v5_2\san_giuseppe_bridge_4k.hdr)");
+        baker.bake(R"(C:\Users\Shagu\Downloads\qwantani_sunset_puresky_4k (1).hdr)");
 
     shuttle_engine::assets::EnvironmentBlobWriter::write(
         result,

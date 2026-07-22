@@ -6,150 +6,6 @@
 
 namespace shuttle_engine {
 
-        vk::Result PbrRender::initMainRenderPass(vk::Device device, vk::ImageLayout finalLayout) {
-
-        std::array attachmentDescriptions {
-            vk::AttachmentDescription{
-                .format = vk::Format::eB8G8R8A8Srgb,
-                .samples = vk::SampleCountFlagBits::e1,
-                .loadOp = vk::AttachmentLoadOp::eClear,
-                .storeOp = vk::AttachmentStoreOp::eStore,
-                .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-                .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-                .initialLayout = vk::ImageLayout::eUndefined,
-                .finalLayout = finalLayout
-            },
-            vk::AttachmentDescription{
-                .format = vk::Format::eD32SfloatS8Uint,
-                .samples = vk::SampleCountFlagBits::e1,
-                .loadOp = vk::AttachmentLoadOp::eClear,
-                .storeOp = vk::AttachmentStoreOp::eDontCare,
-                .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-                .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-                .initialLayout = vk::ImageLayout::eUndefined,
-                .finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal
-            }
-        };
-
-        std::array attachmentReferences {
-            vk::AttachmentReference{
-                .attachment = 0,
-                .layout = vk::ImageLayout::eColorAttachmentOptimal
-            },
-            vk::AttachmentReference{
-                .attachment = 1,
-                .layout = vk::ImageLayout::eDepthStencilAttachmentOptimal
-            }
-        };
-
-        vk::SubpassDescription subpassDescription {
-            .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
-            .colorAttachmentCount = 1,
-            .pColorAttachments = &attachmentReferences[0],
-            .pDepthStencilAttachment = &attachmentReferences[1]
-        };
-
-        std::array subpassDependencies {
-            vk::SubpassDependency{
-                .srcSubpass = vk::SubpassExternal,
-                .dstSubpass = 0,
-                .srcStageMask = vk::PipelineStageFlagBits::eBottomOfPipe,
-                .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                .srcAccessMask = {},
-                .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
-                .dependencyFlags = vk::DependencyFlagBits::eByRegion
-            },
-            vk::SubpassDependency{
-                .srcSubpass = 0,
-                .dstSubpass = vk::SubpassExternal,
-                .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                .dstStageMask = vk::PipelineStageFlagBits::eBottomOfPipe,
-                .srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
-                .dstAccessMask = {},
-                .dependencyFlags = vk::DependencyFlagBits::eByRegion
-            }
-        };
-
-        vk::RenderPassCreateInfo const renderPassCreateInfo {
-            .attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size()),
-            .pAttachments = attachmentDescriptions.data(),
-            .subpassCount = 1,
-            .pSubpasses = &subpassDescription,
-            .dependencyCount = static_cast<uint32_t>(subpassDependencies.size()),
-            .pDependencies = subpassDependencies.data()
-        };
-
-        auto mainRenderPassResultValue = device.createRenderPassUnique(renderPassCreateInfo);
-        if (mainRenderPassResultValue.result != vk::Result::eSuccess) {
-            return mainRenderPassResultValue.result;
-        }
-        mainRenderPass = std::move(mainRenderPassResultValue.value);
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result PbrRender::initShadowRenderPass(vk::Device device) {
-        vk::AttachmentDescription attachmentDescription {
-            .format = vk::Format::eD32SfloatS8Uint,
-            .samples = vk::SampleCountFlagBits::e1,
-            .loadOp = vk::AttachmentLoadOp::eClear,
-            .storeOp = vk::AttachmentStoreOp::eStore,
-            .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
-            .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
-            .initialLayout = vk::ImageLayout::eUndefined,
-            .finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal
-        };
-
-        vk::AttachmentReference attachmentReference {
-            .attachment = 0,
-            .layout = vk::ImageLayout::eDepthStencilAttachmentOptimal
-        };
-
-        vk::SubpassDescription subpassDescription {
-            .pipelineBindPoint = vk::PipelineBindPoint::eGraphics,
-            .colorAttachmentCount = 0,
-            .pDepthStencilAttachment = &attachmentReference
-        };
-
-        // Зависимости отличные! Они синхронизируют запись глубины и последующее чтение.
-        std::array subpassDependencies {
-            vk::SubpassDependency{
-                .srcSubpass = vk::SubpassExternal,
-                .dstSubpass = 0,
-                // Смена: теперь мы ждем начала прохода, а не фрагментного шейдера
-                .srcStageMask = vk::PipelineStageFlagBits::eBottomOfPipe,
-                .dstStageMask = vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
-                .srcAccessMask = vk::AccessFlagBits::eMemoryRead,
-                .dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                .dependencyFlags = vk::DependencyFlagBits::eByRegion
-            },
-            vk::SubpassDependency{
-                .srcSubpass = 0,
-                .dstSubpass = vk::SubpassExternal,
-                .srcStageMask = vk::PipelineStageFlagBits::eLateFragmentTests,
-                .dstStageMask = vk::PipelineStageFlagBits::eFragmentShader,
-                .srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite,
-                .dstAccessMask = vk::AccessFlagBits::eShaderRead,
-                .dependencyFlags = vk::DependencyFlagBits::eByRegion
-            }
-        };
-
-        vk::RenderPassCreateInfo const renderPassCreateInfo {
-            .attachmentCount = 1,
-            .pAttachments = &attachmentDescription,
-            .subpassCount = 1,
-            .pSubpasses = &subpassDescription,
-            .dependencyCount = static_cast<uint32_t>(subpassDependencies.size()),
-            .pDependencies = subpassDependencies.data()
-        };
-
-        auto shadowRenderPassResultValue = device.createRenderPassUnique(renderPassCreateInfo);
-        if (shadowRenderPassResultValue.result != vk::Result::eSuccess) {
-            return shadowRenderPassResultValue.result;
-        }
-        shadowRenderPass = std::move(shadowRenderPassResultValue.value);
-        return vk::Result::eSuccess;
-    }
-
     vk::Result PbrRender::initMainPipeline(vk::Device device) {
         // 1. Загрузка шейдеров
         auto vertModule = loadAndCreateShaderModuleUnique(device, "../shaders/pbr.vert.spv");
@@ -281,8 +137,17 @@ namespace shuttle_engine {
             .pDynamicStates = dynamicStates.data()
         };
 
+        vk::Format colorFormat = vk::Format::eB8G8R8A8Srgb;
+
+        vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo{
+            .colorAttachmentCount = 1,
+            .pColorAttachmentFormats = &colorFormat,
+            .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint
+        };
+
         // 10. Финальная сборка Graphics Pipeline
         vk::GraphicsPipelineCreateInfo const pipelineCreateInfo {
+            .pNext = &pipelineRenderingCreateInfo,
             .stageCount = 2,
             .pStages = shaderStages,
             .pVertexInputState = &vertexInput,
@@ -294,7 +159,7 @@ namespace shuttle_engine {
             .pColorBlendState = &colorBlending,
             .pDynamicState = &dynamicState,
             .layout = mainPipelineLayout.get(), // Макет основного конвейера
-            .renderPass = mainRenderPass.get()  // Проход основного рендеринга
+            .renderPass = VK_NULL_HANDLE  // Проход основного рендеринга
         };
 
         auto mainPipelineResultValue = device.createGraphicsPipelineUnique(nullptr, pipelineCreateInfo);
@@ -374,14 +239,20 @@ namespace shuttle_engine {
         vk::DynamicState dynamicStates[] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor, vk::DynamicState::eDepthBias };
         vk::PipelineDynamicStateCreateInfo dynamicState{ .dynamicStateCount = 3, .pDynamicStates = dynamicStates };
 
+        vk::PipelineRenderingCreateInfo rendering{
+            .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint,
+            .stencilAttachmentFormat = vk::Format::eUndefined
+        };
+
         vk::GraphicsPipelineCreateInfo pipelineInfo{
+            .pNext = &rendering,
             .stageCount = 1, .pStages = shaderStages,
             .pVertexInputState = &vertexInput, .pInputAssemblyState = &inputAssembly,
             .pViewportState = &viewport, .pRasterizationState = &rasterizer, .pMultisampleState = &multisampling,
             .pDepthStencilState = &depthStencil, .pColorBlendState = &colorBlend,
             .pDynamicState = &dynamicState,
             .layout = shadowPipelineLayout.get(),
-            .renderPass = shadowRenderPass.get(),
+            .renderPass = VK_NULL_HANDLE,
             .subpass = 0
         };
 
@@ -491,10 +362,18 @@ namespace shuttle_engine {
             .pDynamicStates = dynamicStates.data()
         };
 
+        vk::Format colorFormat = vk::Format::eB8G8R8A8Srgb;
+
+        vk::PipelineRenderingCreateInfo pipelineRenderingCreateInfo{
+            .colorAttachmentCount = 1,
+            .pColorAttachmentFormats = &colorFormat,
+            .depthAttachmentFormat = vk::Format::eD32SfloatS8Uint
+        };
+
         vk::GraphicsPipelineCreateInfo pipelineCreateInfo{
+            .pNext = &pipelineRenderingCreateInfo,
             .stageCount = 2,
             .pStages = shaderStages,
-
             .pVertexInputState = &vertexInput,
             .pInputAssemblyState = &inputAssembly,
             .pViewportState = &viewportState,
@@ -504,11 +383,9 @@ namespace shuttle_engine {
             .pColorBlendState = &colorBlending,
             .pDynamicState = &dynamicState,
 
-            .layout =
-                skyboxPipelineLayout.get(),
+            .layout = skyboxPipelineLayout.get(),
 
-            .renderPass =
-                mainRenderPass.get()
+            .renderPass =VK_NULL_HANDLE
         };
 
         auto result =

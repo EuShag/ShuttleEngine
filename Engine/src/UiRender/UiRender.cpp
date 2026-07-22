@@ -15,7 +15,7 @@ namespace shuttle_engine {
 
     vk::ResultValue<UiRender> UiRender::create(SdlWindow &window, vk::Instance instance,
         vk::PhysicalDevice physicalDevice, vk::Device device, uint32_t queueFamilyIndex, vk::Queue queue,
-        uint32_t imageCount, vk::RenderPass renderPass) {
+        uint32_t imageCount) {
 
         UiRender result;
 
@@ -55,8 +55,10 @@ namespace shuttle_engine {
 
         ImGui_ImplSDL2_InitForVulkan(window.getWindow());
 
+        VkFormat colorFormat = VK_FORMAT_B8G8R8A8_SRGB;
+
         ImGui_ImplVulkan_InitInfo initInfo {
-            .ApiVersion = vk::makeApiVersion(0, 1, 0, 0),
+            .ApiVersion = vk::makeApiVersion(0, 1, 4, 0),
             .Instance = instance,
             .PhysicalDevice = physicalDevice,
             .Device = device,
@@ -66,13 +68,17 @@ namespace shuttle_engine {
             .MinImageCount = imageCount,
             .ImageCount = imageCount,
             .PipelineInfoMain = {
-                .RenderPass = renderPass,
-                .Subpass = 0,
                 .MSAASamples = static_cast<VkSampleCountFlagBits>(vk::SampleCountFlagBits::e1),
+                .PipelineRenderingCreateInfo = {
+                    .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+                    .colorAttachmentCount = 1,
+                    .pColorAttachmentFormats = &colorFormat,
+                    .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT
+                }
             },
-            .UseDynamicRendering = false,
+            .UseDynamicRendering = true,
             .Allocator = nullptr,
-            .CheckVkResultFn = [] (VkResult result) { UiRenderCreateResult = result; },
+            .CheckVkResultFn = [] (VkResult const result) { UiRenderCreateResult = result; },
             .MinAllocationSize = 2048 * 2048
         };
 

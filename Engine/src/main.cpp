@@ -29,6 +29,7 @@
 #include "Terrain/Terrain.hpp"
 #include "UiRender/UiRender.hpp"
 #include "VulkanDebugger/VulkanDebugger.hpp"
+#include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -84,6 +85,7 @@ int main(int argc, char** argv) {
 			set_debug_messenger_severity(messengerCreateInfo.messageSeverity).
 			set_debug_messenger_type(messengerCreateInfo.messageType).
 			set_debug_callback(messengerCreateInfo.pfnUserCallback).
+			require_api_version(VK_API_VERSION_1_4).
 			build();
 
 		if (instanceResult.has_value()) {
@@ -112,75 +114,68 @@ int main(int argc, char** argv) {
 
 		auto uniqueSurface = window.createVulkanSurfaceUnique(instance);
 
+		VkPhysicalDeviceFeatures2 features2 = {
+			.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+			.features = vk::PhysicalDeviceFeatures{
+				.multiDrawIndirect = vk::True,
+				.samplerAnisotropy = vk::True
+			}
+		};
+		VkPhysicalDeviceVulkan11Features features11 = vk::PhysicalDeviceVulkan11Features{
+			.multiview = vk::True,
+			.shaderDrawParameters = vk::True
+		};
+		VkPhysicalDeviceVulkan12Features features12 = vk::PhysicalDeviceVulkan12Features{
+			.descriptorIndexing = vk::True,
+			.shaderUniformBufferArrayNonUniformIndexing = vk::True,
+			.shaderSampledImageArrayNonUniformIndexing = vk::True,
+			.shaderStorageBufferArrayNonUniformIndexing = vk::True,
+			.shaderStorageImageArrayNonUniformIndexing = vk::True,
+			.shaderInputAttachmentArrayNonUniformIndexing = vk::True,
+			.descriptorBindingUniformBufferUpdateAfterBind = vk::True,
+			.descriptorBindingSampledImageUpdateAfterBind = vk::True,
+			.descriptorBindingStorageImageUpdateAfterBind = vk::True,
+			.descriptorBindingStorageBufferUpdateAfterBind = vk::True,
+			.descriptorBindingUniformTexelBufferUpdateAfterBind = vk::True,
+			.descriptorBindingStorageTexelBufferUpdateAfterBind = vk::True,
+			.descriptorBindingPartiallyBound = vk::True,
+			.descriptorBindingVariableDescriptorCount = vk::True,
+			.runtimeDescriptorArray = vk::True,
+			.scalarBlockLayout = vk::True,
+			.uniformBufferStandardLayout = vk::True,
+			.timelineSemaphore = vk::True,
+			.bufferDeviceAddress = vk::True,
+			.shaderOutputViewportIndex = vk::True,
+			.shaderOutputLayer = vk::True
+		};
+		VkPhysicalDeviceVulkan13Features features13 = vk::PhysicalDeviceVulkan13Features{
+			.inlineUniformBlock = vk::True,
+			.descriptorBindingInlineUniformBlockUpdateAfterBind = vk::True,
+			.pipelineCreationCacheControl = vk::True,
+			.shaderDemoteToHelperInvocation = vk::True,
+			.shaderTerminateInvocation = vk::True,
+			.subgroupSizeControl = vk::True,
+			.computeFullSubgroups = vk::True,
+			.synchronization2 = vk::True,
+			.shaderZeroInitializeWorkgroupMemory = vk::True,
+			.dynamicRendering = vk::True,
+			.shaderIntegerDotProduct = vk::True,
+			.maintenance4 = vk::True
+		};
+		VkPhysicalDeviceVulkan14Features features14 = vk::PhysicalDeviceVulkan14Features{
+			.shaderSubgroupRotate = vk::True,
+			.shaderSubgroupRotateClustered = vk::True,
+			.shaderExpectAssume = vk::True,
+			.indexTypeUint8 = vk::True,
+			.dynamicRenderingLocalRead = vk::True,
+			.maintenance5 = vk::True,
+			.maintenance6 = vk::True,
+			.pipelineRobustness = vk::True,
+			.pushDescriptor = vk::True
+		};
 
 		auto vkbPhysicalDeviceResult = vkb::PhysicalDeviceSelector{instanceResult.value(), *uniqueSurface}.
 			set_minimum_version(1, 4).
-			set_required_features(
-				vk::PhysicalDeviceFeatures{
-					.multiDrawIndirect = vk::True,
-					.samplerAnisotropy = vk::True
-				}
-			).
-			set_required_features_11(
-				vk::PhysicalDeviceVulkan11Features{
-					.multiview = vk::True,
-					.shaderDrawParameters = vk::True,
-				}
-			).
-			set_required_features_12(
-				vk::PhysicalDeviceVulkan12Features{
-					.descriptorIndexing = vk::True,
-					.shaderUniformBufferArrayNonUniformIndexing = vk::True,
-					.shaderSampledImageArrayNonUniformIndexing = vk::True,
-					.shaderStorageBufferArrayNonUniformIndexing = vk::True,
-					.shaderStorageImageArrayNonUniformIndexing = vk::True,
-					.shaderInputAttachmentArrayNonUniformIndexing = vk::True,
-					.descriptorBindingUniformBufferUpdateAfterBind = vk::True,
-					.descriptorBindingSampledImageUpdateAfterBind = vk::True,
-					.descriptorBindingStorageImageUpdateAfterBind = vk::True,
-					.descriptorBindingStorageBufferUpdateAfterBind = vk::True,
-					.descriptorBindingUniformTexelBufferUpdateAfterBind = vk::True,
-					.descriptorBindingStorageTexelBufferUpdateAfterBind = vk::True,
-					.descriptorBindingPartiallyBound = vk::True,
-					.descriptorBindingVariableDescriptorCount = vk::True,
-					.runtimeDescriptorArray = vk::True,
-					.scalarBlockLayout = vk::True,
-					.uniformBufferStandardLayout = vk::True,
-					.timelineSemaphore = vk::True,
-					.bufferDeviceAddress = vk::True,
-					.shaderOutputViewportIndex = vk::True,
-					.shaderOutputLayer = vk::True,
-				}
-			).
-			set_required_features_13(
-				vk::PhysicalDeviceVulkan13Features{
-					.inlineUniformBlock = vk::True,
-					.descriptorBindingInlineUniformBlockUpdateAfterBind = vk::True,
-					.pipelineCreationCacheControl = vk::True,
-					.shaderDemoteToHelperInvocation = vk::True,
-					.shaderTerminateInvocation = vk::True,
-					.subgroupSizeControl = vk::True,
-					.computeFullSubgroups = vk::True,
-					.synchronization2 = vk::True,
-					.shaderZeroInitializeWorkgroupMemory = vk::True,
-					.dynamicRendering = vk::True,
-					.shaderIntegerDotProduct = vk::True,
-					.maintenance4 = vk::True,
-				}
-			).
-			set_required_features_14(
-				vk::PhysicalDeviceVulkan14Features{
-					.shaderSubgroupRotate = vk::True,
-					.shaderSubgroupRotateClustered = vk::True,
-					.shaderExpectAssume = vk::True,
-					.indexTypeUint8 = vk::True,
-					.dynamicRenderingLocalRead = vk::True,
-					.maintenance5 = vk::True,
-					.maintenance6 = vk::True,
-					.pipelineRobustness = vk::True,
-					.pushDescriptor = vk::True,
-				}
-			).
 			add_required_extension(vk::KHRSwapchainExtensionName).
 		select();
 
@@ -191,6 +186,11 @@ int main(int argc, char** argv) {
 
 		auto vkbDeviceResult = vkb::DeviceBuilder{vkbPhysicalDeviceResult.value()}.
 			set_allocation_callbacks(nullptr).
+			add_pNext(&features2).
+			add_pNext(&features11).
+			add_pNext(&features12).
+			add_pNext(&features13).
+			add_pNext(&features14).
 			build();
 
 		if (!vkbDeviceResult.has_value()) {
@@ -314,9 +314,11 @@ int main(int argc, char** argv) {
 
 		CameraController cameraController{ camera };
 
+		bool needsMadeScreenshoot = false;
 		// Регистрируем управление через нашу обертку
 		window.setKeyboardEventCallback([&](SdlWindow&, SdlKeyCode keyCode, SdlKeyMode, SdlKeyState keyState) {
 			cameraController.handleKeyboardEvent(window, keyCode, SdlKeyModeBits::None, keyState, sdlLibrary);
+			if (keyState == SdlKeyState::Pressed && keyCode == SdlKeyCode::F12) needsMadeScreenshoot = true;
 		});
 
 		// =========================================================================
@@ -385,6 +387,7 @@ int main(int argc, char** argv) {
 			device,
 			allocator,
 			{ .width = 4096, .height = 4096 },
+			swapchain.extent,
 			*frameDataDescriptorPool,
 			frameCount
 		);
@@ -400,8 +403,7 @@ int main(int argc, char** argv) {
 			device,
 			graphicsQueueFamilyIndex,
 			graphicsQueue,
-			swapchain.imageCount,
-			pbrRender.getMainRenderPass()
+			swapchain.imageCount
 		);
 
 		auto uiRender = std::move(uiRenderResultValue.value);
@@ -552,7 +554,8 @@ int main(int argc, char** argv) {
 					activeResources.renderTargets[imageIndex], // Рендерим в таргет текущей картинки
 					[&](vk::CommandBuffer drawCmd) {
 						uiRender.recordDrawCommands(drawCmd);
-					}
+					},
+					needsMadeScreenshoot
 				);
 
 				cmd.end();
@@ -581,6 +584,11 @@ int main(int argc, char** argv) {
 					recreateAllResources();
 				} else if (presentResult != vk::Result::eSuccess) {
 					throw std::runtime_error("Fatal: Failed to present rendered image to queue");
+				}
+
+				if (needsMadeScreenshoot) {
+					safeScreenshot(allocator.getMappedPointer(*frameDatas[currentFrameIndex].screenshotBuffer), swapchain.extent.width, swapchain.extent.height);
+					needsMadeScreenshoot = false;
 				}
 
 				// Переходим к следующему слоту кадра в полете
