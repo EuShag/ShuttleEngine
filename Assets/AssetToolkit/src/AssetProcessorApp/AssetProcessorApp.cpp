@@ -94,7 +94,10 @@ void AssetProcessorApp::drawPaths()
 
 void AssetProcessorApp::drawActions()
 {
-    if (m_busy)
+    const bool busy =
+        m_busy.load();
+
+    if (busy)
     {
         ImGui::BeginDisabled();
     }
@@ -118,13 +121,14 @@ void AssetProcessorApp::drawActions()
         }
     }
 
-    if (m_busy)
+    if (busy)
     {
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
-        ImGui::Text("Working...");
+        ImGui::TextUnformatted(
+            "Working...");
     }
 }
 
