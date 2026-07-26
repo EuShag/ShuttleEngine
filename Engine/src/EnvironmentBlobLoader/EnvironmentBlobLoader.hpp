@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "BlobLayout.hpp"
+#include "SceneHeader.hpp"
 #include "EnvironmentFormat.hpp"
 
 namespace shuttle_engine::assets
@@ -34,7 +34,7 @@ namespace shuttle_engine::assets
 
         [[nodiscard]] uint32_t mipCount() const
         {
-            return meta->mipCount;
+            return meta->mipLevels;
         }
 
         [[nodiscard]] uint32_t layerCount() const

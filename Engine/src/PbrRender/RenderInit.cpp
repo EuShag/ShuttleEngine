@@ -572,43 +572,15 @@ namespace shuttle_engine {
             // Binding 0: Material Properties
             vk::DescriptorSetLayoutBinding{
                 .binding = 0,
-                .descriptorType = vk::DescriptorType::eUniformBuffer,
+                .descriptorType = vk::DescriptorType::eStorageBuffer,
                 .descriptorCount = 1,
                 .stageFlags = vk::ShaderStageFlagBits::eFragment
             },
-            // Binding 1: Albedo Map
+            // Binding 1: Texture Descriptor Array
             vk::DescriptorSetLayoutBinding{
                 .binding = 1,
                 .descriptorType = vk::DescriptorType::eSampledImage,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eFragment
-            },
-            // Binding 2: Normal Map
-            vk::DescriptorSetLayoutBinding{
-                .binding = 2,
-                .descriptorType = vk::DescriptorType::eSampledImage,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eFragment
-            },
-            // Binding 3: Ambient-Roughness-Metallic Map
-            vk::DescriptorSetLayoutBinding{
-                .binding = 3,
-                .descriptorType = vk::DescriptorType::eSampledImage,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eFragment
-            },
-            // Binding 4: Emission Map
-            vk::DescriptorSetLayoutBinding{
-                .binding = 4,
-                .descriptorType = vk::DescriptorType::eSampledImage,
-                .descriptorCount = 1,
-                .stageFlags = vk::ShaderStageFlagBits::eFragment
-            },
-            // Binding 5: Height Map
-            vk::DescriptorSetLayoutBinding{
-                .binding = 5,
-                .descriptorType = vk::DescriptorType::eSampledImage,
-                .descriptorCount = 1,
+                .descriptorCount = 1000,
                 .stageFlags = vk::ShaderStageFlagBits::eFragment
             }
         };

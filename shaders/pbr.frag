@@ -86,7 +86,9 @@ float calculateShadow(vec4 shadowCoord, vec3 geoNormal, vec3 L) {
 
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(sampler2D(shadowMap, shadowSampler), 0).xy;
-    float bias = max(0.0003 * (1.0 - dot(geoNormal, L)), 0.00005);
+
+    float NdotL = max(dot(geoNormal, L), 0.0);
+    float bias = max(0.0003 * (1.0 - NdotL), 0.00005);
 
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
@@ -133,7 +135,7 @@ void main() {
     vec3 albedo = pow(rawAlbedo.rgb, vec3(2.2));
 
     vec3 orm = texture(sampler2D(ormMap, materialSampler), inUv).rgb;
-    float ao = orm.r * material.occlusionStrength;
+    float ao = 1.0f;
     float roughness = max(orm.g * material.roughnessFactor, 0.05); // Защита от нулевой шероховатости
     float metallic = orm.b * material.metallicFactor;
 

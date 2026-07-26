@@ -5,6 +5,7 @@
 #ifndef HELLOTRIANGLE_RENDER_HPP
 #define HELLOTRIANGLE_RENDER_HPP
 #include "IncludeVulkan.hpp"
+#include "TextureCatalog.hpp"
 #include "../HostRenderData/HostRenderData.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "BlobLoader/BlobLoader.hpp"
@@ -196,10 +197,6 @@ namespace shuttle_engine{
         std::vector<resources::UniqueAllocatedImage> textureImages;
         std::vector<vk::UniqueImageView> textureViews;
 
-        // Fallback 1x1 textures: [0]=albedo(white), [1]=normal, [2]=orm, [3]=emissive, [4]=height
-        std::array<resources::UniqueAllocatedImage, 5> fallbackImages;
-        std::array<vk::UniqueImageView, 5> fallbackViews;
-
         // Environment maps
         resources::UniqueAllocatedImage skyboxImage;
         vk::UniqueImageView skyboxView;
@@ -211,6 +208,8 @@ namespace shuttle_engine{
         vk::UniqueImageView radianceView;
 
         vk::DescriptorSet environmentDescriptorSet;
+
+        vk::DescriptorSet materialDescriptorSet;
 
 
         vk::UniqueDescriptorPool descriptorPool;
@@ -226,7 +225,6 @@ namespace shuttle_engine{
         vk::UniqueImageView depthBufferImageView;
         vk::Image colorAttachmentImage;
         vk::UniqueImageView colorAttachmentImageView;
-        vk::UniqueFramebuffer mainRenderPassFramebuffer;
         vk::Extent2D renderTargetExtent;
     };
 
@@ -241,6 +239,155 @@ namespace shuttle_engine{
         vk::DescriptorSet sceneDataSet;
         resources::UniqueAllocatedBuffer screenshotBuffer;
     };
+
+    struct RenderContext {
+        vk::Device device;
+        resources::DeviceAllocator allocator;
+
+        vk::UniqueDescriptorPool descriptorPool;
+    };
+
+    struct DeviceRendererResources
+    {
+        // Pipelines
+        vk::UniquePipeline mainPipeline;
+        vk::UniquePipeline shadowPipeline;
+        vk::UniquePipeline skyboxPipeline;
+
+        // Pipeline layouts
+        vk::UniquePipelineLayout mainPipelineLayout;
+        vk::UniquePipelineLayout shadowPipelineLayout;
+        vk::UniquePipelineLayout skyboxPipelineLayout;
+
+        // Descriptor layouts
+        vk::UniqueDescriptorSetLayout rendererSetLayout;
+        vk::UniqueDescriptorSetLayout environmentSetLayout;
+        vk::UniqueDescriptorSetLayout sceneSetLayout;
+        vk::UniqueDescriptorSetLayout frameSetLayout;
+
+        // Samplers
+        vk::UniqueSampler materialSampler;
+        vk::UniqueSampler shadowSampler;
+        vk::UniqueSampler nearestSampler;
+
+        // Renderer descriptor set
+        vk::DescriptorSet rendererSet;
+
+        // BRDF
+        resources::UniqueAllocatedImage brdfLutImage;
+        vk::UniqueImageView brdfLutImageView;
+
+        // Fallback textures
+        resources::UniqueAllocatedImage fallbackAlbedoImage;
+        resources::UniqueAllocatedImage fallbackNormalImage;
+        resources::UniqueAllocatedImage fallbackOrmImage;
+        resources::UniqueAllocatedImage fallbackEmissionImage;
+
+        vk::UniqueImageView fallbackAlbedoImageView;
+        vk::UniqueImageView fallbackNormalImageView;
+        vk::UniqueImageView fallbackOrmImageView;
+        vk::UniqueImageView fallbackEmissionImageView;
+    };
+
+    struct DeviceSceneResources
+    {
+        // Geometry
+        resources::UniqueAllocatedBuffer vertexBuffer;
+        resources::UniqueAllocatedBuffer indexBuffer;
+
+        // Materials
+        resources::UniqueAllocatedBuffer materialSsbo;
+
+        // Draw data
+        resources::UniqueAllocatedBuffer modelSsbo;
+        resources::UniqueAllocatedBuffer indirectDrawBuffer;
+
+        std::vector<IndirectDraw> indirectDraws;
+
+        // Textures
+        ShuttleEngine::render::TextureCatalog textureCatalog;
+
+        std::vector<resources::UniqueAllocatedImage> textureImages;
+        std::vector<vk::UniqueImageView> textureImageViews;
+
+        vk::DescriptorSet sceneSet;
+    };
+
+    struct DeviceFrameResources
+    {
+        resources::UniqueAllocatedBuffer cameraBuffer;
+        resources::UniqueAllocatedBuffer lightingInfoBuffer;
+        resources::UniqueAllocatedBuffer directionalLightsBuffer;
+
+        resources::UniqueAllocatedImage shadowMapImage;
+        vk::UniqueImageView shadowMapImageView;
+
+        resources::UniqueAllocatedBuffer screenshotBuffer;
+
+        vk::DescriptorSet frameSet;
+    };
+
+    struct DeviceEnvironmentResources
+    {
+        resources::UniqueAllocatedImage skyboxImage;
+        vk::UniqueImageView skyboxView;
+
+        resources::UniqueAllocatedImage irradianceImage;
+        vk::UniqueImageView irradianceView;
+
+        resources::UniqueAllocatedImage radianceImage;
+        vk::UniqueImageView radianceView;
+
+        vk::DescriptorSet environmentSet;
+    };
+
+    struct SceneFrameRequirements
+    {
+        uint32_t modelCount;
+
+        uint32_t directionalLightCount;
+        uint32_t pointLightCount;
+        uint32_t spotLightCount;
+    };
+
+    struct UploadSceneOutput {
+        DeviceSceneResources deviceSceneResources;
+        SceneFrameRequirements sceneFrameRequirements;
+    };
+
+    struct HostFrameResources
+    {
+        resources::UniqueAllocatedBuffer uploadBuffer;
+        void* mappedMemory;
+
+        // Layout
+        vk::DeviceSize cameraOffset;
+        vk::DeviceSize lightingInfoOffset;
+        vk::DeviceSize directionalLightsOffset;
+        vk::DeviceSize modelDataOffset;
+
+        // Typed access
+        CameraUniformData* camera;
+        SceneLightingData* lightingInfo;
+
+        std::span<DirectionalLightData> directionalLights;
+        std::span<ModelData> modelDatas;
+    };
+
+    struct FrameRenderSettings
+    {
+        bool renderShadows = true;
+        bool renderSkybox = true;
+
+        bool makeScreenshot = false;
+
+        bool renderDebugGeometry = false;
+        bool renderDebugLights = false;
+
+        bool renderTransparency = true;
+    };
+
+
 
     class PbrRender {
     public:
@@ -369,7 +516,21 @@ namespace shuttle_engine{
 
         resources::UniqueAllocatedImage brdfLutImage;
         vk::UniqueImageView brdfLutImageView;
-    };
+
+        resources::UniqueAllocatedImage fallbackAlbedoImage;
+        vk::UniqueImageView fallbackAlbedoImageView;
+
+        resources::UniqueAllocatedImage fallbackNormalImage;
+        vk::UniqueImageView fallbackNormalImageView;
+
+        resources::UniqueAllocatedImage fallbackOrmImage;
+        vk::UniqueImageView fallbackOrmImageView;
+
+        resources::AllocatedImage fallbackEmissiveImage;
+        vk::UniqueImageView fallbackEmissiveImageView;
+
+        resources::AllocatedImage fallbackHeightImage;
+        vk::UniqueImageView fallbackHeightImageView;    };
 }
 
 #endif //HELLOTRIANGLE_RENDER_HPP

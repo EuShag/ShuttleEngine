@@ -329,7 +329,7 @@ namespace shuttle_engine {
                 .imageType   = vk::ImageType::e2D,
                 .format      = static_cast<vk::Format>(meta.format),
                 .extent      = vk::Extent3D{ meta.width, meta.height, 1 },
-                .mipLevels   = meta.mipCount,
+                .mipLevels   = meta.mipLevels,
                 .arrayLayers = meta.isCubemap ? 6u : 1u,
                 .samples     = vk::SampleCountFlagBits::e1,
                 .tiling      = vk::ImageTiling::eOptimal,
@@ -344,7 +344,7 @@ namespace shuttle_engine {
                 .image    = *resultData.textureImages[i],
                 .viewType = meta.isCubemap ? vk::ImageViewType::eCube : vk::ImageViewType::e2D,
                 .format   = static_cast<vk::Format>(meta.format),
-                .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, meta.mipCount, 0, meta.isCubemap ? 6u : 1u }
+                .subresourceRange = { vk::ImageAspectFlagBits::eColor, 0, meta.mipLevels, 0, meta.isCubemap ? 6u : 1u }
             });
             if (imageViewCreateResult != vk::Result::eSuccess) return {imageViewCreateResult, {}};
             resultData.textureViews[i] = std::move(view);
@@ -371,7 +371,7 @@ namespace shuttle_engine {
                     meta.height,
                     1
                 },
-                .mipLevels = meta.mipCount,
+                .mipLevels = meta.mipLevels,
                 .arrayLayers = meta.isCubemap ? 6u : 1u,
                 .samples = vk::SampleCountFlagBits::e1,
                 .tiling = vk::ImageTiling::eOptimal,
@@ -404,7 +404,7 @@ namespace shuttle_engine {
                     .subresourceRange = {
                         vk::ImageAspectFlagBits::eColor,
                         0,
-                        meta.mipCount,
+                        meta.mipLevels,
                         0,
                         meta.isCubemap ? 6u : 1u
                     }
@@ -582,7 +582,7 @@ namespace shuttle_engine {
             const uint32_t layers =
                 meta.isCubemap ? 6u : 1u;
 
-            for (uint32_t mip = 0; mip < meta.mipCount; ++mip)
+            for (uint32_t mip = 0; mip < meta.mipLevels; ++mip)
             {
                 const uint32_t w =
                     std::max(1u, meta.width >> mip);
@@ -665,14 +665,14 @@ namespace shuttle_engine {
             const auto& meta = blob.textures[i];
             uint32_t layers = meta.isCubemap ? 6u : 1u;
 
-            transitionImage(*resultData.textureImages[i], meta.mipCount, layers,
+            transitionImage(*resultData.textureImages[i], meta.mipLevels, layers,
                 vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal,
                 {}, vk::AccessFlagBits::eTransferWrite,
                 vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer);
 
             std::vector<vk::BufferImageCopy> regions;
             vk::DeviceSize mipOff = 0;
-            for (uint32_t mip = 0; mip < meta.mipCount; ++mip) {
+            for (uint32_t mip = 0; mip < meta.mipLevels; ++mip) {
                 uint32_t w = std::max(1u, meta.width  >> mip);
                 uint32_t h = std::max(1u, meta.height >> mip);
                 uint32_t mipBytes = BlobSceneData::calcMipSize(w, h, meta.format);
@@ -686,7 +686,7 @@ namespace shuttle_engine {
             cmd.copyBufferToImage(*stagingBuffer, *resultData.textureImages[i],
                                   vk::ImageLayout::eTransferDstOptimal, regions);
 
-            transitionImage(*resultData.textureImages[i], meta.mipCount, layers,
+            transitionImage(*resultData.textureImages[i], meta.mipLevels, layers,
                 vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::AccessFlagBits::eTransferWrite, {},
                 vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eBottomOfPipe);
@@ -708,7 +708,7 @@ namespace shuttle_engine {
 
                 transitionImage(
                     image,
-                    meta.mipCount,
+                    meta.mipLevels,
                     layers,
                     vk::ImageLayout::eUndefined,
                     vk::ImageLayout::eTransferDstOptimal,
@@ -733,7 +733,7 @@ namespace shuttle_engine {
 
                 transitionImage(
                     image,
-                    meta.mipCount,
+                    meta.mipLevels,
                     layers,
                     vk::ImageLayout::eTransferDstOptimal,
                     vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -1267,6 +1267,25 @@ namespace shuttle_engine {
                     .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
                     .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
                     .image = *targets.depthBufferImage,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                    }
+                },
+                // Shadow Map Barrier
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                    .srcAccessMask = vk::AccessFlagBits2::eShaderRead,
+                    .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+                    .dstAccessMask = vk::AccessFlagBits2::eNone,
+                    .oldLayout = vk::ImageLayout::eDepthStencilReadOnlyOptimal,
+                    .newLayout = vk::ImageLayout::eDepthStencilReadOnlyOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *frameData.shadowMapImage,
                     .subresourceRange = {
                         .aspectMask = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil,
                         .baseMipLevel = 0,

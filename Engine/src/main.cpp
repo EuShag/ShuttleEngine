@@ -514,6 +514,11 @@ int main(int argc, char** argv) {
 				currentFrameIndex
 			);
 
+			if (acquireResult.result == vk::Result::eNotReady) {
+				// GPU еще не освободил изображение -> пропускаем кадр
+				continue;
+			}
+
 			if (acquireResult.result == vk::Result::eSuccess) {
 				uint32_t const imageIndex = acquireResult.value;
 

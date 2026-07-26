@@ -1,0 +1,6 @@
+add_subdirectory(Core)
+add_subdirectory(Formats)
+add_subdirectory(TextureCompiler)
+add_subdirectory(SceneCompiler)
+add_subdirectory(EnvironmentCompiler)
+add_subdirectory(AssetToolkit)

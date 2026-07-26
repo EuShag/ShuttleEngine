@@ -30,14 +30,36 @@ set(OPTION_ENABLE_ALL_APPS OFF CACHE BOOL "Build Compressonator Applications" FO
 set(OPTION_BUILD_PLUGINS OFF CACHE BOOL "Build Compressonator Plugins" FORCE)
 set(OPTION_BUILD_TESTS OFF CACHE BOOL "Build Compressonator Tests" FORCE)
 
-include(cmake/cmft_target.cmake)
+if (MSVC)
+    add_compile_options(/FS)
+endif()
 
+include(cmake/cmft_target.cmake)
+add_subdirectory(Assets)
 add_subdirectory(external/meshoptimizer)
 add_subdirectory(external/vk-bootstrap)
 add_subdirectory(shaders)
-add_subdirectory(img)
-add_subdirectory(assets)
 add_subdirectory(Engine)
-add_subdirectory(AssetProcessor)
-add_subdirectory(external/assimp)
 add_subdirectory(resources)
+
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+
+set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
+
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF CACHE BOOL "" FORCE)
+
+set(ASSIMP_BUILD_FBX_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_GLTF_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_OBJ_IMPORTER ON CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_COLLADA_IMPORTER ON CACHE BOOL "" FORCE)
+
+add_subdirectory(external/assimp)
+
+if (MSVC AND TARGET assimp)
+    target_compile_options(assimp PRIVATE /FS)
+endif()

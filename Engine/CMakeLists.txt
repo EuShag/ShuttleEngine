@@ -24,8 +24,6 @@ add_executable(Engine
         "src/Terrain/Terrain.hpp"
         "src/PbrRender/Render.cpp"
         "src/PbrRender/Render.hpp"
-        "src/BlobLoader/BlobLoader.hpp"
-        "src/BlobLoader/BlobLoader.cpp"
         "src/HostRenderData/HostRenderData.cpp"
         "src/DeviceAllocator/DeviceAllocator.cpp"
         "src/PbrRender/RenderInit.cpp"
@@ -46,6 +44,8 @@ add_executable(Engine
         "src/RetireController/RetireController.hpp"
         "src/EnvironmentBlobLoader/EnvironmentBlobLoader.cpp"
         "src/EnvironmentBlobLoader/EnvironmentBlobLoader.hpp"
+        "src/PbrRender/TextureCatalog.hpp"
+        "src/PbrRender/TextureCatalog.cpp"
 )
 
 target_include_directories(Engine PRIVATE ${Vulkan_INCLUDE_DIRS})
@@ -72,8 +72,8 @@ target_include_directories(Engine PRIVATE "${Vulkan_INCLUDE_DIRS}/SDL2"
                                             "${PROJECT_SOURCE_DIR}/external/VulkanMemoryAllocator/include"
                                             "${PROJECT_SOURCE_DIR}/external/stb"
                                             "${PROJECT_SOURCE_DIR}/external/vk-bootstrap/src"
-                                            "${PROJECT_SOURCE_DIR}/external/tinyddsloader")
+                                            "${PROJECT_SOURCE_DIR}/external/tinyddsloader"
+                                            "${PROJECT_SOURCE_DIR}/external/mio/single_include"
+                                            "${PROJECT_SOURCE_DIR}/AssetProcessor/src/Core/include")
 
-add_dependencies(Engine CopyAssets)
 add_dependencies(Engine CompileShaders)
-add_dependencies(Engine CopyCubeMapImages)

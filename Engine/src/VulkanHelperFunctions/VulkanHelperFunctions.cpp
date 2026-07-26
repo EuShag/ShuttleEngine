@@ -32,7 +32,7 @@ namespace {
 		std::stringstream ss;
 
 		ss
-			<< "../resources/screenshots"
+			<< "../resources/screenshots/screenshot_"
 			<< std::put_time(
 				   &localTime,
 				   "%Y-%m-%d_%H-%M-%S"
