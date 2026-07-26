@@ -33,7 +33,7 @@ namespace shuttle::assets::formats::geometry
         uint32_t lodCount{};
         uint32_t flags{};
 
-        formats::AABB localBounds{};
+        AABB localBounds{};
 
         MeshLod lods[MaxMeshLods]{};
     };

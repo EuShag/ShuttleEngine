@@ -19,6 +19,7 @@ target_sources(ShuttleSceneCompiler
         src/Builders/AnimationBuilder.cpp
         src/Builders/SceneGraphBuilder.cpp
         src/Builders/SceneBuilder.cpp
+        src/Builders/LightingBuilder.cpp
 
         # serialization
         src/Serialization/CompiledSceneBlobWriter.cpp

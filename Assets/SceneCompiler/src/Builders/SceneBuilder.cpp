@@ -11,7 +11,8 @@ namespace shuttle::assets::scene_compiler
         MaterialBuildResult materials,
         GeometryBuildResult geometry,
         AnimationBuildResult animation,
-        SceneGraphBuildResult sceneGraph)
+        SceneGraphBuildResult sceneGraph,
+        LightingBuildResult lighting)
     {
         CompiledScene result{};
 
@@ -134,6 +135,14 @@ namespace shuttle::assets::scene_compiler
         result.keyframeValues =
             std::move(
                 animation.keyframeValues);
+
+        //
+        // lighting
+        //
+
+        result.directionalLights =
+            std::move(
+                lighting.directionalLights);
 
         return result;
     }

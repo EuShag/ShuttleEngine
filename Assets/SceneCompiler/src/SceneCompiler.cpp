@@ -3,6 +3,7 @@
 #include "Importers/Assimp/AssimpSceneImporter.hpp"
 #include "Runtime/CompiledScene.hpp"
 #include "Texture/SceneTextureResolver.hpp"
+#include "Builders/LightingBuilder.hpp"
 
 namespace shuttle::assets::scene_compiler
 {
@@ -95,6 +96,14 @@ namespace shuttle::assets::scene_compiler
                 materials);
 
         //
+        // lighting
+        //
+
+        LightingBuildResult lighting =
+            LightingBuilder::build(
+                *importedScene);
+
+        //
         // final scene
         //
 
@@ -103,6 +112,7 @@ namespace shuttle::assets::scene_compiler
             std::move(materials),
             std::move(geometry),
             std::move(animation),
-            std::move(graph));
+            std::move(graph),
+            std::move(lighting));
     }
 }

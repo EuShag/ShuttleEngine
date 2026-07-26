@@ -183,6 +183,25 @@ namespace shuttle::assets::scene_compiler
             scene.drawableObjects);
 
         //
+        // lighting
+        //
+
+        addTypedSection(
+            writer,
+            core::BlobSectionType::GpuDirectionalLights,
+            scene.directionalLights);
+
+            addTypedSection(
+                writer,
+                core::BlobSectionType::GpuPointLights,
+                scene.pointLights);
+
+            addTypedSection(
+                writer,
+                core::BlobSectionType::GpuSpotLights,
+                scene.spotLights);
+
+        //
         // animation
         //
 

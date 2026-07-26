@@ -29,32 +29,36 @@ namespace shuttle::assets::core {
         GpuMeshes,
         GpuDrawableObjects,
 
+        GpuDirectionalLights = 3000,
+        GpuPointLights,
+        GpuSpotLights,
+
         // Geometry megabuffers
-        PositionMegabuffer = 3000,
+        PositionMegabuffer = 4000,
         AttributeMegabuffer,
         SkinMegabuffer,
         IndexMegabuffer,
 
         // Animation
-        Skeletons = 4000,
+        Skeletons = 5000,
         Bones,
         BoneChannels,
         KeyframeTimes,
         KeyframeValues,
 
         // Textures
-        TextureMetadata = 5000,
+        TextureMetadata = 6000,
         TextureMipMetadata,
         TextureData,
 
         // Environment
-        EnvironmentInfo = 6000,
+        EnvironmentInfo = 7000,
         EnvironmentTextureMetadata,
         EnvironmentTextureMipMetadata,
         EnvironmentTextureData,
 
         // Future
-        Meshlets = 7000,
+        Meshlets = 8000,
         RayTracingData,
 
         Custom

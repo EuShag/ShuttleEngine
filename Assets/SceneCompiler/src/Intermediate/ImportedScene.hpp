@@ -258,6 +258,37 @@ namespace shuttle::assets::scene_compiler
         int32_t skinIndex = InvalidIndexI32;
     };
 
+    struct ImportedDirectionalLight
+    {
+        glm::vec3 direction;
+        glm::vec3 color;
+
+        float intensity;
+        bool castShadows;
+    };
+
+    struct ImportedPointLight
+    {
+        glm::vec3 position;
+        glm::vec3 color;
+
+        float intensity;
+        float range;
+    };
+
+    struct ImportedSpotLight
+    {
+        glm::vec3 position;
+        glm::vec3 direction;
+
+        glm::vec3 color;
+
+        float intensity;
+
+        float innerCone;
+        float outerCone;
+    };
+
     struct ImportedScene
     {
         std::vector<ImportedNode> nodes;
@@ -273,5 +304,11 @@ namespace shuttle::assets::scene_compiler
         std::vector<ImportedSkin> skins;
 
         std::vector<ImportedAnimation> animations;
+
+        std::vector<ImportedDirectionalLight> directionalLights;
+
+        std::vector<ImportedPointLight> pointLights;
+
+        std::vector<ImportedSpotLight> spotLights;
     };
 }

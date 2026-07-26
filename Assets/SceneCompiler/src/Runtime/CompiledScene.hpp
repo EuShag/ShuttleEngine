@@ -6,6 +6,9 @@
 #include <Assets/Formats/Scene.hpp>
 #include <Assets/TextureCompiler/CompiledTexture.hpp>
 
+#include "Assets/Formats/Lighting.hpp"
+
+
 namespace shuttle::assets::scene_compiler
 {
     struct CompiledScene
@@ -111,5 +114,11 @@ namespace shuttle::assets::scene_compiler
         std::vector<
             formats::animation::AnimationKeyframeValue>
             keyframeValues;
+
+        std::vector<formats::lighting::DirectionalLight> directionalLights;
+
+        std::vector<formats::lighting::PointLight> pointLights;
+
+        std::vector<formats::lighting::SpotLight> spotLights;
     };
 }
