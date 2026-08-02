@@ -1,0 +1,99 @@
+#version 450
+
+#include "common_bindings.glsl"
+#include "common_frame.glsl"
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+// ============================================================
+// Push Constants
+// ============================================================
+
+layout(push_constant) uniform PushConstants
+{
+    float depthSigma;
+    float aoSigma;
+
+    int kernelRadius;
+
+    int reserved0;
+}
+
+pc;
+
+// ============================================================
+// Renderer Set
+// ============================================================
+
+layout(set = SET_RENDERER, binding = RENDERER_NEAREST_SAMPLER) uniform sampler nearestSampler;
+
+// ============================================================
+// Frame Set
+// ============================================================
+
+layout(set = SET_FRAME, binding = FRAME_INFO, std140) uniform FrameInfoBuffer
+{
+    FrameInfo frame;
+};
+
+layout(set = SET_FRAME, binding = FRAME_LINEAR_DEPTH_IMAGE) uniform texture2D linearDepthImage;
+layout(set = SET_FRAME, binding = FRAME_GTAO_IMAGE) uniform texture2D gtaoImage;
+layout(set = SET_FRAME, binding = FRAME_GTAO_FILTERED_STORAGE_IMAGE, r8) writeonly uniform image2D gtaoFilteredImage;
+
+float loadDepth(ivec2 pixel)
+{
+    ivec2 size = ivec2(frame.renderResolution);
+    pixel = clamp(pixel, ivec2(0), size - ivec2(1));
+    return texelFetch(sampler2D(linearDepthImage, nearestSampler), pixel, 0).r;
+}
+
+float loadAO(ivec2 pixel)
+{
+    ivec2 size = ivec2(frame.renderResolution);
+    pixel = clamp(pixel, ivec2(0), size - ivec2(1));
+    return texelFetch(sampler2D(gtaoImage, nearestSampler), pixel, 0).r;
+}
+
+float gaussian(float x, float sigma)
+{
+    float s = max(sigma, 0.0001);
+    return exp(-(x * x) / (2.0 * s * s));
+}
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = ivec2(frame.renderResolution);
+
+    if (pixel.x >= size.x || pixel.y >= size.y) return;
+
+    float centerDepth = loadDepth(pixel);
+    float centerAO = loadAO(pixel);
+
+    float accumulatedAO = 0.0;
+    float accumulatedWeight = 0.0;
+
+    int radius = max(pc.kernelRadius, 0);
+    for (int y = -radius; y <= radius; ++y)
+    {
+        for (int x = -radius; x <= radius; ++x)
+        {
+            ivec2 samplePixel = pixel + ivec2(x, y);
+
+            float sampleDepth = loadDepth(samplePixel);
+            float sampleAO = loadAO(samplePixel);
+
+            float spatialDistance = length(vec2(x, y));
+            float spatialWeight = gaussian(spatialDistance, float(max(radius, 1)));
+            float depthWeight = gaussian(abs(sampleDepth - centerDepth), pc.depthSigma);
+            float aoWeight = gaussian(abs(sampleAO - centerAO), pc.aoSigma);
+            float weight = spatialWeight * depthWeight * aoWeight;
+
+            accumulatedAO += sampleAO * weight;
+            accumulatedWeight += weight;
+        }
+    }
+
+    float filteredAO = accumulatedAO / max(accumulatedWeight, 0.00001);
+    imageStore(gtaoFilteredImage, pixel, vec4(clamp(filteredAO, 0.0, 1.0), 0.0, 0.0, 0.0));
+}

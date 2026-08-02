@@ -7,11 +7,10 @@
 
 namespace shuttle::assets::scene_compiler
 {
-    class AssimpSceneImporter
-    {
-    public:
-        [[nodiscard]]
-        static std::optional<ImportedScene> import(
-            const std::filesystem::path& filePath);
-    };
-}
+class AssimpSceneImporter
+{
+  public:
+    [[nodiscard]]
+    static std::optional<ImportedScene> import(const std::filesystem::path& filePath);
+};
+} // namespace shuttle::assets::scene_compiler

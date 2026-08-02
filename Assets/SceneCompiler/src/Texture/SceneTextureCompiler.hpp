@@ -11,36 +11,34 @@
 
 namespace shuttle::assets::scene_compiler
 {
-    struct SceneTextureCompilerOptions
-    {
-        bool compileTextures = true;
+struct SceneTextureCompilerOptions
+{
+    bool compileTextures = true;
 
-        bool generateOrmTextures = true;
+    bool generateOrmTextures = true;
 
-        bool generateMips = true;
+    bool generateMips = true;
 
-        bool flipY = false;
+    bool flipY = false;
 
-        bool roughnessIsGloss = false;
-    };
+    bool roughnessIsGloss = false;
+};
 
-    struct SceneTextureCompilerResult
-    {
-        bool success = true;
+struct SceneTextureCompilerResult
+{
+    bool success = true;
 
-        std::string errorMessage;
+    std::string errorMessage;
 
-        std::vector<texture_compiler::CompiledTexture> textures;
+    std::vector<texture_compiler::CompiledTexture> textures;
 
-        std::vector<int32_t> importedToCompiledTexture;
-    };
+    std::vector<int32_t> importedToCompiledTexture;
+};
 
-    class SceneTextureCompiler
-    {
-    public:
-        [[nodiscard]]
-        static SceneTextureCompilerResult compile(
-            ImportedScene& scene,
-            const SceneTextureCompilerOptions& options = {});
-    };
-}
+class SceneTextureCompiler
+{
+  public:
+    [[nodiscard]]
+    static SceneTextureCompilerResult compile(ImportedScene& scene, const SceneTextureCompilerOptions& options = {});
+};
+} // namespace shuttle::assets::scene_compiler

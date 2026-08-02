@@ -9,27 +9,23 @@
 
 namespace shuttle::assets::scene_compiler
 {
-    struct LightingBuildResult
-    {
-        bool success = true;
+struct LightingBuildResult
+{
+    bool success = true;
 
-        std::string errorMessage;
+    std::string errorMessage;
 
-        std::vector<formats::lighting::DirectionalLight>
-            directionalLights;
+    std::vector<formats::lighting::DirectionalLight> directionalLights;
 
-        std::vector<formats::lighting::PointLight>
-            pointLights;
+    std::vector<formats::lighting::PointLight> pointLights;
 
-        std::vector<formats::lighting::SpotLight>
-            spotLights;
-    };
+    std::vector<formats::lighting::SpotLight> spotLights;
+};
 
-    class LightingBuilder
-    {
-    public:
-        [[nodiscard]]
-        static LightingBuildResult build(
-            const ImportedScene& scene);
-    };
-}
+class LightingBuilder
+{
+  public:
+    [[nodiscard]]
+    static LightingBuildResult build(const ImportedScene& scene);
+};
+} // namespace shuttle::assets::scene_compiler

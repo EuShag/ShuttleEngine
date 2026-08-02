@@ -1,35 +1,52 @@
-#version 460
+#version 450
 
-layout(location = 0) out vec3 vDirection;
+#include "common_bindings.glsl"
+#include "common_frame.glsl"
 
-layout(set = 2, binding = 0) uniform CameraData {
-	mat4 view;
-	mat4 projection;
-	vec4 cameraPosition;
-} cameraData;
+// ============================================================
+// Frame Set
+// ============================================================
 
-const vec3 kCubeVertices[36] = {
-vec3(-1,-1,-1), vec3( 1,-1,-1), vec3( 1, 1,-1), vec3( 1, 1,-1), vec3(-1, 1,-1), vec3(-1,-1,-1),
-vec3(-1,-1, 1), vec3( 1,-1, 1), vec3( 1, 1, 1), vec3( 1, 1, 1), vec3(-1, 1, 1), vec3(-1,-1, 1),
-vec3(-1, 1, 1), vec3(-1, 1,-1), vec3(-1,-1,-1), vec3(-1,-1,-1), vec3(-1,-1, 1), vec3(-1, 1, 1),
-vec3( 1, 1, 1), vec3( 1, 1,-1), vec3( 1,-1,-1), vec3( 1,-1,-1), vec3( 1,-1, 1), vec3( 1, 1, 1),
-vec3(-1,-1,-1), vec3( 1,-1,-1), vec3( 1,-1, 1), vec3( 1,-1, 1), vec3(-1,-1, 1), vec3(-1,-1,-1),
-vec3(-1, 1,-1), vec3( 1, 1,-1), vec3( 1, 1, 1), vec3( 1, 1, 1), vec3(-1, 1, 1), vec3(-1, 1,-1)
+layout(set = SET_FRAME, binding = FRAME_INFO, std140) uniform FrameInfoBuffer
+{
+    FrameInfo frame;
 };
 
-void main() {
-	vec3 position = kCubeVertices[gl_VertexIndex];
+// ============================================================
+// Outputs
+// ============================================================
 
-	// ИСПРАВЛЕНИЕ 1: Направление сэмплирования — это сама вершина куба в мировом пространстве!
-	// Vulkan Cubemap ожидает именно чистый вектор направления из центра куба наружу.
-	vDirection = position;
+layout(location = 0) out vec3 outDirection;
 
-	// Вырезаем трансляцию (смещение) из матрицы view, оставляя только вращение
-	mat4 viewWithoutTranslation = mat4(mat3(cameraData.view));
+// ============================================================
+// Cube Vertices
+// ============================================================
 
-	// ИСПРАВЛЕНИЕ 2: Перемножаем канонично. Сначала вращаем куб в пространстве камеры, затем проецируем
-	vec4 clipPos = cameraData.projection * viewWithoutTranslation * vec4(position, 1.0);
+const vec3 CubeVertices[36] = {
+    // +X
+    vec3(1, -1, -1), vec3(1, -1, 1), vec3(1, 1, 1), vec3(1, -1, -1), vec3(1, 1, 1), vec3(1, 1, -1),
+    // -X
+    vec3(-1, -1, 1), vec3(-1, -1, -1), vec3(-1, 1, -1), vec3(-1, -1, 1), vec3(-1, 1, -1), vec3(-1, 1, 1),
+    // +Y
+    vec3(-1, 1, -1), vec3(1, 1, -1), vec3(1, 1, 1), vec3(-1, 1, -1), vec3(1, 1, 1), vec3(-1, 1, 1),
+    // -Y
+    vec3(-1, -1, 1), vec3(1, -1, 1), vec3(1, -1, -1), vec3(-1, -1, 1), vec3(1, -1, -1), vec3(-1, -1, -1),
+    // +Z
+    vec3(-1, -1, 1), vec3(-1, 1, 1), vec3(1, 1, 1), vec3(-1, -1, 1), vec3(1, 1, 1), vec3(1, -1, 1),
+    // -Z
+    vec3(1, -1, -1), vec3(1, 1, -1), vec3(-1, 1, -1), vec3(1, -1, -1), vec3(-1, 1, -1), vec3(-1, -1, -1)};
 
-	// Оставляем твой крутой хак с xyww — он гарантирует, что Z всегда будет равен 1.0 (максимальная глубина)
-	gl_Position = clipPos.xyww;
+// ============================================================
+// Main
+// ============================================================
+
+void main()
+{
+    vec3 localPosition = CubeVertices[gl_VertexIndex];
+    outDirection = localPosition;
+
+    mat4 viewNoTranslation = mat4(mat3(frame.viewMatrix));
+    vec4 clipPosition = frame.projectionMatrix * viewNoTranslation * vec4(localPosition, 1.0);
+
+    gl_Position = clipPosition.xyww;
 }

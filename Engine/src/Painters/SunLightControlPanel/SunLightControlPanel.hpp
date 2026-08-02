@@ -8,33 +8,38 @@
 
 #include "UiRender/UiRender.hpp"
 
-namespace shuttle_engine {
-    class SunLightControlPanel : public IuiPainter {
-    public:
-        // Передаем ссылки на данные, которыми будем управлять
-        SunLightControlPanel(glm::vec4& dir, glm::vec4& color, float& intensity)
-            : m_dir(dir), m_color(color), m_intensity(intensity) {}
+namespace shuttle
+{
+class SunLightControlPanel : public IuiPainter
+{
+  public:
+    // Передаем ссылки на данные, которыми будем управлять
+    SunLightControlPanel(glm::vec4& dir, glm::vec4& color, float& intensity)
+        : m_dir(dir), m_color(color), m_intensity(intensity)
+    {
+    }
 
-        void drawUi() override {
-            ImGui::Begin("SunLight Control");
+    void drawUi() override
+    {
+        ImGui::Begin("SunLight Control");
 
-            // Поворот солнца
-            ImGui::SliderFloat3("Direction", &m_dir.x, -1.0f, 1.0f);
+        // Поворот солнца
+        ImGui::SliderFloat3("Direction", &m_dir.x, -1.0f, 1.0f);
 
-            // Цвет и интенсивность
-            ImGui::ColorEdit4("Color", &m_color.x);
-            ImGui::SliderFloat("Intensity", &m_intensity, 0.0f, 20.0f);
+        // Цвет и интенсивность
+        ImGui::ColorEdit4("Color", &m_color.x);
+        ImGui::SliderFloat("Intensity", &m_intensity, 0.0f, 20.0f);
 
-            ImGui::End();
-        }
+        ImGui::End();
+    }
 
-    private:
-        // Ссылки на реальные переменные в движке
-        glm::vec4& m_dir;
-        glm::vec4& m_color;
-        float&     m_intensity;
-    };
+  private:
+    // Ссылки на реальные переменные в движке
+    glm::vec4& m_dir;
+    glm::vec4& m_color;
+    float& m_intensity;
+};
 
-} // shuttle_engine
+} // namespace shuttle
 
-#endif //HELLOTRIANGLE_SUNLIGHTCONTROLPANEL_HPP
+#endif // HELLOTRIANGLE_SUNLIGHTCONTROLPANEL_HPP

@@ -15,10 +15,10 @@ enum class ToolMode
 
 class AssetProcessorApp
 {
-public:
+  public:
     void draw();
 
-private:
+  private:
     //
     // UI
     //
@@ -48,25 +48,18 @@ private:
 
     void pushLog(std::string text);
 
-private:
-    ToolMode m_mode =
-        ToolMode::Scene;
+  private:
+    ToolMode m_mode = ToolMode::Scene;
 
-    std::array<char, 1024>
-        m_source{};
+    std::array<char, 1024> m_source{};
 
-    std::array<char, 1024>
-        m_destination{};
+    std::array<char, 1024> m_destination{};
 
-    std::mutex
-        m_logMutex;
+    std::mutex m_logMutex;
 
-    std::vector<std::string>
-        m_logs;
+    std::vector<std::string> m_logs;
 
-    std::future<void>
-        m_worker;
+    std::future<void> m_worker;
 
-    std::atomic_bool
-        m_busy = false;
+    std::atomic_bool m_busy = false;
 };

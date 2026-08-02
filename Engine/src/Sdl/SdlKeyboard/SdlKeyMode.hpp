@@ -27,45 +27,51 @@ enum class SdlKeyModeBits
     Reserved = KMOD_RESERVED
 };
 
-class SdlKeyMode {
-public:
-	SdlKeyMode() = default;
+class SdlKeyMode
+{
+  public:
+    SdlKeyMode() = default;
 
-	SdlKeyMode(const SdlKeyMode&) = default;
+    SdlKeyMode(const SdlKeyMode&) = default;
 
-	SdlKeyMode(SdlKeyMode&&) = default;
+    SdlKeyMode(SdlKeyMode&&) = default;
 
-	SdlKeyMode& operator=(const SdlKeyMode&) = default;
-	SdlKeyMode& operator=(SdlKeyMode&&) = default;
+    SdlKeyMode& operator=(const SdlKeyMode&) = default;
+    SdlKeyMode& operator=(SdlKeyMode&&) = default;
 
-	SdlKeyMode(std::initializer_list<SdlKeyModeBits> bits) {
-		keyModeBits = 0;
-		for (auto bit : bits) {
-			keyModeBits |= static_cast<uint16_t>(bit);
-		}
-	}
-
-	SdlKeyMode(SdlKeyModeBits bit) {
-		keyModeBits = static_cast<uint16_t>(bit);
-	}
-
-	explicit SdlKeyMode(Uint16 keyModeBits) : keyModeBits(keyModeBits) {}
-    bool operator||(SdlKeyModeBits bit) const {
-		return (keyModeBits & static_cast<uint32_t>(bit)) != 0;
+    SdlKeyMode(std::initializer_list<SdlKeyModeBits> bits)
+    {
+        keyModeBits = 0;
+        for (auto bit : bits)
+        {
+            keyModeBits |= static_cast<uint16_t>(bit);
+        }
     }
-	bool operator&&(SdlKeyModeBits bit) const {
+
+    SdlKeyMode(SdlKeyModeBits bit) { keyModeBits = static_cast<uint16_t>(bit); }
+
+    explicit SdlKeyMode(Uint16 keyModeBits) : keyModeBits(keyModeBits) {}
+
+    bool operator||(SdlKeyModeBits bit) const { return (keyModeBits & static_cast<uint32_t>(bit)) != 0; }
+
+    bool operator&&(SdlKeyModeBits bit) const
+    {
         return (keyModeBits & static_cast<uint32_t>(bit)) == static_cast<uint32_t>(bit);
-	}
-	bool operator||(std::initializer_list<SdlKeyModeBits> bits) const {
-        return std::ranges::all_of(bits, [this](SdlKeyModeBits bit) {
-            return (keyModeBits & static_cast<uint32_t>(bit)) != 0;
-			});
     }
-    bool operator&&(std::initializer_list<SdlKeyModeBits> bits) const {
-        return std::ranges::all_of(bits, [this](SdlKeyModeBits bit) {
-			return (keyModeBits & static_cast<uint32_t>(bit)) == static_cast<uint32_t>(bit);
-			});
-	}
-private:
-	Uint16 keyModeBits = 0;
+
+    bool operator||(std::initializer_list<SdlKeyModeBits> bits) const
+    {
+        return std::ranges::all_of(bits, [this](SdlKeyModeBits bit)
+                                   { return (keyModeBits & static_cast<uint32_t>(bit)) != 0; });
+    }
+
+    bool operator&&(std::initializer_list<SdlKeyModeBits> bits) const
+    {
+        return std::ranges::all_of(
+            bits, [this](SdlKeyModeBits bit)
+            { return (keyModeBits & static_cast<uint32_t>(bit)) == static_cast<uint32_t>(bit); });
+    }
+
+  private:
+    Uint16 keyModeBits = 0;
 };

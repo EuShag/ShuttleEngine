@@ -4,11 +4,8 @@
 
 namespace shuttle::assets::environment_compiler
 {
-    std::optional<CompiledEnvironment>
-    EnvironmentCompiler::compile(
-        const std::filesystem::path& hdrFile)
-    {
-        return EnvironmentBaker::bake(
-            hdrFile);
-    }
+std::optional<CompiledEnvironment> EnvironmentCompiler::compile(const std::filesystem::path& hdrFile)
+{
+    return EnvironmentBaker::bake(hdrFile);
 }
+} // namespace shuttle::assets::environment_compiler

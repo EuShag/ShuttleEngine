@@ -9,30 +9,20 @@
 
 #include "AssetProcessorApp/AssetProcessorApp.hpp"
 
-int main(
-    int argc,
-    char** argv)
+int main(int argc, char** argv)
 {
     SDL_SetMainReady();
 
     (void)argc;
     (void)argv;
 
-    if (SDL_Init(
-            SDL_INIT_VIDEO |
-            SDL_INIT_EVENTS) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
     {
         return -1;
     }
 
-    SDL_Window* window =
-        SDL_CreateWindow(
-            "Shuttle Asset Toolkit",
-            SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED,
-            1280,
-            720,
-            SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("Shuttle Asset Toolkit", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280,
+                                          720, SDL_WINDOW_RESIZABLE);
 
     if (!window)
     {
@@ -40,12 +30,7 @@ int main(
         return -1;
     }
 
-    SDL_Renderer* renderer =
-        SDL_CreateRenderer(
-            window,
-            -1,
-            SDL_RENDERER_ACCELERATED |
-            SDL_RENDERER_PRESENTVSYNC);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     if (!renderer)
     {
@@ -58,19 +43,15 @@ int main(
 
     ImGui::CreateContext();
 
-    ImGuiIO& io =
-        ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
     (void)io;
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplSDL2_InitForSDLRenderer(
-        window,
-        renderer);
+    ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
 
-    ImGui_ImplSDLRenderer2_Init(
-        renderer);
+    ImGui_ImplSDLRenderer2_Init(renderer);
 
     AssetProcessorApp app;
 
@@ -82,17 +63,14 @@ int main(
 
         while (SDL_PollEvent(&event))
         {
-            ImGui_ImplSDL2_ProcessEvent(
-                &event);
+            ImGui_ImplSDL2_ProcessEvent(&event);
 
             if (event.type == SDL_QUIT)
             {
                 running = false;
             }
 
-            if (event.type == SDL_WINDOWEVENT &&
-                event.window.event ==
-                    SDL_WINDOWEVENT_CLOSE)
+            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
             {
                 running = false;
             }
@@ -107,22 +85,13 @@ int main(
 
         ImGui::Render();
 
-        SDL_SetRenderDrawColor(
-            renderer,
-            20,
-            20,
-            20,
-            255);
+        SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
 
-        SDL_RenderClear(
-            renderer);
+        SDL_RenderClear(renderer);
 
-        ImGui_ImplSDLRenderer2_RenderDrawData(
-            ImGui::GetDrawData(),
-            renderer);
+        ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), renderer);
 
-        SDL_RenderPresent(
-            renderer);
+        SDL_RenderPresent(renderer);
     }
 
     ImGui_ImplSDLRenderer2_Shutdown();
@@ -130,11 +99,9 @@ int main(
 
     ImGui::DestroyContext();
 
-    SDL_DestroyRenderer(
-        renderer);
+    SDL_DestroyRenderer(renderer);
 
-    SDL_DestroyWindow(
-        window);
+    SDL_DestroyWindow(window);
 
     SDL_Quit();
 

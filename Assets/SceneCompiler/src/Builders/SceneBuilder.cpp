@@ -6,144 +6,98 @@
 
 namespace shuttle::assets::scene_compiler
 {
-    CompiledScene SceneBuilder::build(
-        SceneTextureCompilerResult textures,
-        MaterialBuildResult materials,
-        GeometryBuildResult geometry,
-        AnimationBuildResult animation,
-        SceneGraphBuildResult sceneGraph,
-        LightingBuildResult lighting)
-    {
-        CompiledScene result{};
+CompiledScene SceneBuilder::build(SceneTextureCompilerResult textures, MaterialBuildResult materials,
+                                  GeometryBuildResult geometry, AnimationBuildResult animation,
+                                  SceneGraphBuildResult sceneGraph, LightingBuildResult lighting)
+{
+    CompiledScene result{};
 
-        //
-        // textures
-        //
+    //
+    // textures
+    //
 
-        result.textures =
-            std::move(
-                textures.textures);
+    result.textures = std::move(textures.textures);
 
-        //
-        // materials
-        //
+    //
+    // materials
+    //
 
-        result.materials =
-            std::move(
-                materials.materials);
+    result.materials = std::move(materials.materials);
 
-        //
-        // geometry
-        //
+    //
+    // geometry
+    //
 
-        result.positions =
-            std::move(
-                geometry.positions);
+    result.positions = std::move(geometry.positions);
 
-        result.attributes =
-            std::move(
-                geometry.attributes);
+    result.attributes = std::move(geometry.attributes);
 
-        result.skins =
-            std::move(
-                geometry.skins);
+    result.skins = std::move(geometry.skins);
 
-        result.indices =
-            std::move(
-                geometry.indices);
+    result.indices = std::move(geometry.indices);
 
-        result.meshes =
-            std::move(
-                geometry.meshes);
+    result.meshes = std::move(geometry.meshes);
 
-        //
-        // scene graph
-        //
+    //
+    // scene graph
+    //
 
-        result.nodes =
-            std::move(
-                sceneGraph.nodes);
+    result.nodes = std::move(sceneGraph.nodes);
 
-        result.levels =
-            std::move(
-                sceneGraph.levels);
+    result.levels = std::move(sceneGraph.levels);
 
-        result.drawableObjects =
-            std::move(
-                sceneGraph.drawableObjects);
+    result.drawableObjects = std::move(sceneGraph.drawableObjects);
 
-        //
-        // skeletons
-        //
+    result.transforms = std::move(sceneGraph.transforms);
 
-        result.skeletons =
-            std::move(
-                animation.skeletons);
+    //
+    // skeletons
+    //
 
-        result.bones =
-            std::move(
-                animation.bones);
+    result.skeletons = std::move(animation.skeletons);
 
-        //
-        // animation clips
-        //
+    result.bones = std::move(animation.bones);
 
-        result.clips =
-            std::move(
-                animation.clips);
+    //
+    // animation clips
+    //
 
-        result.boneChannels =
-            std::move(
-                animation.boneChannels);
+    result.clips = std::move(animation.clips);
 
-        //
-        // morphing
-        //
+    result.transformChannels = std::move(animation.transformChannels);
 
-        result.morphTargets =
-            std::move(
-                animation.morphTargets);
+    //
+    // morphing
+    //
 
-        result.morphVertexDeltas =
-            std::move(
-                animation.morphVertexDeltas);
+    result.morphTargets = std::move(animation.morphTargets);
 
-        result.morphChannels =
-            std::move(
-                animation.morphChannels);
+    result.morphVertexDeltas = std::move(animation.morphVertexDeltas);
 
-        //
-        // material animation
-        //
+    result.morphChannels = std::move(animation.morphChannels);
 
-        result.materialProperties =
-            std::move(
-                animation.materialProperties);
+    //
+    // material animation
+    //
 
-        result.materialChannels =
-            std::move(
-                animation.materialChannels);
+    result.materialProperties = std::move(animation.materialProperties);
 
-        //
-        // keyframes
-        //
+    result.materialChannels = std::move(animation.materialChannels);
 
-        result.keyframeTimes =
-            std::move(
-                animation.keyframeTimes);
+    //
+    // keyframes
+    //
 
-        result.keyframeValues =
-            std::move(
-                animation.keyframeValues);
+    result.keyframeTimes = std::move(animation.keyframeTimes);
 
-        //
-        // lighting
-        //
+    result.keyframeValues = std::move(animation.keyframeValues);
 
-        result.directionalLights =
-            std::move(
-                lighting.directionalLights);
+    //
+    // lighting
+    //
 
-        return result;
-    }
+    result.directionalLights = std::move(lighting.directionalLights);
+
+    return result;
 }
+} // namespace shuttle::assets::scene_compiler

@@ -4,135 +4,136 @@
 
 #include <glm/glm.hpp>
 
+#include <Assets/Formats/Common.hpp>
+
 namespace shuttle::assets::formats::animation
 {
-    enum class AnimationPath : uint32_t
-    {
-        Translation = 0,
-        Rotation    = 1,
-        Scale       = 2
-    };
+enum class AnimationPath : uint32_t
+{
+    Translation = 0,
+    Rotation = 1,
+    Scale = 2
+};
 
-    struct alignas(16) SkeletonData
-    {
-        uint32_t boneOffset{};
-        uint32_t boneCount{};
-        int32_t rootBoneIndex{-1};
-        uint32_t reserved{};
-    };
+struct alignas(16) SkeletonData
+{
+    uint32_t boneOffset{};
+    uint32_t boneCount{};
 
-    static_assert(sizeof(SkeletonData) == 16);
+    int32_t rootBoneIndex{-1};
 
-    struct alignas(16) BoneData
-    {
-        glm::mat4 invBindMatrix{1.0f};
-        int32_t parentBoneIndex{-1};
-        uint32_t sceneNodeIndex{UINT32_MAX};
-        uint32_t reserved[2]{};
-    };
+    uint32_t reserved{};
+};
 
-    static_assert(sizeof(BoneData) == 80);
+static_assert(sizeof(SkeletonData) == 16);
 
-    struct alignas(16) AnimationClip
-    {
-        float duration{};
+struct alignas(16) BoneData
+{
+    glm::mat4 invBindMatrix{1.0f};
 
-        uint32_t firstBoneChannelIndex{};
-        uint32_t boneChannelCount{};
+    int32_t parentBoneIndex{-1};
 
-        uint32_t firstMorphChannelIndex{};
-        uint32_t morphChannelCount{};
+    uint32_t sceneNodeIndex{InvalidIndexU32};
 
-        uint32_t clipNameHash{};
+    uint32_t reserved[2]{};
+};
 
-        uint32_t firstMaterialChannelIndex{};
-        uint32_t materialChannelCount{};
+static_assert(sizeof(BoneData) == 80);
 
-        uint32_t reserved{};
-    };
+struct alignas(16) AnimationClip
+{
+    float duration{};
 
-    static_assert(sizeof(AnimationClip) == 48);
+    uint32_t firstTransformChannelIndex{};
+    uint32_t transformChannelCount{};
 
-    struct alignas(16) BoneChannel
-    {
-        uint32_t boneIndex{};
+    uint32_t firstMorphChannelIndex{};
+    uint32_t morphChannelCount{};
 
-        AnimationPath path{
-            AnimationPath::Translation
-        };
+    uint32_t firstMaterialChannelIndex{};
+    uint32_t materialChannelCount{};
 
-        uint32_t keyframeOffset{};
-        uint32_t keyframeCount{};
-    };
+    uint32_t clipNameHash{};
+};
 
-    static_assert(sizeof(BoneChannel) == 16);
+static_assert(sizeof(AnimationClip) == 32);
 
-    struct alignas(16) MorphChannel
-    {
-        uint32_t morphTargetIndex{};
+struct alignas(16) TransformChannel
+{
+    uint32_t transformBindingIndex{};
 
-        uint32_t keyframeOffset{};
-        uint32_t keyframeCount{};
+    AnimationPath path{AnimationPath::Translation};
 
-        uint32_t flags{};
-    };
+    uint32_t keyframeOffset{};
+    uint32_t keyframeCount{};
+};
 
-    static_assert(sizeof(MorphChannel) == 16);
+static_assert(sizeof(TransformChannel) == 16);
 
-    struct alignas(16) MaterialChannel
-    {
-        uint32_t materialIndex{};
+struct alignas(16) MorphChannel
+{
+    uint32_t morphTargetIndex{};
 
-        uint32_t propertyHash{};
+    uint32_t keyframeOffset{};
+    uint32_t keyframeCount{};
 
-        uint32_t keyframeOffset{};
-        uint32_t keyframeCount{};
-    };
+    uint32_t flags{};
+};
 
-    static_assert(sizeof(MaterialChannel) == 16);
+static_assert(sizeof(MorphChannel) == 16);
 
-    struct alignas(16) AnimationKeyframeValue
-    {
-        glm::vec4 value{};
-    };
+struct alignas(16) MaterialChannel
+{
+    uint32_t materialIndex{};
 
-    static_assert(sizeof(AnimationKeyframeValue) == 16);
+    uint32_t propertyHash{};
 
-    struct alignas(16) MorphTarget
-    {
-        uint32_t firstDeltaIndex{};
-        uint32_t deltaCount{};
+    uint32_t keyframeOffset{};
+    uint32_t keyframeCount{};
+};
 
-        uint32_t targetNameHash{};
+static_assert(sizeof(MaterialChannel) == 16);
 
-        uint32_t reserved{};
+struct alignas(16) AnimationKeyframeValue
+{
+    glm::vec4 value{};
+};
 
-        glm::vec3 maxPositionDelta{};
+static_assert(sizeof(AnimationKeyframeValue) == 16);
 
-        uint32_t reserved2{};
-    };
+struct alignas(16) MorphTarget
+{
+    uint32_t firstDeltaIndex{};
+    uint32_t deltaCount{};
 
-    static_assert(sizeof(MorphTarget) == 32);
+    uint32_t targetNameHash{};
+    uint32_t reserved{};
 
-    struct alignas(16) MorphVertexDelta
-    {
-        glm::vec3 positionDelta{};
+    glm::vec3 maxPositionDelta{};
+    uint32_t reserved2{};
+};
 
-        uint32_t vertexIndex{};
-    };
+static_assert(sizeof(MorphTarget) == 32);
 
-    static_assert(sizeof(MorphVertexDelta) == 16);
+struct alignas(16) MorphVertexDelta
+{
+    glm::vec3 positionDelta{};
 
-    struct alignas(16) MaterialProperty
-    {
-        uint32_t propertyHash{};
+    uint32_t vertexIndex{};
+};
 
-        uint32_t elementCount{};
+static_assert(sizeof(MorphVertexDelta) == 16);
 
-        uint32_t offsetInMaterial{};
+struct alignas(16) MaterialProperty
+{
+    uint32_t propertyHash{};
 
-        uint32_t reserved{};
-    };
+    uint32_t elementCount{};
 
-    static_assert(sizeof(MaterialProperty) == 16);
-}
+    uint32_t offsetInMaterial{};
+
+    uint32_t reserved{};
+};
+
+static_assert(sizeof(MaterialProperty) == 16);
+} // namespace shuttle::assets::formats::animation

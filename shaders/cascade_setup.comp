@@ -1,0 +1,317 @@
+#version 450
+
+#include "common_bindings.glsl"
+#include "common_frame.glsl"
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+// ============================================================
+// Push Constants
+// ============================================================
+//
+// lightDirection:
+//   Направление света в world-space.
+//   Предположение: направление указывает, куда светит солнце.
+//
+// shadowDistance:
+//   Максимальная дистанция теней от камеры.
+//
+// splitLambda:
+//   0.0 = линейные сплиты
+//   1.0 = логарифмические сплиты
+//   Обычно 0.75..0.95.
+//
+// shadowMapResolution:
+//   Разрешение одного каскада.
+//
+// depthPadding:
+//   Насколько расширять near/far в light-space,
+//   чтобы тени не обрезались.
+
+layout(push_constant) uniform PushConstants
+{
+    vec4 lightDirection;
+
+    float shadowDistance;
+    float splitLambda;
+
+    uint cascadeCount;
+    uint shadowMapResolution;
+
+    float depthPadding;
+
+    uint reserved0;
+    uint reserved1;
+    uint reserved2;
+}
+
+pc;
+
+// ============================================================
+// Frame Set
+// ============================================================
+
+layout(set = SET_FRAME, binding = FRAME_INFO, std140) uniform FrameInfoBuffer
+{
+    FrameInfo frame;
+};
+
+layout(set = SET_FRAME, binding = FRAME_DIRECTIONAL_SHADOW_DATA, std430) buffer DirectionalShadowDataBuffer
+{
+    DirectionalShadowData shadowData;
+};
+
+// ============================================================
+// Math helpers
+// ============================================================
+
+float saturate(float v)
+{
+    return clamp(v, 0.0, 1.0);
+}
+
+float computeCascadeSplit(uint cascadeIndex)
+{
+
+    float nearPlane = frame.nearPlane;
+    float farPlane = min(frame.farPlane, pc.shadowDistance);
+    float cascadeCount = float(max(pc.cascadeCount, 1u));
+    float p = float(cascadeIndex + 1u) / cascadeCount;
+    float linearSplit = nearPlane + (farPlane - nearPlane) * p;
+    float logSplit = nearPlane * pow(farPlane / nearPlane, p);
+
+    return mix(linearSplit, logSplit, saturate(pc.splitLambda));
+}
+
+float getCascadeNear(uint cascadeIndex)
+{
+    if (cascadeIndex == 0u) return frame.nearPlane;
+
+    return computeCascadeSplit(cascadeIndex - 1u);
+}
+
+float getCascadeFar(uint cascadeIndex)
+{
+    return computeCascadeSplit(cascadeIndex);
+}
+
+vec3 viewSpaceFrustumCorner(float x, float y, float depth)
+{
+
+    float vx = x * depth / frame.projectionMatrix[0][0];
+    float vy = y * depth / frame.projectionMatrix[1][1];
+
+    return vec3(vx, vy, -depth);
+}
+
+mat4 makeLookAtLH(vec3 eye, vec3 center, vec3 up)
+{
+    vec3 f = normalize(center - eye);
+    vec3 s = normalize(cross(up, f));
+    vec3 u = cross(f, s);
+
+    mat4 result = mat4(1.0);
+
+    result[0][0] = s.x;
+    result[1][0] = s.y;
+    result[2][0] = s.z;
+
+    result[0][1] = u.x;
+    result[1][1] = u.y;
+    result[2][1] = u.z;
+
+    result[0][2] = f.x;
+    result[1][2] = f.y;
+    result[2][2] = f.z;
+
+    result[3][0] = -dot(s, eye);
+    result[3][1] = -dot(u, eye);
+    result[3][2] = -dot(f, eye);
+
+    return result;
+}
+
+mat4 makeOrthoLH_ZO(
+        float left,
+        float right,
+        float bottom,
+        float top,
+        float nearPlane,
+        float farPlane)
+{
+    mat4 result = mat4(1.0);
+
+    result[0][0] = 2.0 / (right - left);
+    result[1][1] = 2.0 / (top - bottom);
+
+    result[2][2] = 1.0 / (farPlane - nearPlane);
+
+    result[3][0] =
+    -(right + left) /
+    (right - left);
+
+    result[3][1] =
+    -(top + bottom) /
+    (top - bottom);
+
+    result[3][2] =
+    -nearPlane /
+    (farPlane - nearPlane);
+
+    return result;
+}
+
+vec3 chooseStableUpVector(vec3 lightDir)
+{
+
+    vec3 up = vec3(0.0, 1.0, 0.0);
+    if (abs(dot(up, lightDir)) > 0.95) up = vec3(0.0, 0.0, 1.0);
+
+    return up;
+}
+
+// ============================================================
+// Main
+// ============================================================
+
+void main()
+{
+
+    uint cascadeIndex = gl_GlobalInvocationID.x;
+
+    uint cascadeCount = min(pc.cascadeCount, uint(SHUTTLE_MAX_SHADOW_CASCADES));
+
+    if (cascadeIndex >= cascadeCount) return;
+
+    // ============================================================
+    // 1. Compute cascade split range
+    // ============================================================
+
+    float cascadeNear = getCascadeNear(cascadeIndex);
+    float cascadeFar = getCascadeFar(cascadeIndex);
+
+    if (cascadeIndex == 0u)
+    {
+        shadowData.cascadeSplits.x = cascadeFar;
+    }
+    else if (cascadeIndex == 1u)
+    {
+        shadowData.cascadeSplits.y = cascadeFar;
+    }
+    else if (cascadeIndex == 2u)
+    {
+        shadowData.cascadeSplits.z = cascadeFar;
+    }
+    else if (cascadeIndex == 3u)
+    {
+        shadowData.cascadeSplits.w = cascadeFar;
+    }
+
+    // ============================================================
+    // 2. Build 8 world-space corners of cascade frustum slice
+    // ============================================================
+
+    mat4 invView = inverse(frame.viewMatrix);
+    vec3 corners[8];
+    uint index = 0u;
+
+    for (uint z = 0u; z < 2u; ++z)
+    {
+        float depth = (z == 0u) ? cascadeNear : cascadeFar;
+
+        for (uint y = 0u; y < 2u; ++y)
+        {
+            float ndcY = (y == 0u) ? -1.0 : 1.0;
+
+            for (uint x = 0u; x < 2u; ++x)
+            {
+
+                float ndcX = (x == 0u) ? -1.0 : 1.0;
+
+                vec3 viewCorner = viewSpaceFrustumCorner(ndcX, ndcY, depth);
+
+                vec4 worldCorner = invView * vec4(viewCorner, 1.0);
+                corners[index] = worldCorner.xyz;
+                index++;
+            }
+        }
+    }
+
+    // ============================================================
+    // 3. Compute stable cascade bounding sphere
+    // ============================================================
+
+    vec3 center = vec3(0.0);
+
+    for (uint i = 0u; i < 8u; ++i)
+        center += corners[i];
+
+    center /= 8.0;
+
+    float radius = 0.0;
+
+    for (uint i = 0u; i < 8u; ++i)
+    {
+        radius = max(radius, length(corners[i] - center));
+    }
+
+    // Немного округляем радиус вверх, чтобы уменьшить shimmer.
+    radius = ceil(radius * 16.0) / 16.0;
+
+    // ============================================================
+    // 4. Build initial light view
+    // ============================================================
+
+    vec3 lightDir = normalize(pc.lightDirection.xyz);
+    vec3 up = chooseStableUpVector(lightDir);
+    vec3 eye = center - lightDir * radius;
+
+    mat4 lightView = makeLookAtLH(eye, center, up);
+
+    // ============================================================
+    // 5. Stabilize cascade using texel snapping
+    // ============================================================
+
+    float resolution = float(max(pc.shadowMapResolution, 1u));
+    float texelSize = (radius * 2.0) / resolution;
+    vec4 centerLS = lightView * vec4(center, 1.0);
+    vec2 snappedCenter = floor(centerLS.xy / texelSize) * texelSize;
+    vec2 snapOffset = snappedCenter - centerLS.xy;
+
+    lightView[3].x += snapOffset.x;
+    lightView[3].y += snapOffset.y;
+
+    // ============================================================
+    // 6. Compute light-space Z range
+    // ============================================================
+
+    float minZ = 1e20;
+    float maxZ = -1e20;
+
+    for (uint i = 0u; i < 8u; ++i)
+    {
+        vec4 p = lightView * vec4(corners[i], 1.0);
+        minZ = min(minZ, p.z);
+        maxZ = max(maxZ, p.z);
+    }
+
+    float padding = max(pc.depthPadding, 0.0);
+    float lightNear = max(0.01, -maxZ - padding);
+    float lightFar = max(lightNear + 1.0, -minZ + padding);
+
+    // ============================================================
+    // 7. Orthographic projection
+    // ============================================================
+
+    mat4 lightProjection = makeOrthoLH_ZO(-radius, radius, -radius, radius, lightNear, lightFar);
+
+    mat4 lightViewProjection = lightProjection * lightView;
+
+    // ============================================================
+    // 8. Store cascade data
+    // ============================================================
+
+    shadowData.cascades[cascadeIndex].lightViewProjection = lightViewProjection;
+
+    shadowData.cascades[cascadeIndex].boundingSphere = vec4(center, radius);
+}

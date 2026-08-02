@@ -4,80 +4,56 @@
 
 #ifndef HELLOTRIANGLE_FRAMEMANAGER_HPP
 #define HELLOTRIANGLE_FRAMEMANAGER_HPP
+#include <array>
 #include <vector>
 #include "IncludeVulkan.hpp"
 
-namespace shuttle_engine {
-    class FrameManager {
-    public:
+namespace shuttle
+{
+class FrameManager
+{
+  public:
+    [[nodiscard]] static vk::ResultValue<FrameManager> create(vk::Device device, uint32_t framesInFlightCount,
+                                                              uint32_t swapchainImageCount,
+                                                              FrameManager&& frameManager = {});
 
-        [[nodiscard]] static vk::ResultValue<FrameManager> create(
-            vk::Device device,
-            uint32_t framesInFlightCount,
-            uint32_t swapchainImageCount,
-            FrameManager&& frameManager = {}
-        );
+    [[nodiscard]] vk::Result prepareFrameSlot(vk::Device device, uint32_t frameIndex);
 
-        [[nodiscard]] vk::Result prepareFrameSlot(
-            vk::Device device,
-            uint32_t frameIndex
-        );
+    [[nodiscard]] vk::ResultValue<uint32_t> acquireNextImage(vk::Device device, vk::SwapchainKHR swapchain, uint32_t frameIndex);
 
-        [[nodiscard]] vk::ResultValue<uint32_t> acquireNextImage(
-            vk::Device device,
-            vk::SwapchainKHR swapchain,
-            uint32_t frameIndex
-        );
+    [[nodiscard]] vk::Result submitRenderCommands(vk::Queue graphicsQueue, vk::CommandBuffer cmd, uint32_t frameIndex,
+                                                  uint32_t imageIndex);
 
-        [[nodiscard]] vk::Result submitRenderCommands(
-            vk::Queue graphicsQueue,
-            vk::CommandBuffer cmd,
-            uint32_t frameIndex,
-            uint32_t imageIndex
-        );
+    [[nodiscard]] vk::Result present(vk::Queue presentQueue, vk::SwapchainKHR swapchain, uint32_t imageIndex);
 
-        [[nodiscard]] vk::Result present(
-            vk::Queue presentQueue,
-            vk::SwapchainKHR swapchain,
-            uint32_t imageIndex
-        );
+    [[nodiscard]] vk::Result waitRenderIdle(vk::Device device) noexcept;
+    FrameManager() noexcept = default;
 
-        [[nodiscard]] vk::Result waitRenderIdle(vk::Device device) noexcept;
-        FrameManager() noexcept = default;
+    // Удаляем копирование, так как vk::Unique... не копируемы
+    FrameManager(const FrameManager&) = delete;
+    FrameManager& operator=(const FrameManager&) = delete;
 
-        // Удаляем копирование, так как vk::Unique... не копируемы
-        FrameManager(const FrameManager&) = delete;
-        FrameManager& operator=(const FrameManager&) = delete;
+    // Разрешаем перемещение (Move)
+    FrameManager(FrameManager&& other) noexcept = default;
+    FrameManager& operator=(FrameManager&& other) noexcept = default;
 
-        // Разрешаем перемещение (Move)
-        FrameManager(FrameManager&& other) noexcept = default;
-        FrameManager& operator=(FrameManager&& other) noexcept = default;
+  private:
+    FrameManager(uint32_t framesInFlightCount, uint32_t swapchainImageCount) noexcept
+        : framesInFlightCount{framesInFlightCount}, swapchainImageCount{swapchainImageCount}
+    {
+    }
 
-    private:
+    bool isEmpty() const { return framesInFlightCount == 0; }
 
-        FrameManager(
-            uint32_t framesInFlightCount,
-            uint32_t swapchainImageCount
-        ) noexcept :
-            framesInFlightCount{framesInFlightCount}, swapchainImageCount{swapchainImageCount}
-        {}
+    [[nodiscard]] vk::Result init(vk::Device device, FrameManager&& oldFrameManager = {});
 
-        bool isEmpty() const {
-            return framesInFlightCount == 0;
-        }
+    std::vector<vk::UniqueFence> uniqueInFlightFences;
+    std::vector<vk::UniqueSemaphore> uniqueImageAvailableSemaphores;
+    std::vector<vk::UniqueSemaphore> uniqueRenderFinishedSemaphores;
 
-        [[nodiscard]] vk::Result init(
-            vk::Device device,
-            FrameManager&& oldFrameManager = {}
-        );
+    uint32_t framesInFlightCount;
+    uint32_t swapchainImageCount;
+};
+} // namespace shuttle
 
-        std::vector<vk::UniqueFence> uniqueInFlightFences;
-        std::vector<vk::UniqueSemaphore> uniqueImageAvailableSemaphores;
-        std::vector<vk::UniqueSemaphore> uniqueRenderFinishedSemaphores;
-
-        uint32_t framesInFlightCount;
-        uint32_t swapchainImageCount;
-    };
-} // shuttle_engine
-
-#endif //HELLOTRIANGLE_FRAMEMANAGER_HPP
+#endif // HELLOTRIANGLE_FRAMEMANAGER_HPP

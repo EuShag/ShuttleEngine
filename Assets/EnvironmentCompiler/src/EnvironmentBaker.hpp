@@ -10,18 +10,17 @@
 
 namespace shuttle::assets::environment_compiler
 {
-    class EnvironmentBaker
-    {
-    public:
-        [[nodiscard]]
-        static std::optional<CompiledEnvironment> bake(
-            const std::filesystem::path& hdrFile);
+class EnvironmentBaker
+{
+  public:
+    [[nodiscard]]
+    static std::optional<CompiledEnvironment> bake(const std::filesystem::path& hdrFile);
 
-    private:
-        [[nodiscard]]
-        static cmft::CrtAllocator* allocator()
-        {
-            return &cmft::g_crtAllocator;
-        }
-    };
-}
+  private:
+    [[nodiscard]]
+    static cmft::CrtAllocator* allocator()
+    {
+        return &cmft::g_crtAllocator;
+    }
+};
+} // namespace shuttle::assets::environment_compiler

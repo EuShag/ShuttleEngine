@@ -11,23 +11,26 @@
 #include "HostRenderData/HostRenderData.hpp"
 #include "ImageLoader/Image.hpp"
 
-namespace shuttle_engine {
+namespace shuttle
+{
 
-    struct TerrainProperties {
-        vk::Extent2D meshResolution;
-        glm::vec2 worldSize;
+struct TerrainProperties
+{
+    vk::Extent2D meshResolution;
+    glm::vec2 worldSize;
 
-        float minHeight = -10.0f;
-        float maxHeight =  50.0f;
+    float minHeight = -10.0f;
+    float maxHeight = 50.0f;
 
-        glm::vec2 textureRepeatFactor{100.0f, 100.0f};
-    };
+    glm::vec2 textureRepeatFactor{100.0f, 100.0f};
+};
 
-    // 2. Генератор
-    class TerrainGeometryGenerator {
-    public:
-        static HostMeshData createFromHeightMap(const TerrainProperties& props, const Image1D16bit& heightMap);
-    };
-}
+// 2. Генератор
+class TerrainGeometryGenerator
+{
+  public:
+    static HostMeshData createFromHeightMap(const TerrainProperties& props, const Image1D16bit& heightMap);
+};
+} // namespace shuttle
 
-#endif //HELLOTRIANGLE_TERRAIN_HPP
+#endif // HELLOTRIANGLE_TERRAIN_HPP

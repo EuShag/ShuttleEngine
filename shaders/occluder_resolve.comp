@@ -1,0 +1,126 @@
+#version 450
+
+#include "common_bindings.glsl"
+#include "common_scene.glsl"
+#include "common_frame.glsl"
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+// ============================================================
+// Scene Set
+// ============================================================
+
+layout(set = SET_SCENE, binding = SCENE_DRAWABLES, std430) readonly buffer DrawableBuffer
+{
+    GpuDrawableObject drawables[];
+};
+
+layout(set = SET_SCENE, binding = SCENE_MESHES, std430) readonly buffer MeshBuffer
+{
+    GpuMesh meshes[];
+};
+
+// ============================================================
+// Frame Set
+// ============================================================
+
+layout(set = SET_FRAME, binding = FRAME_CANDIDATE_INDICES, std430) readonly buffer CandidateIndicesBuffer
+{
+    uint candidateIndices[];
+};
+
+layout(set = SET_FRAME, binding = FRAME_CANDIDATE_COUNT, std430) readonly buffer CandidateCountBuffer
+{
+    uint candidateCount;
+};
+
+layout(set = SET_FRAME, binding = FRAME_VISIBILITY_FLAGS, std430) buffer VisibilityFlagsBuffer
+{
+    uint visibilityFlags[];
+};
+
+layout(set = SET_FRAME, binding = FRAME_CHOSEN_MESH_IDS, std430) buffer ChosenMeshIdsBuffer
+{
+    uint chosenMeshIds[];
+};
+
+layout(set = SET_FRAME, binding = FRAME_INDIRECT_COMMANDS, std430) buffer IndirectCommandBuffer
+{
+    VkDrawIndexedIndirectCommand commands[];
+};
+
+// ============================================================
+// Helpers
+// ============================================================
+
+bool hasMeshFlag(uint flags, uint flag)
+{
+    return (flags & flag) != 0u;
+}
+
+uint chooseOccluderLod(GpuMesh mesh)
+{
+    // Для occluder depth pass лучше начинать с LOD0.
+    // Можно позже выбрать более грубый LOD для крупных окклюдеров.
+    return 0u;
+}
+
+// ============================================================
+// Main
+// ============================================================
+
+void main()
+{
+    uint candidateIndex = gl_GlobalInvocationID.x;
+
+    if (candidateIndex >= candidateCount)
+    {
+        return;
+    }
+
+    uint drawableId = candidateIndices[candidateIndex];
+
+    GpuDrawableObject drawable = drawables[drawableId];
+
+    GpuMesh mesh = meshes[drawable.meshIndex];
+
+    if (!hasMeshFlag(mesh.meshFlags, MESH_FLAG_OCCLUDER))
+    {
+        visibilityFlags[drawableId] = 0u;
+
+        return;
+    }
+
+    if (hasMeshFlag(mesh.meshFlags, MESH_FLAG_TRANSPARENT))
+    {
+        visibilityFlags[drawableId] = 0u;
+
+        return;
+    }
+
+    uint lodIndex = chooseOccluderLod(mesh);
+
+    uint commandIndex = drawable.meshIndex * MAX_MESH_LODS + lodIndex;
+
+    MeshLod lod = mesh.lods[lodIndex];
+
+    visibilityFlags[drawableId] = 1u;
+
+    chosenMeshIds[drawableId] = commandIndex;
+
+    uint oldInstanceCount = atomicAdd(commands[commandIndex].instanceCount, 1u);
+
+    if (oldInstanceCount == 0u)
+    {
+        commands[commandIndex].indexCount = lod.indexCount;
+
+        commands[commandIndex].firstIndex = lod.firstIndex;
+
+        // Важно:
+        // vertexOffset = 0, потому что gl_VertexIndex должен оставаться
+        // локальным индексом вершины внутри mesh.
+        commands[commandIndex].vertexOffset = 0;
+
+        commands[commandIndex].firstInstance = 0u;
+    }
+}

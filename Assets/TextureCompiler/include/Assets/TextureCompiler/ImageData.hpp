@@ -5,35 +5,35 @@
 
 namespace shuttle::assets::texture_compiler
 {
-    struct ImageData
+struct ImageData
+{
+    const uint8_t* pixels = nullptr;
+    size_t size = 0;
+
+    [[nodiscard]]
+    bool valid() const noexcept
     {
-        const uint8_t* pixels = nullptr;
-        size_t size = 0;
+        return pixels != nullptr && size > 0;
+    }
+};
 
-        [[nodiscard]]
-        bool valid() const noexcept
-        {
-            return pixels != nullptr && size > 0;
-        }
-    };
+struct ImageSizedData
+{
+    const uint8_t* pixels = nullptr;
+    uint32_t width = 0;
+    uint32_t height = 0;
 
-    struct ImageSizedData
+    [[nodiscard]]
+    bool valid() const noexcept
     {
-        const uint8_t* pixels = nullptr;
-        uint32_t width = 0;
-        uint32_t height = 0;
+        return pixels != nullptr && width > 0 && height > 0;
+    }
+};
 
-        [[nodiscard]]
-        bool valid() const noexcept
-        {
-            return pixels != nullptr && width > 0 && height > 0;
-        }
-    };
-
-    enum class CompressionType : uint32_t
-    {
-        BC5,
-        BC6H,
-        BC7
-    };
-}
+enum class CompressionType : uint32_t
+{
+    BC5,
+    BC6H,
+    BC7
+};
+} // namespace shuttle::assets::texture_compiler

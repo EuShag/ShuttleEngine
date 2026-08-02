@@ -4,5 +4,6 @@
 
 #include "SunLightControlPanel.hpp"
 
-namespace shuttle_engine {
-} // shuttle_engine
+namespace shuttle
+{
+} // namespace shuttle

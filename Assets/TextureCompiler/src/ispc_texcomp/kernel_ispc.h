@@ -15,10 +15,9 @@ typedef int bool;
 #endif
 #endif
 
-
-
 #ifdef __cplusplus
-namespace ispc { /* namespace */
+namespace ispc
+{      /* namespace */
 #endif // __cplusplus
 
 /* Portable alignment macro that works across different compilers and standards */
@@ -48,8 +47,10 @@ namespace ispc { /* namespace */
 
 #ifndef __ISPC_STRUCT_rgba_surface__
 #define __ISPC_STRUCT_rgba_surface__
-struct rgba_surface {
-    uint8_t * ptr;
+
+struct rgba_surface
+{
+    uint8_t* ptr;
     int32_t width;
     int32_t height;
     int32_t stride;
@@ -58,7 +59,9 @@ struct rgba_surface {
 
 #ifndef __ISPC_STRUCT_bc6h_enc_settings__
 #define __ISPC_STRUCT_bc6h_enc_settings__
-struct bc6h_enc_settings {
+
+struct bc6h_enc_settings
+{
     bool slow_mode;
     bool fast_mode;
     int32_t refineIterations_1p;
@@ -69,7 +72,9 @@ struct bc6h_enc_settings {
 
 #ifndef __ISPC_STRUCT_bc7_enc_settings__
 #define __ISPC_STRUCT_bc7_enc_settings__
-struct bc7_enc_settings {
+
+struct bc7_enc_settings
+{
     bool mode_selection[4];
     int32_t refineIterations[8];
     bool skip_mode2;
@@ -84,29 +89,30 @@ struct bc7_enc_settings {
 
 #ifndef __ISPC_STRUCT_etc_enc_settings__
 #define __ISPC_STRUCT_etc_enc_settings__
-struct etc_enc_settings {
+
+struct etc_enc_settings
+{
     int32_t fastSkipTreshold;
 };
 #endif
 
-
 ///////////////////////////////////////////////////////////////////////////
 // Functions exported from ispc code
 ///////////////////////////////////////////////////////////////////////////
-#if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
-extern "C" {
+#if defined(__cplusplus) && (!defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C)
+extern "C"
+{
 #endif // __cplusplus
-    extern void CompressBlocksBC1_ispc(struct rgba_surface * src, uint8_t * dst);
-    extern void CompressBlocksBC3_ispc(struct rgba_surface * src, uint8_t * dst);
-    extern void CompressBlocksBC4_ispc(struct rgba_surface * src, uint8_t * dst);
-    extern void CompressBlocksBC5_ispc(struct rgba_surface * src, uint8_t * dst);
-    extern void CompressBlocksBC6H_ispc(struct rgba_surface * src, uint8_t * dst, struct bc6h_enc_settings * settings);
-    extern void CompressBlocksBC7_ispc(struct rgba_surface * src, uint8_t * dst, struct bc7_enc_settings * settings);
-    extern void CompressBlocksETC1_ispc(struct rgba_surface * src, uint8_t * dst, struct etc_enc_settings * settings);
-#if defined(__cplusplus) && (! defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C )
+    extern void CompressBlocksBC1_ispc(struct rgba_surface* src, uint8_t* dst);
+    extern void CompressBlocksBC3_ispc(struct rgba_surface* src, uint8_t* dst);
+    extern void CompressBlocksBC4_ispc(struct rgba_surface* src, uint8_t* dst);
+    extern void CompressBlocksBC5_ispc(struct rgba_surface* src, uint8_t* dst);
+    extern void CompressBlocksBC6H_ispc(struct rgba_surface* src, uint8_t* dst, struct bc6h_enc_settings* settings);
+    extern void CompressBlocksBC7_ispc(struct rgba_surface* src, uint8_t* dst, struct bc7_enc_settings* settings);
+    extern void CompressBlocksETC1_ispc(struct rgba_surface* src, uint8_t* dst, struct etc_enc_settings* settings);
+#if defined(__cplusplus) && (!defined(__ISPC_NO_EXTERN_C) || !__ISPC_NO_EXTERN_C)
 } /* end extern C */
 #endif // __cplusplus
-
 
 #ifdef __cplusplus
 } /* namespace */

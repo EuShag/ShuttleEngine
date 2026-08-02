@@ -7,12 +7,12 @@
 
 namespace shuttle::assets::texture_compiler
 {
-    struct CompiledTexture
-    {
-        std::vector<uint8_t> data;
+struct CompiledTexture
+{
+    std::vector<uint8_t> data;
 
-        formats::texture::TextureMetadata metadata{};
+    formats::texture::TextureMetadata metadata{};
 
-        std::vector<formats::texture::TextureMipMetadata> mipMetadata;
-    };
-}
+    std::vector<formats::texture::TextureMipMetadata> mipMetadata;
+};
+} // namespace shuttle::assets::texture_compiler

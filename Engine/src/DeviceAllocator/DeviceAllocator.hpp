@@ -3,281 +3,314 @@
 #include "IncludeVulkan.hpp"
 #include <vector>
 
-namespace shuttle_engine::resources {
-	enum class AllocationCreateFlagBits : uint32_t {
-		eDedicatedMemory = 0x00000001,
-		eNeverAllocate = 0x00000002,
-		eMapped = 0x00000004,
-		eUserDataCopyString = 0x00000020,
-		eUpperAddressBit = 0x00000040,
-		eDontBind = 0x00000080,
-		eWithinBud = 0x00000100,
-		eCanAlias = 0x00000200,
-		eHostAccessSequentialWrite = 0x00000400,
-		eHostAccessRandom = 0x00000800,
-		eStrategyMinMemory = 0x00010000,
-		eCreateStrategyMinTime = 0x00020000,
-		eCreateStrategyMinOffset = 0x00040000,
-		eStrategyBestFit = eStrategyMinMemory,
-		eStrategyFirestFit = eCreateStrategyMinTime
-	};
-
-	using AllocationCreateFlags = vk::Flags<AllocationCreateFlagBits>;
-}
-
-template <>
-struct vk::FlagTraits<shuttle_engine::resources::AllocationCreateFlagBits> {
-	using WrappedType = uint32_t;
-	enum { isBitmask = true };
-
-	static constexpr auto allFlags =
-		shuttle_engine::resources::AllocationCreateFlags(
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eDedicatedMemory) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eNeverAllocate) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eMapped) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eUserDataCopyString) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eUpperAddressBit) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eDontBind) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eWithinBud) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eCanAlias) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eHostAccessSequentialWrite) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eHostAccessRandom) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eStrategyMinMemory) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eCreateStrategyMinTime) |
-			static_cast<uint32_t>(shuttle_engine::resources::AllocationCreateFlagBits::eCreateStrategyMinOffset)
-		);
+namespace shuttle::resources
+{
+enum class AllocationCreateFlagBits : uint32_t
+{
+    eDedicatedMemory = 0x00000001,
+    eNeverAllocate = 0x00000002,
+    eMapped = 0x00000004,
+    eUserDataCopyString = 0x00000020,
+    eUpperAddressBit = 0x00000040,
+    eDontBind = 0x00000080,
+    eWithinBud = 0x00000100,
+    eCanAlias = 0x00000200,
+    eHostAccessSequentialWrite = 0x00000400,
+    eHostAccessRandom = 0x00000800,
+    eStrategyMinMemory = 0x00010000,
+    eCreateStrategyMinTime = 0x00020000,
+    eCreateStrategyMinOffset = 0x00040000,
+    eStrategyBestFit = eStrategyMinMemory,
+    eStrategyFirestFit = eCreateStrategyMinTime
 };
 
-namespace shuttle_engine::resources {
-	using AllocationCreateFlags = vk::Flags<AllocationCreateFlagBits>;
+using AllocationCreateFlags = vk::Flags<AllocationCreateFlagBits>;
+} // namespace shuttle::resources
 
-	enum class MemoryUsage {
-		eUnknown,
-		eGpuOnly,
-		eCpuOnly,
-		eCpuToGpu,
-		eGpuToCpu,
-		eAuto,
-		eAutoPreferDedicatedMemory,
-		ePreferHostMemory,
-		ePreferDeviceMemory
-	};
+template <> struct vk::FlagTraits<shuttle::resources::AllocationCreateFlagBits>
+{
+    using WrappedType = uint32_t;
 
-	using AllocationHandle = void*;
-	using AllocatorHandle = void*;
-	class DeviceAllocator;
+    enum
+    {
+        isBitmask = true
+    };
 
-	template <typename TResource>
-		requires std::same_as<TResource, vk::Buffer> || std::same_as<TResource, vk::Image>
-	class AllocatedResource {
-	public:
-		AllocatedResource() = default;
-		AllocatedResource(AllocationHandle const& allocation, TResource resourceHandle)
-			: allocation{ allocation }, resourceHandle{ resourceHandle } {}
+    static constexpr auto allFlags = shuttle::resources::AllocationCreateFlags(
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eDedicatedMemory) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eNeverAllocate) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eMapped) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eUserDataCopyString) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eUpperAddressBit) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eDontBind) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eWithinBud) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eCanAlias) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eHostAccessSequentialWrite) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eHostAccessRandom) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eStrategyMinMemory) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eCreateStrategyMinTime) |
+        static_cast<uint32_t>(shuttle::resources::AllocationCreateFlagBits::eCreateStrategyMinOffset));
+};
 
-		[[nodiscard]] AllocationHandle getAllocation() const { return allocation; }
+namespace shuttle::resources
+{
+using AllocationCreateFlags = vk::Flags<AllocationCreateFlagBits>;
 
-		bool operator==(AllocatedResource const& other) const {
-			return allocation == other.allocation && resourceHandle == other.resourceHandle;
-		}
+enum class MemoryUsage
+{
+    eUnknown,
+    eGpuOnly,
+    eCpuOnly,
+    eCpuToGpu,
+    eGpuToCpu,
+    eAuto,
+    eAutoPreferDedicatedMemory,
+    ePreferHostMemory,
+    ePreferDeviceMemory
+};
 
-		bool operator!=(AllocatedResource const& other) const {
-			return !(*this == other);
-		}
+using AllocationHandle = void*;
+using AllocatorHandle = void*;
+class DeviceAllocator;
 
-		operator TResource() const { return resourceHandle; }
+template <typename TResource>
+    requires std::same_as<TResource, vk::Buffer> || std::same_as<TResource, vk::Image>
+class AllocatedResource
+{
+  public:
+    AllocatedResource() = default;
 
-	private:
-		AllocationHandle allocation = nullptr;
-		TResource resourceHandle = VK_NULL_HANDLE;
-	};
+    AllocatedResource(AllocationHandle const& allocation, TResource resourceHandle)
+        : allocation{allocation}, resourceHandle{resourceHandle}
+    {
+    }
 
-	using AllocatedBuffer = AllocatedResource<vk::Buffer>;
-	using AllocatedImage = AllocatedResource<vk::Image>;
+    [[nodiscard]] AllocationHandle getAllocation() const { return allocation; }
 
-	struct StrideCopyHostToBufferInfo {
-		AllocatedBuffer dstBuffer;
-		vk::DeviceSize dstBufferOffset{};
-		size_t dstBufferStride{0};
-		void const* srcData{};
-		size_t srcDataStride{0};
-		size_t elementCount{};
-		size_t elementSize{};
-	};
+    bool operator==(AllocatedResource const& other) const
+    {
+        return allocation == other.allocation && resourceHandle == other.resourceHandle;
+    }
 
-	struct StrideCopyBufferToHostInfo {
-		AllocatedBuffer srcBuffer;
-		vk::DeviceSize srcBufferOffset{};
-		size_t srcBufferStride{0};
-		void* dstData{};
-		size_t dstDataStride{0};
-		size_t elementCount{};
-		size_t elementSize{};
-	};
+    bool operator!=(AllocatedResource const& other) const { return !(*this == other); }
 
-	struct CopyHostToBufferInfo {
-		AllocatedBuffer dstBuffer;
-		vk::DeviceSize dstBufferOffset{};
-		const void* srcData{};
-		size_t dataSize{0};
-	};
+    operator TResource() const { return resourceHandle; }
 
-	struct CopyBufferToHostInfo {
-		AllocatedBuffer srcBuffer;
-		vk::DeviceSize srcBufferOffset{};
-		void* dstData{};
-		size_t dataSize{0};
-	};
+  private:
+    AllocationHandle allocation = nullptr;
+    TResource resourceHandle = VK_NULL_HANDLE;
+};
 
+using AllocatedBuffer = AllocatedResource<vk::Buffer>;
+using AllocatedImage = AllocatedResource<vk::Image>;
 
-	class UniqueAllocatedBufferDeleter {
-	public:
-		UniqueAllocatedBufferDeleter(DeviceAllocator const& allocator) noexcept : allocator{ &allocator } {}
-		UniqueAllocatedBufferDeleter() = default;
+struct StrideCopyHostToBufferInfo
+{
+    AllocatedBuffer dstBuffer;
+    vk::DeviceSize dstBufferOffset{};
+    size_t dstBufferStride{0};
+    void const* srcData{};
+    size_t srcDataStride{0};
+    size_t elementCount{};
+    size_t elementSize{};
+};
 
-		void operator()(AllocatedBuffer const& allocatedBuffer) const noexcept;
-	private:
-		DeviceAllocator const* allocator = nullptr;
-	};
+struct StrideCopyBufferToHostInfo
+{
+    AllocatedBuffer srcBuffer;
+    vk::DeviceSize srcBufferOffset{};
+    size_t srcBufferStride{0};
+    void* dstData{};
+    size_t dstDataStride{0};
+    size_t elementCount{};
+    size_t elementSize{};
+};
 
-	class UniqueAllocatedImageDeleter {
-	public:
-		UniqueAllocatedImageDeleter(DeviceAllocator const& allocator) noexcept : allocator{ &allocator } {}
-		UniqueAllocatedImageDeleter() = default;
+struct CopyHostToBufferInfo
+{
+    AllocatedBuffer dstBuffer;
+    vk::DeviceSize dstBufferOffset{};
+    const void* srcData{};
+    size_t dataSize{0};
+};
 
-		void operator()(AllocatedImage const& allocatedImage) const noexcept;
-	private:
-		DeviceAllocator const* allocator = nullptr;
-	};
+struct CopyBufferToHostInfo
+{
+    AllocatedBuffer srcBuffer;
+    vk::DeviceSize srcBufferOffset{};
+    void* dstData{};
+    size_t dataSize{0};
+};
 
-	template <typename TResource, typename TDeleter>
-		requires std::same_as<TResource, vk::Buffer> || std::same_as<TResource, vk::Image>
-	class UniqueAllocatedResource {
-	public:
-		UniqueAllocatedResource() = default;
-		UniqueAllocatedResource(AllocatedResource<TResource> allocatedResource, TDeleter deleter) noexcept
-			: allocatedResource{ allocatedResource }, deleter{ deleter } {}
+class UniqueAllocatedBufferDeleter
+{
+  public:
+    UniqueAllocatedBufferDeleter(DeviceAllocator const& allocator) noexcept : allocator{&allocator} {}
 
-		UniqueAllocatedResource(UniqueAllocatedResource const&) = delete;
-		UniqueAllocatedResource& operator=(UniqueAllocatedResource const&) noexcept = delete;
+    UniqueAllocatedBufferDeleter() = default;
 
-		UniqueAllocatedResource(UniqueAllocatedResource&& other) noexcept : allocatedResource{ other.allocatedResource }, deleter{ other.deleter } {
-			other.allocatedResource = AllocatedResource<TResource>{};
-			other.deleter = TDeleter{};
-		}
-		UniqueAllocatedResource& operator=(UniqueAllocatedResource&& other) noexcept {
-			allocatedResource = other.allocatedResource;
-			deleter = other.deleter;
-			other.deleter = TDeleter{};
-			other.allocatedResource = AllocatedResource<TResource>{};
-			return *this;
-		}
+    void operator()(AllocatedBuffer const& allocatedBuffer) const noexcept;
 
-		AllocatedResource<TResource> const& get() const noexcept { return allocatedResource; }
-		AllocatedResource<TResource>& get() noexcept { return allocatedResource; }
+  private:
+    DeviceAllocator const* allocator = nullptr;
+};
 
-		AllocatedResource<TResource>* operator->() noexcept { return &allocatedResource; }
-		AllocatedResource<TResource> const* operator->() const noexcept { return &allocatedResource; }
+class UniqueAllocatedImageDeleter
+{
+  public:
+    UniqueAllocatedImageDeleter(DeviceAllocator const& allocator) noexcept : allocator{&allocator} {}
 
-		AllocatedResource<TResource>& operator*() noexcept { return allocatedResource; }
-		AllocatedResource<TResource> const& operator*() const noexcept { return allocatedResource; }
+    UniqueAllocatedImageDeleter() = default;
 
-		~UniqueAllocatedResource() {
-			if (allocatedResource != AllocatedResource<TResource>{})
-			deleter(allocatedResource);
-		}
+    void operator()(AllocatedImage const& allocatedImage) const noexcept;
 
-	private:
-		AllocatedResource<TResource> allocatedResource = AllocatedResource<TResource>{};
-		TDeleter deleter{};
-	};
+  private:
+    DeviceAllocator const* allocator = nullptr;
+};
 
-	using UniqueAllocatedBuffer = UniqueAllocatedResource<vk::Buffer, UniqueAllocatedBufferDeleter>;
-	using UniqueAllocatedImage = UniqueAllocatedResource<vk::Image, UniqueAllocatedImageDeleter>;
+template <typename TResource, typename TDeleter>
+    requires std::same_as<TResource, vk::Buffer> || std::same_as<TResource, vk::Image>
+class UniqueAllocatedResource
+{
+  public:
+    UniqueAllocatedResource() = default;
 
-	class DeviceAllocator {
-	public:
-		DeviceAllocator() = default;
-		DeviceAllocator(AllocatorHandle handle) noexcept : handle{ handle } {}
+    UniqueAllocatedResource(AllocatedResource<TResource> allocatedResource, TDeleter deleter) noexcept
+        : allocatedResource{allocatedResource}, deleter{deleter}
+    {
+    }
 
-		bool operator==(DeviceAllocator const& other) const noexcept { return handle == other.handle; }
+    UniqueAllocatedResource(UniqueAllocatedResource const&) = delete;
+    UniqueAllocatedResource& operator=(UniqueAllocatedResource const&) noexcept = delete;
 
-		[[nodiscard]] static vk::ResultValue<DeviceAllocator> create(
-			vk::Instance instance, vk::Device device,
-			vk::PhysicalDevice physicalDevice,
-			vk::detail::DispatchLoaderDynamic const& dispatcher = vk::detail::defaultDispatchLoaderDynamic) noexcept;
+    UniqueAllocatedResource(UniqueAllocatedResource&& other) noexcept
+        : allocatedResource{other.allocatedResource}, deleter{other.deleter}
+    {
+        other.allocatedResource = AllocatedResource<TResource>{};
+        other.deleter = TDeleter{};
+    }
 
-		[[nodiscard]] vk::ResultValue<AllocatedBuffer> createAndAllocateBuffer(
-			vk::BufferCreateInfo const& bufferCreateInfo,
-			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
-			AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
+    UniqueAllocatedResource& operator=(UniqueAllocatedResource&& other) noexcept
+    {
+        allocatedResource = other.allocatedResource;
+        deleter = other.deleter;
+        other.deleter = TDeleter{};
+        other.allocatedResource = AllocatedResource<TResource>{};
+        return *this;
+    }
 
-		[[nodiscard]] vk::ResultValue<AllocatedImage> createAndAllocateImage(
-			vk::ImageCreateInfo const& imageCreateInfo,
-			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
-			AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
+    AllocatedResource<TResource> const& get() const noexcept { return allocatedResource; }
 
-		[[nodiscard]] vk::ResultValue<UniqueAllocatedBuffer> createAndAllocateBufferUnique(
-			vk::BufferCreateInfo const& bufferCreateInfo,
-			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
-			AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
+    AllocatedResource<TResource>& get() noexcept { return allocatedResource; }
 
-		[[nodiscard]] vk::ResultValue<UniqueAllocatedImage> createAndAllocateImageUnique(
-			vk::ImageCreateInfo const& imageCreateInfo,
-			MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
-			AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
+    AllocatedResource<TResource>* operator->() noexcept { return &allocatedResource; }
 
-		[[nodiscard]] vk::Result writeBufferFromHostStride(StrideCopyHostToBufferInfo const& writeInfo) const noexcept;
-		[[nodiscard]] vk::Result readBufferToHostStride(StrideCopyBufferToHostInfo const& readInfos) const noexcept;
-		[[nodiscard]] vk::Result writeBufferFromHost(CopyHostToBufferInfo const& writeInfo) const noexcept;
-		[[nodiscard]] vk::Result readBufferToHost(CopyBufferToHostInfo const& readInfo) const noexcept;
-		[[nodiscard]] void* getMappedPointer(AllocatedBuffer buffer) const noexcept;
+    AllocatedResource<TResource> const* operator->() const noexcept { return &allocatedResource; }
 
-		DeviceAllocator& operator=(DeviceAllocator const& other) = default;
+    AllocatedResource<TResource>& operator*() noexcept { return allocatedResource; }
 
-		void destroyBuffer(
-			AllocatedBuffer allocatedBuffer) const noexcept;
+    AllocatedResource<TResource> const& operator*() const noexcept { return allocatedResource; }
 
-		void destroyImage(
-			AllocatedImage allocatedImage) const noexcept;
+    ~UniqueAllocatedResource()
+    {
+        if (allocatedResource != AllocatedResource<TResource>{}) deleter(allocatedResource);
+    }
 
-		void destroy() const noexcept;
+  private:
+    AllocatedResource<TResource> allocatedResource = AllocatedResource<TResource>{};
+    TDeleter deleter{};
+};
 
-	private:
-		AllocatorHandle handle = nullptr;
-	};
+using UniqueAllocatedBuffer = UniqueAllocatedResource<vk::Buffer, UniqueAllocatedBufferDeleter>;
+using UniqueAllocatedImage = UniqueAllocatedResource<vk::Image, UniqueAllocatedImageDeleter>;
 
-	class UniqueAllocator {
-	public:
-		UniqueAllocator(DeviceAllocator const& allocator) : allocator{ allocator } {}
+class DeviceAllocator
+{
+  public:
+    DeviceAllocator() = default;
 
-		UniqueAllocator() = default;
-		[[nodiscard]] static vk::ResultValue<UniqueAllocator> makeUnique(
-			vk::Instance instance, vk::Device device, 
-			vk::PhysicalDevice physicalDevice, 
-			vk::detail::DispatchLoaderDynamic const& dispatcher = vk::detail::defaultDispatchLoaderDynamic) noexcept;
+    DeviceAllocator(AllocatorHandle handle) noexcept : handle{handle} {}
 
-		UniqueAllocator(UniqueAllocator const&) = delete;
-		UniqueAllocator& operator=(UniqueAllocator const&) = delete;
-		UniqueAllocator(UniqueAllocator&& other) noexcept : allocator{ other.allocator } {
-			other.allocator = DeviceAllocator{};
-		}
+    bool operator==(DeviceAllocator const& other) const noexcept { return handle == other.handle; }
 
-		DeviceAllocator& get() noexcept { return allocator; }
-		[[nodiscard]] DeviceAllocator const& get() const noexcept { return allocator; }
+    [[nodiscard]] static vk::ResultValue<DeviceAllocator>
+    create(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice,
+           vk::detail::DispatchLoaderDynamic const& dispatcher = vk::detail::defaultDispatchLoaderDynamic) noexcept;
 
-		DeviceAllocator* operator->() { return &allocator; }
-		DeviceAllocator const* operator->() const noexcept { return &allocator; }
+    [[nodiscard]] vk::ResultValue<AllocatedBuffer>
+    createAndAllocateBuffer(vk::BufferCreateInfo const& bufferCreateInfo,
+                            MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+                            AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
 
-		DeviceAllocator& operator*() noexcept { return allocator; }
-		DeviceAllocator const& operator*() const noexcept { return allocator; }
+    [[nodiscard]] vk::ResultValue<AllocatedImage>
+    createAndAllocateImage(vk::ImageCreateInfo const& imageCreateInfo,
+                           MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+                           AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
 
-		~UniqueAllocator() {
-			if (allocator != DeviceAllocator{})
-			allocator.destroy();
-		}
-	private:
-		DeviceAllocator allocator;
-	};
-}
+    [[nodiscard]] vk::ResultValue<UniqueAllocatedBuffer>
+    createAndAllocateBufferUnique(vk::BufferCreateInfo const& bufferCreateInfo,
+                                  MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+                                  AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
 
+    [[nodiscard]] vk::ResultValue<UniqueAllocatedImage>
+    createAndAllocateImageUnique(vk::ImageCreateInfo const& imageCreateInfo,
+                                 MemoryUsage desireMemoryUsage = MemoryUsage::eAuto,
+                                 AllocationCreateFlags allocationCreateFlags = {}) const noexcept;
+
+    [[nodiscard]] vk::Result writeBufferFromHostStride(StrideCopyHostToBufferInfo const& writeInfo) const noexcept;
+    [[nodiscard]] vk::Result readBufferToHostStride(StrideCopyBufferToHostInfo const& readInfos) const noexcept;
+    [[nodiscard]] vk::Result writeBufferFromHost(CopyHostToBufferInfo const& writeInfo) const noexcept;
+    [[nodiscard]] vk::Result readBufferToHost(CopyBufferToHostInfo const& readInfo) const noexcept;
+    [[nodiscard]] void* getMappedPointer(AllocatedBuffer buffer) const noexcept;
+
+    DeviceAllocator& operator=(DeviceAllocator const& other) = default;
+
+    void destroyBuffer(AllocatedBuffer allocatedBuffer) const noexcept;
+
+    void destroyImage(AllocatedImage allocatedImage) const noexcept;
+
+    void destroy() const noexcept;
+
+  private:
+    AllocatorHandle handle = nullptr;
+};
+
+class UniqueAllocator
+{
+  public:
+    UniqueAllocator(DeviceAllocator const& allocator) : allocator{allocator} {}
+
+    UniqueAllocator() = default;
+    [[nodiscard]] static vk::ResultValue<UniqueAllocator>
+    makeUnique(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice,
+               vk::detail::DispatchLoaderDynamic const& dispatcher = vk::detail::defaultDispatchLoaderDynamic) noexcept;
+
+    UniqueAllocator(UniqueAllocator const&) = delete;
+    UniqueAllocator& operator=(UniqueAllocator const&) = delete;
+
+    UniqueAllocator(UniqueAllocator&& other) noexcept : allocator{other.allocator}
+    {
+        other.allocator = DeviceAllocator{};
+    }
+
+    DeviceAllocator& get() noexcept { return allocator; }
+
+    [[nodiscard]] DeviceAllocator const& get() const noexcept { return allocator; }
+
+    DeviceAllocator* operator->() { return &allocator; }
+
+    DeviceAllocator const* operator->() const noexcept { return &allocator; }
+
+    DeviceAllocator& operator*() noexcept { return allocator; }
+
+    DeviceAllocator const& operator*() const noexcept { return allocator; }
+
+    ~UniqueAllocator()
+    {
+        if (allocator != DeviceAllocator{}) allocator.destroy();
+    }
+
+  private:
+    DeviceAllocator allocator;
+};
+} // namespace shuttle::resources

@@ -1,0 +1,99 @@
+#version 450
+
+#include "common_bindings.glsl"
+#include "common_frame.glsl"
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+// ============================================================
+// Push Constants
+// ============================================================
+
+layout(push_constant) uniform PushConstants
+{
+    float radius;
+    float intensity;
+    float power;
+    uint sampleCount;
+
+    float maxRadiusPixels;
+    float depthBias;
+
+    uint reserved0;
+    uint reserved1;
+}
+
+pc;
+
+// ============================================================
+// Renderer Set
+// ============================================================
+
+layout(set = SET_RENDERER, binding = RENDERER_NEAREST_SAMPLER) uniform sampler nearestSampler;
+
+// ============================================================
+// Frame Set
+// ============================================================
+
+layout(set = SET_FRAME, binding = FRAME_INFO, std140) uniform FrameInfoBuffer
+{
+    FrameInfo frame;
+};
+
+layout(set = SET_FRAME, binding = FRAME_LINEAR_DEPTH_IMAGE) uniform texture2D linearDepthImage;
+layout(set = SET_FRAME, binding = FRAME_GTAO_STORAGE_IMAGE, r8) writeonly uniform image2D gtaoImage;
+
+float loadDepth(ivec2 pixel)
+{
+    ivec2 size = ivec2(frame.renderResolution);
+    pixel = clamp(pixel, ivec2(0), size - ivec2(1));
+    return texelFetch(sampler2D(linearDepthImage, nearestSampler), pixel, 0).r;
+}
+
+float random01(ivec2 p, uint frameIndex)
+{
+    uint x = uint(p.x) * 1973u + uint(p.y) * 9277u + frameIndex * 26699u + 911u;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    return float(x & 1023u) / 1023.0;
+}
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = ivec2(frame.renderResolution);
+
+    if (pixel.x >= size.x || pixel.y >= size.y) return;
+
+    float centerDepth = loadDepth(pixel);
+    if (centerDepth <= frame.nearPlane)
+    {
+        imageStore(gtaoImage, pixel, vec4(1.0, 0.0, 0.0, 0.0));
+        return;
+    }
+
+    uint sampleCount = max(pc.sampleCount, 1u);
+    float radiusPixels = clamp(pc.radius * frame.renderResolution.y / max(centerDepth, 0.001), 1.0, pc.maxRadiusPixels);
+
+    float seed = random01(pixel, frame.frameIndex);
+    float occlusion = 0.0;
+
+    for (uint i = 0u; i < sampleCount; ++i)
+    {
+        float t = (float(i) + 0.5) / float(sampleCount);
+        float angle = 6.28318530718 * (t + seed);
+        vec2 dir = vec2(cos(angle), sin(angle));
+        ivec2 samplePixel = pixel + ivec2(round(dir * radiusPixels));
+
+        float sampleDepth = loadDepth(samplePixel);
+        float depthDelta = centerDepth - sampleDepth;
+        float contribution = clamp((depthDelta - pc.depthBias) / max(pc.radius, 0.001), 0.0, 1.0);
+        occlusion += contribution;
+    }
+
+    float ao = 1.0 - pc.intensity * (occlusion / float(sampleCount));
+    ao = pow(clamp(ao, 0.0, 1.0), max(pc.power, 0.001));
+
+    imageStore(gtaoImage, pixel, vec4(ao, 0.0, 0.0, 0.0));
+}

@@ -6,119 +6,85 @@
 #include <Assets/Formats/Scene.hpp>
 #include <Assets/TextureCompiler/CompiledTexture.hpp>
 
-#include "Assets/Formats/Lighting.hpp"
-
+#include <Assets/Formats/Lighting.hpp>
 
 namespace shuttle::assets::scene_compiler
 {
-    struct CompiledScene
-    {
-        //
-        // textures
-        //
+struct CompiledScene
+{
+    //
+    // textures
+    //
 
-        std::vector<
-            texture_compiler::CompiledTexture>
-            textures;
+    std::vector<texture_compiler::CompiledTexture> textures;
 
-        //
-        // materials
-        //
+    //
+    // materials
+    //
 
-        std::vector<
-            formats::material::MaterialInfo>
-            materials;
+    std::vector<formats::material::MaterialInfo> materials;
 
-        //
-        // geometry
-        //
+    //
+    // geometry
+    //
 
-        std::vector<
-            formats::PositionAttribute>
-            positions;
+    std::vector<formats::PositionAttribute> positions;
 
-        std::vector<
-            formats::VertexAttribute>
-            attributes;
+    std::vector<formats::VertexAttribute> attributes;
 
-        std::vector<
-            formats::VertexSkin>
-            skins;
+    std::vector<formats::VertexSkin> skins;
 
-        std::vector<uint32_t>
-            indices;
+    std::vector<uint32_t> indices;
 
-        std::vector<
-            formats::geometry::GpuMesh>
-            meshes;
+    std::vector<formats::geometry::GpuMesh> meshes;
 
-        //
-        // scene graph
-        //
+    //
+    // scene graph
+    //
 
-        std::vector<
-            formats::scene::SceneNode>
-            nodes;
+    std::vector<formats::scene::SceneNode> nodes;
 
-        std::vector<
-            formats::scene::NodeLevelRange>
-            levels;
+    std::vector<formats::scene::NodeLevelRange> levels;
 
-        std::vector<
-            formats::scene::GpuDrawableObject>
-            drawableObjects;
+    // NEW
+    std::vector<formats::scene::Transform> transforms;
 
-        //
-        // animation
-        //
+    std::vector<formats::scene::GpuDrawableObject> drawableObjects;
 
-        std::vector<
-            formats::animation::SkeletonData>
-            skeletons;
+    //
+    // animation
+    //
 
-        std::vector<
-            formats::animation::BoneData>
-            bones;
+    std::vector<formats::animation::SkeletonData> skeletons;
 
-        std::vector<
-            formats::animation::AnimationClip>
-            clips;
+    std::vector<formats::animation::BoneData> bones;
 
-        std::vector<
-            formats::animation::BoneChannel>
-            boneChannels;
+    std::vector<formats::animation::AnimationClip> clips;
 
-        std::vector<
-            formats::animation::MorphTarget>
-            morphTargets;
+    std::vector<formats::animation::TransformChannel> transformChannels;
 
-        std::vector<
-            formats::animation::MorphVertexDelta>
-            morphVertexDeltas;
+    std::vector<formats::animation::MorphTarget> morphTargets;
 
-        std::vector<
-            formats::animation::MorphChannel>
-            morphChannels;
+    std::vector<formats::animation::MorphVertexDelta> morphVertexDeltas;
 
-        std::vector<
-            formats::animation::MaterialProperty>
-            materialProperties;
+    std::vector<formats::animation::MorphChannel> morphChannels;
 
-        std::vector<
-            formats::animation::MaterialChannel>
-            materialChannels;
+    std::vector<formats::animation::MaterialProperty> materialProperties;
 
-        std::vector<float>
-            keyframeTimes;
+    std::vector<formats::animation::MaterialChannel> materialChannels;
 
-        std::vector<
-            formats::animation::AnimationKeyframeValue>
-            keyframeValues;
+    std::vector<float> keyframeTimes;
 
-        std::vector<formats::lighting::DirectionalLight> directionalLights;
+    std::vector<formats::animation::AnimationKeyframeValue> keyframeValues;
 
-        std::vector<formats::lighting::PointLight> pointLights;
+    //
+    // lighting
+    //
 
-        std::vector<formats::lighting::SpotLight> spotLights;
-    };
-}
+    std::vector<formats::lighting::DirectionalLight> directionalLights;
+
+    std::vector<formats::lighting::PointLight> pointLights;
+
+    std::vector<formats::lighting::SpotLight> spotLights;
+};
+} // namespace shuttle::assets::scene_compiler

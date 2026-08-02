@@ -16,10 +16,7 @@
 
 void AssetProcessorApp::draw()
 {
-    ImGui::Begin(
-        "Shuttle Engine Asset Processor",
-        nullptr,
-        ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("Shuttle Engine Asset Processor", nullptr, ImGuiWindowFlags_NoCollapse);
 
     drawToolbar();
 
@@ -40,18 +37,14 @@ void AssetProcessorApp::draw()
 
 void AssetProcessorApp::drawToolbar()
 {
-    if (ImGui::RadioButton(
-            "Scene",
-            m_mode == ToolMode::Scene))
+    if (ImGui::RadioButton("Scene", m_mode == ToolMode::Scene))
     {
         m_mode = ToolMode::Scene;
     }
 
     ImGui::SameLine();
 
-    if (ImGui::RadioButton(
-            "Environment",
-            m_mode == ToolMode::Environment))
+    if (ImGui::RadioButton("Environment", m_mode == ToolMode::Environment))
     {
         m_mode = ToolMode::Environment;
     }
@@ -61,15 +54,11 @@ void AssetProcessorApp::drawPaths()
 {
     ImGui::Text("Source");
 
-    ImGui::InputText(
-        "##Source",
-        m_source.data(),
-        m_source.size());
+    ImGui::InputText("##Source", m_source.data(), m_source.size());
 
     ImGui::SameLine();
 
-    if (ImGui::Button(
-            "Browse##Source"))
+    if (ImGui::Button("Browse##Source"))
     {
         browseSource();
     }
@@ -78,15 +67,11 @@ void AssetProcessorApp::drawPaths()
 
     ImGui::Text("Destination");
 
-    ImGui::InputText(
-        "##Destination",
-        m_destination.data(),
-        m_destination.size());
+    ImGui::InputText("##Destination", m_destination.data(), m_destination.size());
 
     ImGui::SameLine();
 
-    if (ImGui::Button(
-            "Browse##Destination"))
+    if (ImGui::Button("Browse##Destination"))
     {
         browseDestination();
     }
@@ -94,8 +79,7 @@ void AssetProcessorApp::drawPaths()
 
 void AssetProcessorApp::drawActions()
 {
-    const bool busy =
-        m_busy.load();
+    const bool busy = m_busy.load();
 
     if (busy)
     {
@@ -104,18 +88,14 @@ void AssetProcessorApp::drawActions()
 
     if (m_mode == ToolMode::Scene)
     {
-        if (ImGui::Button(
-                "Compile Scene",
-                ImVec2(220.0f, 40.0f)))
+        if (ImGui::Button("Compile Scene", ImVec2(220.0f, 40.0f)))
         {
             compileScene();
         }
     }
     else
     {
-        if (ImGui::Button(
-                "Compile Environment",
-                ImVec2(220.0f, 40.0f)))
+        if (ImGui::Button("Compile Environment", ImVec2(220.0f, 40.0f)))
         {
             compileEnvironment();
         }
@@ -127,8 +107,7 @@ void AssetProcessorApp::drawActions()
 
         ImGui::SameLine();
 
-        ImGui::TextUnformatted(
-            "Working...");
+        ImGui::TextUnformatted("Working...");
     }
 }
 
@@ -136,18 +115,13 @@ void AssetProcessorApp::drawLog()
 {
     ImGui::Text("Log");
 
-    ImGui::BeginChild(
-        "LogWindow",
-        ImVec2(0, 300),
-        true);
+    ImGui::BeginChild("LogWindow", ImVec2(0, 300), true);
 
-    std::scoped_lock lock(
-        m_logMutex);
+    std::scoped_lock lock(m_logMutex);
 
     for (const auto& line : m_logs)
     {
-        ImGui::TextUnformatted(
-            line.c_str());
+        ImGui::TextUnformatted(line.c_str());
     }
 
     ImGui::EndChild();
@@ -155,71 +129,46 @@ void AssetProcessorApp::drawLog()
 
 void AssetProcessorApp::browseSource()
 {
-    auto files =
-        pfd::open_file(
-            "Select Source",
-            "",
-            {
-                "All Assets",
-                "*.fbx *.obj *.gltf *.glb *.hdr",
+    auto files = pfd::open_file("Select Source", "",
+                                {"All Assets", "*.fbx *.obj *.gltf *.glb *.hdr",
 
-                "Scene Files",
-                "*.fbx *.obj *.gltf *.glb",
+                                 "Scene Files", "*.fbx *.obj *.gltf *.glb",
 
-                "HDR Files",
-                "*.hdr"
-            }).result();
+                                 "HDR Files", "*.hdr"})
+                     .result();
 
     if (files.empty())
     {
         return;
     }
 
-    std::strncpy(
-        m_source.data(),
-        files[0].c_str(),
-        m_source.size() - 1);
+    std::strncpy(m_source.data(), files[0].c_str(), m_source.size() - 1);
 
     namespace fs = std::filesystem;
 
-    fs::path output =
-        fs::path(files[0]);
+    fs::path output = fs::path(files[0]);
 
-    output.replace_extension(
-        ".sblb");
+    output.replace_extension(".sblb");
 
-    const std::string out =
-        output.string();
+    const std::string out = output.string();
 
-    std::strncpy(
-        m_destination.data(),
-        out.c_str(),
-        m_destination.size() - 1);
+    std::strncpy(m_destination.data(), out.c_str(), m_destination.size() - 1);
 }
 
 void AssetProcessorApp::browseDestination()
 {
-    auto file =
-        pfd::save_file(
-            "Save Asset",
-            "",
-            {
-                "Blob Files",
-                "*.sblb",
+    auto file = pfd::save_file("Save Asset", "",
+                               {"Blob Files", "*.sblb",
 
-                "All Files",
-                "*"
-            }).result();
+                                "All Files", "*"})
+                    .result();
 
     if (file.empty())
     {
         return;
     }
 
-    std::strncpy(
-        m_destination.data(),
-        file.c_str(),
-        m_destination.size() - 1);
+    std::strncpy(m_destination.data(), file.c_str(), m_destination.size() - 1);
 }
 
 void AssetProcessorApp::compileScene()
@@ -231,68 +180,50 @@ void AssetProcessorApp::compileScene()
 
     m_busy = true;
 
-    const std::string source =
-        m_source.data();
+    const std::string source = m_source.data();
 
-    const std::string destination =
-        m_destination.data();
+    const std::string destination = m_destination.data();
 
-    pushLog(
-        "[Scene] Compilation started.");
+    pushLog("[Scene] Compilation started.");
 
-    m_worker =
-        std::async(
-            std::launch::async,
-            [this, source, destination]
-            {
-                try
-                {
-                    auto scene =
-                        shuttle::assets::scene_compiler::
-                            SceneCompiler::compile(
-                                source);
+    m_worker = std::async(std::launch::async,
+                          [this, source, destination]
+                          {
+                              try
+                              {
+                                  auto scene = shuttle::assets::scene_compiler::SceneCompiler::compile(source);
 
-                    if (!scene)
-                    {
-                        pushLog(
-                            "[Scene] Compiler returned null.");
+                                  if (!scene)
+                                  {
+                                      pushLog("[Scene] Compiler returned null.");
 
-                        m_busy = false;
-                        return;
-                    }
+                                      m_busy = false;
+                                      return;
+                                  }
 
-                    const bool success =
-                        shuttle::assets::scene_compiler::
-                            CompiledSceneBlobWriter::write(
-                                *scene,
-                                destination);
+                                  const bool success = shuttle::assets::scene_compiler::CompiledSceneBlobWriter::write(
+                                      *scene, destination);
 
-                    if (success)
-                    {
-                        pushLog(
-                            "[Scene] Compilation completed.");
-                    }
-                    else
-                    {
-                        pushLog(
-                            "[Scene] Failed to write blob.");
-                    }
-                }
-                catch (const std::exception& exception)
-                {
-                    pushLog(
-                        std::string(
-                            "[Scene] Exception: ") +
-                        exception.what());
-                }
-                catch (...)
-                {
-                    pushLog(
-                        "[Scene] Unknown exception.");
-                }
+                                  if (success)
+                                  {
+                                      pushLog("[Scene] Compilation completed.");
+                                  }
+                                  else
+                                  {
+                                      pushLog("[Scene] Failed to write blob.");
+                                  }
+                              }
+                              catch (const std::exception& exception)
+                              {
+                                  pushLog(std::string("[Scene] Exception: ") + exception.what());
+                              }
+                              catch (...)
+                              {
+                                  pushLog("[Scene] Unknown exception.");
+                              }
 
-                m_busy = false;
-            });
+                              m_busy = false;
+                          });
 }
 
 void AssetProcessorApp::compileEnvironment()
@@ -304,78 +235,57 @@ void AssetProcessorApp::compileEnvironment()
 
     m_busy = true;
 
-    const std::string source =
-        m_source.data();
+    const std::string source = m_source.data();
 
-    const std::string destination =
-        m_destination.data();
+    const std::string destination = m_destination.data();
 
-    pushLog(
-        "[Environment] Compilation started.");
+    pushLog("[Environment] Compilation started.");
 
-    m_worker =
-        std::async(
-            std::launch::async,
-            [this, source, destination]
-            {
-                try
-                {
-                    auto environment =
-                        shuttle::assets::
-                            environment_compiler::
-                                EnvironmentCompiler::compile(
-                                    source);
+    m_worker = std::async(std::launch::async,
+                          [this, source, destination]
+                          {
+                              try
+                              {
+                                  auto environment =
+                                      shuttle::assets::environment_compiler::EnvironmentCompiler::compile(source);
 
-                    if (!environment)
-                    {
-                        pushLog(
-                            "[Environment] Compiler returned null.");
+                                  if (!environment)
+                                  {
+                                      pushLog("[Environment] Compiler returned null.");
 
-                        m_busy = false;
-                        return;
-                    }
+                                      m_busy = false;
+                                      return;
+                                  }
 
-                    const bool success =
-                        shuttle::assets::
-                            environment_compiler::
-                                CompiledEnvironmentBlobWriter::write(
-                                    *environment,
-                                    destination);
+                                  const bool success =
+                                      shuttle::assets::environment_compiler::CompiledEnvironmentBlobWriter::write(
+                                          *environment, destination);
 
-                    if (success)
-                    {
-                        pushLog(
-                            "[Environment] Compilation completed.");
-                    }
-                    else
-                    {
-                        pushLog(
-                            "[Environment] Failed to write blob.");
-                    }
-                }
-                catch (const std::exception& exception)
-                {
-                    pushLog(
-                        std::string(
-                            "[Environment] Exception: ") +
-                        exception.what());
-                }
-                catch (...)
-                {
-                    pushLog(
-                        "[Environment] Unknown exception.");
-                }
+                                  if (success)
+                                  {
+                                      pushLog("[Environment] Compilation completed.");
+                                  }
+                                  else
+                                  {
+                                      pushLog("[Environment] Failed to write blob.");
+                                  }
+                              }
+                              catch (const std::exception& exception)
+                              {
+                                  pushLog(std::string("[Environment] Exception: ") + exception.what());
+                              }
+                              catch (...)
+                              {
+                                  pushLog("[Environment] Unknown exception.");
+                              }
 
-                m_busy = false;
-            });
+                              m_busy = false;
+                          });
 }
 
-void AssetProcessorApp::pushLog(
-    std::string text)
+void AssetProcessorApp::pushLog(std::string text)
 {
-    std::scoped_lock lock(
-        m_logMutex);
+    std::scoped_lock lock(m_logMutex);
 
-    m_logs.push_back(
-        std::move(text));
+    m_logs.push_back(std::move(text));
 }
