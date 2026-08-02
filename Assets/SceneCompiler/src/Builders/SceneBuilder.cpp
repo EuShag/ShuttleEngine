@@ -1,6 +1,7 @@
 #include "SceneBuilder.hpp"
 
 #include <algorithm>
+#include <iostream>
 
 #include "Runtime/CompiledScene.hpp"
 
@@ -97,6 +98,8 @@ CompiledScene SceneBuilder::build(SceneTextureCompilerResult textures, MaterialB
     //
 
     result.directionalLights = std::move(lighting.directionalLights);
+
+    std::cout << "mesh count: " << result.meshes.size() << std::endl;
 
     return result;
 }

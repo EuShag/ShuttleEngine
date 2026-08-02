@@ -568,15 +568,26 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
     }
     else
     {
+        // Find first valid mesh
+        uint32_t firstValidMeshIndex = 0;
+        for (size_t i = 0; i < meshes.size(); ++i)
+        {
+            if (meshes[i].lodCount > 0)
+            {
+                firstValidMeshIndex = static_cast<uint32_t>(i);
+                break;
+            }
+        }
+         
         for (auto& drawable : drawableData)
         {
             if (drawable.transformIndex >= transforms.size())
             {
                 drawable.transformIndex = 0;
             }
-            if (drawable.meshIndex >= meshes.size())
+            if (drawable.meshIndex >= meshes.size() || meshes[drawable.meshIndex].lodCount == 0)
             {
-                drawable.meshIndex = 0;
+                drawable.meshIndex = firstValidMeshIndex;
                 drawable.flags = 0;
             }
             if (drawable.materialIndex >= materialData.size())
@@ -595,12 +606,13 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
         {
             return {vk::Result::eErrorInitializationFailed, {}};
         }
-        if (mesh.positionOffset == 0 || mesh.lodCount == 0)
+        if (mesh.lodCount == 0)
         {
             continue;
         }
 
-        bool hasGlobalIndices = false;
+        // Check which LODs use global indices
+        std::vector<bool> lodUsesGlobalIndices(mesh.lodCount, false);
         for (uint32_t lodIndex = 0; lodIndex < mesh.lodCount; ++lodIndex)
         {
             const auto& lod = mesh.lods[lodIndex];
@@ -623,20 +635,17 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
                     break;
                 }
             }
-            if (allIndicesUseGlobalBase)
-            {
-                hasGlobalIndices = true;
-                break;
-            }
+            lodUsesGlobalIndices[lodIndex] = allIndicesUseGlobalBase;
         }
 
-        if (!hasGlobalIndices)
-        {
-            continue;
-        }
-
+        // Convert indices only for LODs that actually use global base
         for (uint32_t lodIndex = 0; lodIndex < mesh.lodCount; ++lodIndex)
         {
+            if (!lodUsesGlobalIndices[lodIndex])
+            {
+                continue;
+            }
+
             const auto& lod = mesh.lods[lodIndex];
             if (lod.indexCount == 0)
             {
@@ -645,14 +654,10 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
             for (uint32_t i = 0; i < lod.indexCount; ++i)
             {
                 uint32_t& idx = indexData[lod.firstIndex + i];
-                if (idx < mesh.positionOffset)
-                {
-                    return {vk::Result::eErrorInitializationFailed, {}};
-                }
                 idx -= mesh.positionOffset;
             }
+            convertedLegacyGlobalIndices = true;
         }
-        convertedLegacyGlobalIndices = true;
     }
     if (convertedLegacyGlobalIndices)
     {

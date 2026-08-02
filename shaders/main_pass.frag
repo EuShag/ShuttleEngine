@@ -404,7 +404,7 @@ void main()
     vec3 srgb = pow(mapped, vec3(1.0 / frame.gamma));
 
     outColor = vec4(srgb, baseColor.a);
-    outColor = vec4(vec3(finalAO), 1.0);
+    outColor = vec4(vec3(ormSample), 1.0f);
 
     return;
 }
