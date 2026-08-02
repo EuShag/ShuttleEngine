@@ -19,6 +19,7 @@
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #define TINYDDSLOADER_IMPLEMENTATION
 
+#include "rgbcx.h"
 #include <stb_image.h>
 #include <stb_image_resize2.h>
 #include <tinyddsloader.h>
@@ -28,6 +29,74 @@
 namespace shuttle::assets::texture_compiler
 {
 namespace texture_format = shuttle::assets::formats::texture;
+
+    namespace {
+        std::vector<uint8_t> compressBC5(
+        const uint8_t* rgbaPixels,
+        int width,
+        int height) {
+
+            rgbcx::init();
+
+            const int blocksX = (width + 3) / 4;
+            const int blocksY = (height + 3) / 4;
+
+            std::vector<uint8_t> output(
+                static_cast<size_t>(blocksX) *
+                static_cast<size_t>(blocksY) * 16);
+
+            uint8_t blockPixels[4 * 4 * 4];
+
+            for (int by = 0; by < blocksY; ++by)
+            {
+                for (int bx = 0; bx < blocksX; ++bx)
+                {
+                    // Собираем RGBA-блок 4x4
+                    for (int y = 0; y < 4; ++y)
+                    {
+                        const int srcY = std::min(by * 4 + y, height - 1);
+
+                        for (int x = 0; x < 4; ++x)
+                        {
+                            const int srcX = std::min(bx * 4 + x, width - 1);
+
+                            const size_t srcOffset =
+                                (static_cast<size_t>(srcY) * width + srcX) * 4;
+
+                            const size_t dstOffset =
+                                (y * 4 + x) * 4;
+
+                            blockPixels[dstOffset + 0] =
+                                rgbaPixels[srcOffset + 0];
+
+                            blockPixels[dstOffset + 1] =
+                                rgbaPixels[srcOffset + 1];
+
+                            blockPixels[dstOffset + 2] =
+                                rgbaPixels[srcOffset + 2];
+
+                            blockPixels[dstOffset + 3] =
+                                rgbaPixels[srcOffset + 3];
+                        }
+                    }
+
+                    uint8_t* dstBlock =
+                        output.data() +
+                        ((by * blocksX + bx) * 16);
+
+                    rgbcx::encode_bc5(
+                        dstBlock,
+                        blockPixels,
+                        0, // R = X
+                        1, // G = Y
+                        4  // RGBA stride
+                    );
+                }
+            }
+
+            return output;
+        }
+    }
 
 std::optional<CompiledTexture> TextureCompiler::compileFile(const std::filesystem::path& filePath,
                                                             const TextureCompileOptions& options)
@@ -87,12 +156,10 @@ std::optional<CompiledTexture> TextureCompiler::compileRGBA8(const ImageSizedDat
 
     CompiledTexture output{};
 
-    const uint32_t mipCount =
-        options.generateMips
-            ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageData.width, imageData.height))) + 1.0f)
-            : 1u;
+    const uint32_t mipCount = options.generateMips
+            ? static_cast<uint32_t>(std::floor(std::log2(std::max(imageData.width, imageData.height))) + 1.0f) : 1u;
 
-    std::vector<uint8_t> currentMipPixels(imageData.pixels,
+    std::vector currentMipPixels(imageData.pixels,
                                           imageData.pixels + static_cast<size_t>(imageData.width) *
                                                                  static_cast<size_t>(imageData.height) * 4u);
 
@@ -102,19 +169,28 @@ std::optional<CompiledTexture> TextureCompiler::compileRGBA8(const ImageSizedDat
 
     for (uint32_t mip = 0; mip < mipCount; ++mip)
     {
+        std::vector<uint8_t> compressedLevel;
+
         if (options.format == VK_FORMAT_BC5_UNORM_BLOCK && options.semantic == texture_format::TextureSemantic::Normal)
         {
             renormalizeNormalMap(currentMipPixels, currentWidth, currentHeight);
+            compressedLevel = compressBC5(currentMipPixels.data(), currentWidth, currentHeight);
+        }
+        else {
+            const CompressionType compressionType = toCompressionType(options.format);
+
+            compressedLevel = compressBlocks(
+                currentMipPixels.data(),
+                currentWidth, currentHeight,
+                4,
+                compressionType);
         }
 
-        const CompressionType compressionType = toCompressionType(options.format);
 
-        std::vector<uint8_t> compressedLevel =
-            compressBlocks(currentMipPixels.data(), currentWidth, currentHeight, 4, compressionType);
 
-        const uint64_t mipOffset = static_cast<uint64_t>(output.data.size());
+        const uint64_t mipOffset = output.data.size();
 
-        const uint64_t mipSize = static_cast<uint64_t>(compressedLevel.size());
+        const uint64_t mipSize = compressedLevel.size();
 
         texture_format::TextureMipMetadata mipMetadata{};
         mipMetadata.dataOffset = mipOffset;
@@ -632,11 +708,6 @@ std::vector<uint8_t> TextureCompiler::compressBlocks(const uint8_t* pixels, int 
 
         switch (compressionType)
         {
-        case CompressionType::BC5:
-        {
-            CompressBlocksBC5(&surface, destination);
-            break;
-        }
 
         case CompressionType::BC6H:
         {
@@ -719,4 +790,6 @@ std::string TextureCompiler::normalizeExtension(std::string extension)
 
     return extension;
 }
+
+
 } // namespace shuttle::assets::texture_compiler

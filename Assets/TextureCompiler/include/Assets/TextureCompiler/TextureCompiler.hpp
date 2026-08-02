@@ -67,5 +67,7 @@ class TextureCompiler
 
     [[nodiscard]]
     static std::string normalizeExtension(std::string extension);
+
+    static std::vector<uint8_t> compressBlocksBC5FromRG8(const uint8_t *rgPixels, int width, int height);
 };
 } // namespace shuttle::assets::texture_compiler

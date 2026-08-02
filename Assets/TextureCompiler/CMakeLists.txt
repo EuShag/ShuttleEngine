@@ -4,6 +4,8 @@ target_sources(
     ShuttleTextureCompiler
     PRIVATE
         src/TextureCompiler.cpp
+        ${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/rgbcx.cpp
+        ${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/rgbcx.h
         src/ispc_texcomp/ispc_texcomp.cpp
         src/ispc_texcomp/gcc/kernel.o)
 
@@ -13,6 +15,7 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
         ${PROJECT_SOURCE_DIR}/external/stb
+        ${PROJECT_SOURCE_DIR}/external/bc7enc_rdo/
         ${PROJECT_SOURCE_DIR}/external/tinyddsloader
         ${PROJECT_SOURCE_DIR}/external/ispc_texcomp
         ${PROJECT_SOURCE_DIR}/external/mio/single_include)

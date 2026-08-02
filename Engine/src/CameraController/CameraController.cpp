@@ -29,12 +29,12 @@ void CameraController::handleKeyboardEvent(SdlWindow&, SdlKeyCode keyCode, SdlKe
 void CameraController::update(float deltaTime) const
 {
     glm::vec3 moveVec{0.0f};
-    if (moveFlags & Forward) moveVec.z -= 10.0f;
-    if (moveFlags & Backward) moveVec.z += 10.0f;
-    if (moveFlags & Left) moveVec.x -= 10.0f;
-    if (moveFlags & Right) moveVec.x += 10.0f;
-    if (moveFlags & Up) moveVec.y += 10.0f;
-    if (moveFlags & Down) moveVec.y -= 10.0f;
+    if (moveFlags & Forward) moveVec.z -= 5.0f;
+    if (moveFlags & Backward) moveVec.z += 5.0f;
+    if (moveFlags & Left) moveVec.x -= 5.0f;
+    if (moveFlags & Right) moveVec.x += 5.0f;
+    if (moveFlags & Up) moveVec.y += 5.0f;
+    if (moveFlags & Down) moveVec.y -= 5.0f;
 
     if (glm::length(moveVec) > 0.0f) camera.moveLocal(moveVec, deltaTime);
 

@@ -404,7 +404,15 @@ void main()
     vec3 srgb = pow(mapped, vec3(1.0 / frame.gamma));
 
     outColor = vec4(srgb, baseColor.a);
-    outColor = vec4(vec3(ormSample), 1.0f);
 
+    vec4 rawNormal =
+    texture(
+            sampler2D(
+                    sceneTextures[nonuniformEXT(material.normalTexture)],
+                    materialSampler),
+            inUv);
+
+    outColor = vec4(rawNormal.rgb, 1.0);
+    return;
     return;
 }
