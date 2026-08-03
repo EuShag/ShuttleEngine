@@ -590,7 +590,7 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
                 drawable.meshIndex = firstValidMeshIndex;
                 drawable.flags = 0;
             }
-            if (drawable.materialIndex >= materialData.size())
+            if (drawable.materialIndex == assets::formats::InvalidIndexU32 || drawable.materialIndex >= materialData.size())
             {
                 drawable.materialIndex = 0;
             }

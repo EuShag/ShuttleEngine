@@ -77,7 +77,7 @@ int main(int argc, char** argv)
         VulkanDebugger debugger{};
         auto messengerCreateInfo = debugger.getDebugMessengerCreateInfo();
 
-        std::vector<vk::ValidationFeatureEnableEXT> enabledValidationFeatures{
+        std::array enabledValidationFeatures{
             vk::ValidationFeatureEnableEXT::eGpuAssisted,
             vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot
         };
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 
         VkPhysicalDeviceFeatures2 features2 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-            .features = vk::PhysicalDeviceFeatures{.multiDrawIndirect = vk::True, .drawIndirectFirstInstance = vk::True, .samplerAnisotropy = vk::True}};
+            .features = vk::PhysicalDeviceFeatures{.multiDrawIndirect = vk::True, .drawIndirectFirstInstance = vk::True, .fillModeNonSolid = vk::True, .samplerAnisotropy = vk::True}};
         VkPhysicalDeviceVulkan11Features features11 =
             vk::PhysicalDeviceVulkan11Features{.multiview = vk::True, .shaderDrawParameters = vk::True};
         VkPhysicalDeviceVulkan12Features features12 =
@@ -301,7 +301,7 @@ int main(int argc, char** argv)
 
         std::cout << "[Scene] Loading pre-compiled .scene blob: " << resolvedScenePath.string() << "\n";
         auto [uploadSceneResult, uploadSceneOutput] = engine::render::uploadScene(
-            "NewSponza.sblb", renderContext, graphicsQueue, *uniqueGraphicsCommandPool, *rendererResources.sceneSetLayout,
+            "BistroExterior.sblb", renderContext, graphicsQueue, *uniqueGraphicsCommandPool, *rendererResources.sceneSetLayout,
             *rendererResources.fallbackAlbedoImageView, *rendererResources.fallbackNormalImageView,
             *rendererResources.fallbackOrmImageView, *rendererResources.fallbackEmissionImageView);
         if (uploadSceneResult != vk::Result::eSuccess)

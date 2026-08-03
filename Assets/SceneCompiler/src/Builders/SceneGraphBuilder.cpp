@@ -109,7 +109,7 @@ SceneGraphBuildResult SceneGraphBuilder::build(const ImportedScene& scene, const
 
         transform.scale = scale;
 
-        const uint32_t transformIndex = static_cast<uint32_t>(result.transforms.size());
+        const auto transformIndex = static_cast<uint32_t>(result.transforms.size());
 
         result.transforms.push_back(transform);
 
@@ -164,9 +164,18 @@ SceneGraphBuildResult SceneGraphBuilder::build(const ImportedScene& scene, const
 
             const ImportedMesh& mesh = scene.meshes[static_cast<size_t>(importedMesh)];
 
-            if (mesh.materialIndex >= 0 && mesh.materialIndex < static_cast<int32_t>(materials.materials.size()))
+            if (mesh.materialIndex >= 0 && mesh.materialIndex < static_cast<int32_t>(materials.importedToCompiledMaterial.size()))
             {
-                drawable.materialIndex = static_cast<uint32_t>(mesh.materialIndex);
+                const int32_t compiledMaterialIndex = materials.importedToCompiledMaterial[mesh.materialIndex];
+
+                if (compiledMaterialIndex >= 0)
+                {
+                    drawable.materialIndex = static_cast<uint32_t>(compiledMaterialIndex);
+                }
+                else
+                {
+                    drawable.materialIndex = formats::InvalidIndexU32;
+                }
             }
             else
             {

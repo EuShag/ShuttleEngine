@@ -18,7 +18,13 @@ layout(location = 4) in vec3 inViewPosition;
 
 layout(location = 5) in vec4 inCascadeShadowCoords[SHUTTLE_MAX_SHADOW_CASCADES];
 
+layout(location = 10) flat in uint inMeshIndex;
+
+layout(location = 11) flat in uint inTransformIndex;
+
 layout(location = 9) flat in uint inMaterialIndex;
+
+layout(location = 12) flat in uint inDrawID;
 
 // ============================================================
 // Output
@@ -297,7 +303,7 @@ void main()
 
     vec4 ormSample = sampleTexture2D(material.ormTexture, inUv, vec4(1.0, 1.0, 0.0, 1.0));
 
-    float bakedAO = ormSample.r;
+    float bakedAO = 1.0;ormSample.r;
     float roughness = ormSample.g * material.roughnessFactor;
     float metallic = ormSample.b * material.metallicFactor;
 
@@ -403,16 +409,6 @@ void main()
     vec3 mapped = tonemapACES(finalColor);
     vec3 srgb = pow(mapped, vec3(1.0 / frame.gamma));
 
-    outColor = vec4(srgb, baseColor.a);
-
-    vec4 rawNormal =
-    texture(
-            sampler2D(
-                    sceneTextures[nonuniformEXT(material.normalTexture)],
-                    materialSampler),
-            inUv);
-
-    outColor = vec4(rawNormal.rgb, 1.0);
-    return;
+    outColor = vec4(srgb, 1.0);
     return;
 }

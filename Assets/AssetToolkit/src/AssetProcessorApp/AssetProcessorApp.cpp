@@ -191,7 +191,11 @@ void AssetProcessorApp::compileScene()
                           {
                               try
                               {
-                                  auto scene = shuttle::assets::scene_compiler::SceneCompiler::compile(source);
+                                  auto scene_compiler_options = shuttle::assets::scene_compiler::SceneCompilerOptions{};
+                                  scene_compiler_options.geometryOptions.generateLods = false;
+                                  scene_compiler_options.geometryOptions.optimizeVertexCache = false;
+                                  scene_compiler_options.geometryOptions.optimizeVertexFetch = false;
+                                  auto scene = shuttle::assets::scene_compiler::SceneCompiler::compile(source, scene_compiler_options);
 
                                   if (!scene)
                                   {

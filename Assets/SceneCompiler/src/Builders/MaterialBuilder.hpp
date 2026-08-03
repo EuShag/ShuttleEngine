@@ -10,6 +10,8 @@ namespace shuttle::assets::scene_compiler
 struct MaterialBuildResult
 {
     std::vector<formats::material::MaterialInfo> materials;
+
+    std::vector<int32_t> importedToCompiledMaterial;
 };
 
 class MaterialBuilder

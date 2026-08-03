@@ -154,8 +154,12 @@ MaterialBuildResult MaterialBuilder::build(const ImportedScene& scene, const Sce
 
     result.materials.reserve(scene.materials.size());
 
-    for (const ImportedMaterial& imported : scene.materials)
+    result.importedToCompiledMaterial.resize(scene.materials.size());
+
+    for (size_t materialIndex = 0; materialIndex < scene.materials.size(); ++materialIndex)
     {
+        const ImportedMaterial& imported = scene.materials[materialIndex];
+
         MaterialInfo material{};
 
         material.baseColorFactor = imported.baseColorFactor;
@@ -199,6 +203,8 @@ MaterialBuildResult MaterialBuilder::build(const ImportedScene& scene, const Sce
                 textures,
                 imported.emissiveTexture,
                 formats::texture::TextureIndices::FallbackEmissive);
+
+        result.importedToCompiledMaterial[materialIndex] = static_cast<int32_t>(result.materials.size());
 
         result.materials.push_back(material);
     }

@@ -1,4 +1,5 @@
 #version 450
+#extension  GL_ARB_shader_draw_parameters : require
 
 #include "common_bindings.glsl"
 #include "common_scene.glsl"
@@ -68,7 +69,13 @@ layout(location = 4) out vec3 outViewPosition;
 
 layout(location = 5) out vec4 outCascadeShadowCoords[SHUTTLE_MAX_SHADOW_CASCADES];
 
+layout(location = 10) flat out uint outMeshIndex;
+
+layout(location = 11) flat out uint outTransformIndex;
+
 layout(location = 9) flat out uint outMaterialIndex;
+
+layout(location = 12) flat out uint outDrawId;
 
 // ============================================================
 // Main
@@ -115,6 +122,8 @@ void main()
     }
 
     outMaterialIndex = drawable.materialIndex;
-
+    outMeshIndex = drawable.meshIndex;
+    outTransformIndex = drawable.transformIndex;
+    outDrawId = gl_DrawIDARB;
     gl_Position = frame.viewProjectionMatrix * worldPosition;
 }

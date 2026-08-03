@@ -14,6 +14,7 @@
 #include <iostream>
 #include <limits>
 #include <optional>
+#include <queue>
 #include <string>
 #include <unordered_map>
 
@@ -396,14 +397,72 @@ int32_t importNodeRecursive(ImportContext& context, const aiNode* aiNode, int32_
     return nodeIndex;
 }
 
-void importNodes(ImportContext& context)
+    void importNodes(ImportContext& context)
 {
     if (!context.assimpScene || !context.assimpScene->mRootNode)
     {
         return;
     }
 
-    importNodeRecursive(context, context.assimpScene->mRootNode, InvalidIndexI32);
+    struct QueueEntry
+    {
+        const aiNode* aiNode = nullptr;
+        int32_t parentIndex = InvalidIndexI32;
+    };
+
+    std::queue<QueueEntry> queue;
+
+    queue.push({
+        .aiNode = context.assimpScene->mRootNode,
+        .parentIndex = InvalidIndexI32
+    });
+
+    while (!queue.empty())
+    {
+        QueueEntry entry = queue.front();
+        queue.pop();
+
+        ImportedNode node{};
+        node.name = entry.aiNode->mName.C_Str();
+        node.parent = entry.parentIndex;
+        node.localTransform = toGlm(entry.aiNode->mTransformation);
+
+        node.meshes.reserve(entry.aiNode->mNumMeshes);
+
+        for (uint32_t i = 0; i < entry.aiNode->mNumMeshes; ++i)
+        {
+            node.meshes.push_back(
+                static_cast<int32_t>(entry.aiNode->mMeshes[i]));
+        }
+
+        const int32_t nodeIndex =
+            static_cast<int32_t>(context.scene.nodes.size());
+
+        context.nodeNameToIndex[node.name] =
+            static_cast<uint32_t>(nodeIndex);
+
+        context.scene.nodes.push_back(std::move(node));
+
+        //
+        // Добавляем себя в children родителя
+        //
+        if (entry.parentIndex >= 0)
+        {
+            context.scene.nodes[entry.parentIndex]
+                .children.push_back(nodeIndex);
+        }
+
+        //
+        // Кладём детей в очередь
+        //
+        for (uint32_t i = 0; i < entry.aiNode->mNumChildren; ++i)
+        {
+            queue.push({
+                .aiNode = entry.aiNode->mChildren[i],
+                .parentIndex = nodeIndex
+            });
+        }
+    }
 }
 
 void addBoneInfluence(VertexBoneInfluence& influence, uint16_t boneIndex, float weight)
@@ -857,7 +916,7 @@ std::optional<ImportedScene> AssimpSceneImporter::import(const std::filesystem::
 {
     Assimp::Importer importer;
 
-    const unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+    const unsigned int flags = aiProcess_Triangulate | aiProcess_CalcTangentSpace |
                                aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality | aiProcess_FlipUVs;
 
     const aiScene* scene = importer.ReadFile(filePath.string(), flags);
