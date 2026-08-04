@@ -10,32 +10,41 @@
 namespace shuttle
 {
 
-thread_local VkResult UiRenderCreateResult;
+thread_local VkResult UiRenderCreateResult{VK_SUCCESS};
 
-vk::ResultValue<UiRender> UiRender::create(SdlWindow& window, vk::Instance instance, vk::PhysicalDevice physicalDevice,
-                                           vk::Device device, uint32_t queueFamilyIndex, vk::Queue queue,
-                                           uint32_t imageCount)
+vk::ResultValue<UiRender> UiRender::create(
+    SdlWindow& window,
+    vk::Instance instance,
+    vk::PhysicalDevice physicalDevice,
+    vk::Device device,
+    uint32_t queueFamilyIndex,
+    vk::Queue queue,
+    uint32_t imageCount)
 {
 
     UiRender result;
 
-    std::array poolSizes = {vk::DescriptorPoolSize{vk::DescriptorType::eSampler, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eCombinedImageSampler, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eSampledImage, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eStorageImage, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eUniformTexelBuffer, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eStorageTexelBuffer, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eUniformBuffer, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eStorageBuffer, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eUniformBufferDynamic, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eStorageBufferDynamic, 100},
-                            vk::DescriptorPoolSize{vk::DescriptorType::eInputAttachment, 100}};
+    std::array poolSizes = {
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eSampler, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eCombinedImageSampler, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eSampledImage, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageImage, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformTexelBuffer, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageTexelBuffer, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBuffer, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageBuffer, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eUniformBufferDynamic, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eStorageBufferDynamic, .descriptorCount = 100},
+        vk::DescriptorPoolSize{.type = vk::DescriptorType::eInputAttachment, .descriptorCount = 100}};
 
     auto [createDescriptorPoolResult, uniqueDescriptorPool] =
-        device.createDescriptorPoolUnique({.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-                                           .maxSets = 100,
-                                           .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-                                           .pPoolSizes = poolSizes.data()});
+        device.createDescriptorPoolUnique({
+            .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+            .maxSets = 100,
+            .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+            .pPoolSizes = poolSizes.data()
+        });
+
     if (createDescriptorPoolResult != vk::Result::eSuccess) return {createDescriptorPoolResult, {}};
 
     result.uiDescriptorPool = std::move(uniqueDescriptorPool);
@@ -45,6 +54,7 @@ vk::ResultValue<UiRender> UiRender::create(SdlWindow& window, vk::Instance insta
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    ;
 
     ImGui::StyleColorsDark();
 
@@ -62,23 +72,27 @@ vk::ResultValue<UiRender> UiRender::create(SdlWindow& window, vk::Instance insta
         .DescriptorPool = *result.uiDescriptorPool,
         .MinImageCount = imageCount,
         .ImageCount = imageCount,
-        .PipelineInfoMain = {.MSAASamples = static_cast<VkSampleCountFlagBits>(vk::SampleCountFlagBits::e1),
-                             .PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-                                                             .colorAttachmentCount = 1,
-                                                             .pColorAttachmentFormats = &colorFormat,
-                                                             .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT}},
+        .PipelineInfoMain = {
+            .MSAASamples = static_cast<VkSampleCountFlagBits>(vk::SampleCountFlagBits::e1),
+            .PipelineRenderingCreateInfo = {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+                .colorAttachmentCount = 1,
+                .pColorAttachmentFormats = &colorFormat,
+                .depthAttachmentFormat = VK_FORMAT_D32_SFLOAT
+            }
+        },
         .UseDynamicRendering = true,
         .Allocator = nullptr,
         .CheckVkResultFn = [](VkResult const result) { UiRenderCreateResult = result; },
         .MinAllocationSize = 2048 * 2048};
 
     ImGui_ImplVulkan_LoadFunctions(
-        VK_API_VERSION_1_3,
+        VK_API_VERSION_1_4,
         [](const char* function_name, void* user_data)
         {
             // Используем внутренний vkGetInstanceProcAddr, который нашел Vulkan-Hpp
             return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(
-                static_cast<VkInstance>(*reinterpret_cast<vk::Instance*>(user_data)), function_name);
+                static_cast<VkInstance>(*static_cast<vk::Instance*>(user_data)), function_name);
         },
         &instance); // Передаем адрес вашего vk::Instance в user_data
 

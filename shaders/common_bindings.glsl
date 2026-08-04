@@ -54,63 +54,34 @@
 
 #define FRAME_INFO 0
 #define FRAME_FRUSTUM_PLANES 1
+
+// ============================================================
+// Directional Shadows
+// ============================================================
+
 #define FRAME_DIRECTIONAL_SHADOW_DATA 2
+
+// ============================================================
+// Scene Update
+// ============================================================
 
 #define FRAME_WORLD_TRANSFORMS 3
 
-#define FRAME_CANDIDATE_INDICES 4
-#define FRAME_CANDIDATE_COUNT 5
-
-#define FRAME_VISIBILITY_FLAGS 6
-#define FRAME_CHOSEN_MESH_IDS 7
-
-#define FRAME_INDIRECT_COMMANDS 8
-#define FRAME_DRAW_COUNT 9
-
-#define FRAME_MESH_RANGES 10
-
-#define FRAME_MESH_WRITE_COUNTERS 11
-#define FRAME_INSTANCE_REMAP 12
-
-#define FRAME_DEPTH_IMAGE 13
-#define FRAME_LINEAR_DEPTH_IMAGE 14
-
-#define FRAME_HIZ_PYRAMID_IMAGE 15
-
-#define FRAME_GTAO_IMAGE 16
-#define FRAME_GTAO_FILTERED_IMAGE 17
-
-#define FRAME_DIRECTIONAL_SHADOW_MAP_IMAGE 18
-
-#define FRAME_RENDER_STATISTICS 19
+#define FRAME_MESH_RANGES 4
+#define FRAME_INSTANCE_REMAP 5
 
 // ============================================================
-// Storage Images
+// Draw Generation
 // ============================================================
 
-#define FRAME_LINEAR_DEPTH_STORAGE_IMAGE 20
-
-#define FRAME_HIZ_STORAGE_IMAGES 21
-
-#define FRAME_GTAO_STORAGE_IMAGE 22
-#define FRAME_GTAO_FILTERED_STORAGE_IMAGE 23
+#define FRAME_INDIRECT_COMMANDS 6
+#define FRAME_DRAW_COUNT 7
 
 // ============================================================
-// Hi-Z Atomic Cascade
+// Images
 // ============================================================
 
-#define FRAME_HIZ_COUNTERS 24
-// ============================================================
-// Visibility Masks
-// ============================================================
-
-#define FRAME_VISIBILITY_MASKS 25
-
-// ============================================================
-// Occlusion Pass #1
-// ============================================================
-
-#define FRAME_VISIBLE_CANDIDATE_INDICES 26
-#define FRAME_VISIBLE_CANDIDATE_COUNT 27
+#define FRAME_DEPTH_IMAGE 8
+#define FRAME_DIRECTIONAL_SHADOW_MAP_IMAGE 9
 
 #endif

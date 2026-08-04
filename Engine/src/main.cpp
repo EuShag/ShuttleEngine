@@ -77,18 +77,6 @@ int main(int argc, char** argv)
         VulkanDebugger debugger{};
         auto messengerCreateInfo = debugger.getDebugMessengerCreateInfo();
 
-        std::array enabledValidationFeatures{
-            vk::ValidationFeatureEnableEXT::eGpuAssisted,
-            vk::ValidationFeatureEnableEXT::eGpuAssistedReserveBindingSlot
-        };
-
-        vk::ValidationFeaturesEXT validationFeatures{
-            .enabledValidationFeatureCount =
-                static_cast<uint32_t>(enabledValidationFeatures.size()),
-            .pEnabledValidationFeatures =
-                enabledValidationFeatures.data()
-        };
-
         vkb::InstanceBuilder instanceBuilder;
         auto instanceResult = instanceBuilder.set_app_name("Shuttle Engine - Adriatic Flight")
                                   .request_validation_layers(true)
@@ -432,22 +420,7 @@ int main(int argc, char** argv)
             activeResources = std::move(newResources);
             swapchainImageLayouts.assign(activeResources.swapchain.imageCount, vk::ImageLayout::eUndefined);
 
-            frameResources.clear();
-            frameResources.reserve(frameCount);
-            for (uint32_t i = 0; i < frameCount; ++i)
-            {
-                auto [createFrameResourcesResult, frameResource] = engine::render::createFrameResources(
-                    renderContext, rendererResources, activeResources.swapchain.extent.width,
-                    activeResources.swapchain.extent.height, uploadSceneOutput.sceneFrameRequirements.drawableObjectCount,
-                    uploadSceneOutput.sceneFrameRequirements.transformCount,
-                    uploadSceneOutput.sceneFrameRequirements.meshCount, engine::render::ShadowSettings{}.resolution,
-                    engine::render::ShadowSettings{}.cascadeCount);
-                if (createFrameResourcesResult != vk::Result::eSuccess)
-                {
-                    throw std::runtime_error("Failed to recreate frame resources");
-                }
-                frameResources.push_back(std::move(frameResource));
-            }
+
 
             camera.setWindowSize(activeResources.swapchain.extent.width, activeResources.swapchain.extent.height);
         };
@@ -593,16 +566,6 @@ int main(int argc, char** argv)
                     throw std::runtime_error("Failed to begin graphics command buffer");
                 }
 
-                engine::render::GtaoPushConstants gtaoPushConstants{};
-                gtaoPushConstants.radius = 2.0f;
-                gtaoPushConstants.intensity = 1.5f;
-                gtaoPushConstants.power = 1.2f;
-                gtaoPushConstants.sampleCount = 8;
-                gtaoPushConstants.maxRadiusPixels = 48.0f;
-                gtaoPushConstants.depthBias = 0.05f;
-
-                engine::render::GtaoDenoisePushConstants gtaoDenoisePushConstants{};
-
 
                 cmd.copyBuffer(
                     *frustumUploadBuffers[currentFrameIndex],
@@ -622,27 +585,7 @@ int main(int argc, char** argv)
                 };
                 cmd.pipelineBarrier2(vk::DependencyInfo{.bufferMemoryBarrierCount = 1, .pBufferMemoryBarriers = &frustumBarrier});
 
-                auto recordResult = engine::render::recordFrameCommands(
-                    cmd,
-                    rendererResources,
-                    uploadSceneOutput.deviceSceneResources,
-                    environmentResources,
-                    frameResource,
-                    uploadSceneOutput.hostSceneData,
-                    uploadSceneOutput.sceneFrameRequirements,
-                    activeResources.renderTargets[imageIndex],
-                    cascadePushConstants,
-                    gtaoPushConstants,
-                    gtaoDenoisePushConstants,
-                    swapchainImageLayouts[imageIndex],
-                    [&](vk::CommandBuffer drawCmd)
-                    {
-                        uiRender.recordDrawCommands(drawCmd);
-                    });
-                if (recordResult != vk::Result::eSuccess)
-                {
-                    throw std::runtime_error("Failed to record render frame commands");
-                }
+
 
                 if (auto endResult = cmd.end(); endResult != vk::Result::eSuccess)
                 {

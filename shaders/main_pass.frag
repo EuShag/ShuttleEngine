@@ -296,6 +296,7 @@ void main()
     vec4 baseColor = baseColorSample * material.baseColorFactor;
 
     vec3 albedo = pow(baseColor.rgb, vec3(2.2));
+    if (baseColor.w < 0.5) discard;
 
     // ============================================================
     // Metallic / Roughness / AO

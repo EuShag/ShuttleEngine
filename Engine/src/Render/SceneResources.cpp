@@ -10,8 +10,6 @@
 #include "Assets/Formats/Texture.hpp"
 #include <iostream>
 
-#include "../../../external/assimp/include/assimp/TinyFormatter.h"
-
 namespace shuttle::assets::formats::lighting {
     struct DirectionalLight;
 }
@@ -403,14 +401,6 @@ vk::ResultValue<std::span<const T>> readTypedSection(const shuttle::assets::core
             std::span<const T>(reinterpret_cast<const T*>(bytes.data()), bytes.size_bytes() / sizeof(T))};
 }
 
-uint32_t countShadowCastersDirectional(std::span<const assets::formats::lighting::DirectionalLight> lights)
-{
-    uint32_t count = 0;
-    for (const auto& light : lights)
-        if (light.castShadows != 0) ++count;
-    return count;
-}
-
 vk::ResultValue<std::span<const uint8_t>> readRawSection(const shuttle::assets::core::BlobView& blob,
                                                          shuttle::assets::core::BlobSectionType type)
 {
@@ -599,9 +589,8 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
 
     std::vector<uint32_t> indexData(indices.begin(), indices.end());
     bool convertedLegacyGlobalIndices = false;
-    for (size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+    for (const auto & mesh : meshes)
     {
-        const auto& mesh = meshes[meshIndex];
         if (mesh.lodCount > assets::formats::geometry::MaxMeshLods)
         {
             return {vk::Result::eErrorInitializationFailed, {}};
@@ -682,11 +671,6 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
     SceneFrameRequirements sceneFrameRequirements{};
     sceneFrameRequirements.transformCount = static_cast<uint32_t>(transforms.size());
     sceneFrameRequirements.drawableObjectCount = static_cast<uint32_t>(drawableData.size());
-    sceneFrameRequirements.directionalShadowCasterCount = countShadowCastersDirectional(directionalLights);
-    if (sceneFrameRequirements.directionalShadowCasterCount == 0)
-        sceneFrameRequirements.directionalShadowCasterCount = 1;
-    sceneFrameRequirements.pointShadowCasterCount = 0;
-    sceneFrameRequirements.spotShadowCasterCount = 0;
     sceneFrameRequirements.meshCount = static_cast<uint32_t>(meshes.size());
 
     for (uint32_t i = 0; i < materials.size(); ++i) {
@@ -708,7 +692,6 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
                         .directionalLightCount = static_cast<uint32_t>(directionalLights.size()) == 0
                                                      ? 1
                                                      : static_cast<uint32_t>(directionalLights.size()),
-                        .directionalShadowCasterCount = sceneFrameRequirements.directionalShadowCasterCount,
                         .materialCount = static_cast<uint32_t>(materialData.size()),
         .textureCount = assets::formats::texture::TextureIndices::FirstUserTexture + static_cast<int32_t>(textureMetadatas.size())};
 
@@ -822,7 +805,7 @@ uploadScene(const std::filesystem::path& scenePath, RenderContext& context, vk::
         }
         const uint64_t firstMipIndex =
             textureMetadatas[i].mipTableOffset / sizeof(assets::formats::texture::TextureMipMetadata);
-        const uint64_t mipCount = static_cast<uint64_t>(textureMetadatas[i].mipCount);
+        const auto mipCount = static_cast<uint64_t>(textureMetadatas[i].mipCount);
         if (firstMipIndex + mipCount > textureMipMetadatas.size())
         {
             return {vk::Result::eErrorInitializationFailed, {}};

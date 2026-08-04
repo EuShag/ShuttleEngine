@@ -36,6 +36,7 @@ layout(set = SET_FRAME, binding = FRAME_INSTANCE_REMAP, std430) readonly buffer 
 
 void main()
 {
+
     uint drawableId = instanceRemap[gl_InstanceIndex];
 
     GpuDrawableObject drawable = drawables[drawableId];

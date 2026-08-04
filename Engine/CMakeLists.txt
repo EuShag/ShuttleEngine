@@ -43,7 +43,9 @@ add_executable(
     src/RetireController/RetireController.hpp
     src/Render/FrameResources.cpp
     src/Render/FrameCommandRecording.cpp
-    src/Render/TextureCatalog.cpp)
+    src/Render/TextureCatalog.cpp
+        MainWindow/MainWindow.cpp
+        MainWindow/MainWindow.hpp)
 
 target_include_directories(
     Engine

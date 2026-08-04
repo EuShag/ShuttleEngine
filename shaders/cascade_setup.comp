@@ -43,9 +43,7 @@ layout(push_constant) uniform PushConstants
     uint reserved0;
     uint reserved1;
     uint reserved2;
-}
-
-pc;
+} pc;
 
 // ============================================================
 // Frame Set
