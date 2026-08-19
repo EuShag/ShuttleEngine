@@ -714,7 +714,9 @@ namespace shuttle::engine
                     .path = inputPath,
                     .isScene = false,
                     .isDirty = true,
-                    .envGpuData = std::move(environmentResources_)};
+                    .envGpuData = std::move(environmentResources_),
+                    .compiledEnvRAM = std::move(*compiledEnvOpt) // <-- ВОТ ТУТ НУЖНО СОХРАНИТЬ ДАННЫЕ В RAM
+                };
 
                 m_mainWindow.addAsset(editor::core::LoadedAsset{
                     .name = newAsset.name,
@@ -762,6 +764,52 @@ namespace shuttle::engine
                     }
                 }
             });
+
+        m_mainWindow.setSaveEnvironmentCallback(
+            [this](std::filesystem::path const& savePath)
+            {
+                if (m_activeEnvironmentId != 0) // Проверяем, что активное окружение выбрано
+                {
+                    auto it = std::find_if(
+                        m_openAssets.begin(),
+                        m_openAssets.end(),
+                        [&](const OpenAsset& a)
+                        {
+                            // Ищем активное окружение (isScene == false)
+                            return a.id == m_activeEnvironmentId && !a.isScene;
+                        });
+
+                    // Если окружение найдено и у него есть скомпилированные RAM-данные
+                    if (it != m_openAssets.end() && it->compiledEnvRAM.has_value())
+                    {
+                        bool success =
+                            shuttle::assets::environment_compiler::CompiledEnvironmentBlobWriter::write(
+                                *it->compiledEnvRAM, // Записываем скомпилированные данные окружения
+                                savePath);
+
+                        if (success)
+                        {
+                            it->isDirty = false;
+                            it->name = savePath.filename().string();
+                            it->path = savePath;
+                            m_mainWindow.markAssetSaved(it->id, it->name, it->path);
+                            std::cout << "[Editor] Environment asset successfully saved to disk: "
+                                      << savePath << '\n';
+                        }
+                        else
+                        {
+                            std::cerr << "[Editor] Failed to save environment asset to disk: "
+                                      << savePath << '\n';
+                        }
+                    }
+                    else
+                    {
+                        // Если не найдено или нет данных в RAM, выводим ошибку
+                        std::cerr << "[Editor] Cannot save environment: no active environment or compiled data in RAM.\n";
+                    }
+                }
+            });
+
 
         m_mainWindow.setSelectAssetCallback(
             [this](editor::core::ResourceId id)

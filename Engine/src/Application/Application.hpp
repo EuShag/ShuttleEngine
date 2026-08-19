@@ -48,6 +48,7 @@
 #include "UiRender/UiRender.hpp"
 #include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 #include "Assets/SceneCompiler/SceneCompiler.hpp"
+#include "Assets/EnvironmentCompiler/CompiledEnvironment.hpp"
 
 namespace shuttle::engine
 {
@@ -139,6 +140,7 @@ namespace shuttle::engine
             std::optional<render::UploadSceneOutput> sceneGpuData;
             std::optional<render::DeviceEnvironmentResources> envGpuData;
             std::optional<assets::scene_compiler::CompiledScene> compiledSceneRAM;
+            std::optional<assets::environment_compiler::CompiledEnvironment> compiledEnvRAM;
         };
 
         // Core Systems
