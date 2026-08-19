@@ -290,10 +290,6 @@ cmake --build build --config Release
 - построение редакторского инструментария;
 - разделение application, rendering и editor layers.
 
-## Screenshots and Demo
-
-Сюда можно добавить скриншоты и видео:
-
 ## License
 
 Собственный код проекта распространяется под лицензией MIT.
