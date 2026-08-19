@@ -10,29 +10,14 @@
 #include <Assets/Formats/Scene.hpp>
 
 #include <filesystem>
-#include "TextureCatalog.hpp"
 
-#include "Render.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
+#include "SceneDataLoader/SceneDataLoader.hpp"
+#include "DescriptorHeapSet.hpp"
 
 namespace shuttle::engine::render
 {
-
-    struct RenderTarget
-    {
-        vk::Image image{};
-        vk::UniqueImageView imageView{};
-    };
-
-    struct RenderTargets
-    {
-        vk::Extent2D renderTargetExtent{};
-
-        vk::Image colorAttachmentImage{};
-        vk::UniqueImageView colorAttachmentImageView{};
-
-        uint32_t swapchainImageIndex{};
-    };
+    struct FallbackTextureIndices;
 
     struct DirectionalLightData
     {
@@ -48,6 +33,12 @@ namespace shuttle::engine::render
         uint32_t directionalLightCount{};
         uint32_t pointLightCount{};
         uint32_t spotLightCount{};
+    };
+
+    struct Texture {
+        resources::UniqueAllocatedImage image;
+        vk::UniqueImageView imageView;
+        UniqueDescriptorSlot descriptorSlot;
     };
 
     inline constexpr uint32_t MaxShadowCascades = 4;
@@ -240,165 +231,44 @@ namespace shuttle::engine::render
         bool lightsDirty{};
     };
 
-    struct DeviceRendererResources
-    {
-        // ============================================================
-        // Pipeline Layouts
-        // ============================================================
+    struct RenderRootData {
+        vk::DeviceAddress commonDataDeviceAddress{};
+        vk::DeviceAddress sceneDataDeviceAddress{};
+        vk::DeviceAddress environmentDataDeviceAddress{};
+        vk::DeviceAddress cameraDataDeviceAddress{};    
 
-        vk::UniquePipelineLayout pipelineLayout;
-
-        // ============================================================
-        // Graphics Pipelines
-        // ============================================================
-
-        vk::UniquePipeline shadowPipeline;
-        vk::UniquePipeline mainPipeline;
-        vk::UniquePipeline skyboxPipeline;
-
-        // ============================================================
-        // Compute Pipelines
-        // ============================================================
-
-        vk::UniquePipeline sceneUpdatePipeline;
-        vk::UniquePipeline prefixScanPipeline;
-        vk::UniquePipeline instanceResolvePipeline;
-        vk::UniquePipeline cascadeSetupPipeline;
-
-        // ============================================================
-        // Descriptor Pool
-        // ============================================================
-
-        vk::UniqueDescriptorPool descriptorPool;
-
-        // ============================================================
-        // Descriptor Set Layouts
-        // ============================================================
-
-        vk::UniqueDescriptorSetLayout rendererSetLayout;
-        vk::UniqueDescriptorSetLayout environmentSetLayout;
-        vk::UniqueDescriptorSetLayout sceneSetLayout;
-        vk::UniqueDescriptorSetLayout frameSetLayout;
-
-        // ============================================================
-        // Samplers
-        // ============================================================
-
-        vk::UniqueSampler materialSampler;
-        vk::UniqueSampler shadowSampler;
-        vk::UniqueSampler nearestSampler;
-
-        // ============================================================
-        // Renderer Descriptor Set
-        // ============================================================
-
-        vk::DescriptorSet rendererSet;
-
-        // ============================================================
-        // BRDF LUT
-        // ============================================================
-
-        resources::UniqueAllocatedImage brdfLutImage;
-        vk::UniqueImageView brdfLutImageView;
-
-        // ============================================================
-        // Fallback Textures
-        // ============================================================
-
-        resources::UniqueAllocatedImage fallbackAlbedoImage;
-        resources::UniqueAllocatedImage fallbackNormalImage;
-        resources::UniqueAllocatedImage fallbackOrmImage;
-        resources::UniqueAllocatedImage fallbackEmissionImage;
-
-        vk::UniqueImageView fallbackAlbedoImageView;
-        vk::UniqueImageView fallbackNormalImageView;
-        vk::UniqueImageView fallbackOrmImageView;
-        vk::UniqueImageView fallbackEmissionImageView;
     };
+
+    constexpr vk::DeviceSize PassSpecificDataOffset = sizeof(RenderRootData);
 
     struct DeviceSceneResources
     {
-        resources::UniqueAllocatedBuffer sceneInfoBuffer;
+        resources::UniqueAllocatedBuffer sceneRootBuffer;
 
-        // Geometry
         resources::UniqueAllocatedBuffer positionBuffer;
         resources::UniqueAllocatedBuffer attributeBuffer;
         resources::UniqueAllocatedBuffer indexBuffer;
         resources::UniqueAllocatedBuffer meshBuffer;
 
-        // Lights
-        resources::UniqueAllocatedBuffer directionalLightsBuffer;
+        resources::UniqueAllocatedBuffer materialBuffer;
 
-        // Materials
-        resources::UniqueAllocatedBuffer materialSsbo;
+        resources::UniqueAllocatedBuffer directionalLightBuffer;
 
-        // Textures
-        std::vector<resources::UniqueAllocatedImage> textureImages;
-        std::vector<vk::UniqueImageView> textureImageViews;
-        TextureCatalog textureCatalog;
+        std::vector<Texture> textures;
 
-        // Scene graph
-        resources::UniqueAllocatedBuffer sceneNodeBuffer;
-        resources::UniqueAllocatedBuffer sceneLevelBuffer;
-        resources::UniqueAllocatedBuffer gpuDrawableObjectsBuffer;
-        resources::UniqueAllocatedBuffer sceneTransformBuffer;
-
-        vk::DescriptorSet sceneSet;
-    };
-
-    struct DeviceFrameResources
-    {
-        // ============================================================
-        // Descriptor Set
-        // ============================================================
-
-        vk::DescriptorSet frameSet{};
-
-        // ============================================================
-        // Frame Data
-        // ============================================================
-
-        resources::UniqueAllocatedBuffer frameInfoBuffer;
-        resources::UniqueAllocatedBuffer frustumPlanesBuffer;
-        resources::UniqueAllocatedBuffer directionalShadowDataBuffer;
-
-        // ============================================================
-        // Scene Update
-        // ============================================================
-
-        resources::UniqueAllocatedBuffer worldTransformsBuffer;
-        resources::UniqueAllocatedBuffer meshRangesBuffer;
-        resources::UniqueAllocatedBuffer instanceIndicesRemapBuffer;
-        resources::UniqueAllocatedBuffer indirectDrawBuffer;
-        resources::UniqueAllocatedBuffer indirectDrawCountBuffer;
-
-        // ============================================================
-        // Depth
-        // ============================================================
-
-        resources::UniqueAllocatedImage depthImage;
-        vk::UniqueImageView depthImageView;
-
-        // ============================================================
-        // Cascaded Shadows
-        // ============================================================
-
-        resources::UniqueAllocatedImage shadowMapImage;
-        vk::UniqueImageView shadowMapImageView;
+        resources::UniqueAllocatedBuffer nodeBuffer;
+        resources::UniqueAllocatedBuffer levelBuffer;
+        resources::UniqueAllocatedBuffer drawableBuffer;
+        resources::UniqueAllocatedBuffer transformBuffer;
     };
 
     struct DeviceEnvironmentResources
     {
-        resources::UniqueAllocatedImage skyboxImage;
-        vk::UniqueImageView skyboxImageView;
+        resources::UniqueAllocatedBuffer environmentBuffer;
 
-        resources::UniqueAllocatedImage irradianceImage;
-        vk::UniqueImageView irradianceImageView;
-
-        resources::UniqueAllocatedImage radianceImage;
-        vk::UniqueImageView radianceImageView;
-
-        vk::DescriptorSet environmentSet;
+        Texture skybox;
+        Texture irradiance;
+        Texture radiance;
     };
 
     struct SceneFrameRequirements
@@ -415,51 +285,6 @@ namespace shuttle::engine::render
         SceneFrameRequirements sceneFrameRequirements;
     };
 
-    struct HostFrameData
-    {
-        // ============================================================
-        // Upload Buffer
-        // ============================================================
-        resources::UniqueAllocatedBuffer uploadBuffer;
-
-        void* mappedMemory{};
-
-        // ============================================================
-        // Offsets
-        // ============================================================
-        vk::DeviceSize frameInfoOffset{};
-        vk::DeviceSize frustumPlanesOffset{};
-        vk::DeviceSize lightingInfoOffset{};
-        vk::DeviceSize directionalLightsOffset{};
-        vk::DeviceSize directionalShadowDataOffset{};
-        vk::DeviceSize localTransformOffset{};
-
-        // ============================================================
-        // UBO / SSBO Views
-        // ============================================================
-
-        FrameInfo* frameInfo{};
-        FrustumPlanesData* frustumPlanes{};
-        SceneLightingData* lightingInfo{};
-        DirectionalShadowData* directionalShadowData{};
-
-        // ============================================================
-        // Arrays
-        // ============================================================
-
-        std::span<DirectionalLightData> directionalLights;
-        std::span<LocalTransformData> localTransforms;
-    };
-
-    struct GTAOSettings
-    {
-        float radius = 0.5f;
-        float falloff = 1.0f;
-        float intensity = 1.0f;
-
-        uint32_t sampleCount = 8;
-    };
-
     struct ShadowSettings
     {
         uint32_t resolution = 4096;
@@ -467,28 +292,6 @@ namespace shuttle::engine::render
         float splitLambda = 0.85f;
         float maxDistance = 250.0f;
         float shadowBias = 0.0005f;
-    };
-
-    struct RendererResourceSettings
-    {
-        // ============================================================
-        // Shadows
-        // ============================================================
-
-        uint32_t shadowMapResolution = 4096;
-        uint32_t shadowCascadeCount = 4;
-
-        // ============================================================
-        // GTAO
-        // ============================================================
-
-        uint32_t gtaoResolutionScale = 1;
-
-        // ============================================================
-        // Formats
-        // ============================================================
-
-        vk::Format depthFormat = vk::Format::eD32Sfloat;
     };
 
     enum class FrameRecordSegment : uint32_t
@@ -500,39 +303,18 @@ namespace shuttle::engine::render
     };
 
     vk::ResultValue<UploadSceneOutput> uploadScene(
-        const std::filesystem::path& scenePath,
+        const LoadedSceneData& loadedSceneData,
         RenderContext& context,
         vk::Queue transferQueue,
         vk::CommandPool transferCommandPool,
-        vk::DescriptorSetLayout sceneSetLayout,
-        vk::ImageView fallbackAlbedoImageView,
-        vk::ImageView fallbackNormalImageView,
-        vk::ImageView fallbackOrmImageView,
-        vk::ImageView fallbackEmissionImageView);
-
-    vk::ResultValue<DeviceFrameResources> createFrameResources(
-        RenderContext& context,
-        const DeviceRendererResources& rendererResources,
-        uint32_t renderWidth, uint32_t renderHeight,
-        uint32_t drawableCount, uint32_t transformCount,
-        uint32_t meshCount);
-
-    vk::ResultValue<DeviceRendererResources> createRendererResources(
-        RenderContext& context, vk::Queue transferQueue,
-        vk::CommandPool transferCommandPool);
-
-    vk::ResultValue<std::vector<RenderTargets>> createRenderTargets(
-        vk::Device device,
-        resources::DeviceAllocator const& allocator,
-        std::vector<vk::Image> renderTargetImages,
-        vk::Extent2D swapchainExtent,
-        vk::Format swapchainFormat);
+        DescriptorHeapSet& descriptorHeapSet,
+        FallbackTextureIndices const& fallbackTextureIndices);
 
     vk::ResultValue<DeviceEnvironmentResources> createEnvironmentResources(
         RenderContext& context,
-        const DeviceRendererResources& rendererResources,
         vk::Queue transferQueue,
         vk::CommandPool transferCommandPool,
+        DescriptorHeapSet& descriptorHeapSet,
         const std::filesystem::path& environmentBlobPath);
 
 } // namespace shuttle::engine::render

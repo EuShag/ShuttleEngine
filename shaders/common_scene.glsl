@@ -204,18 +204,20 @@ struct SpotLightData
 // Scene info
 // ============================================================
 
-struct SceneInfo
-{
-    uint drawableObjectCount;
-    uint transformCount;
+struct SceneGpuInfo {
+    uint64_t sceneNodesBufferDeviceAddress;
+    uint64_t materialDatasBufferAddress;
+    uint64_t lightDatasBufferAddress;
+    uint64_t meshDatasBufferAddress;
+    uint64_t drawablesBufferAddress;
+    uint64_t localTransformsBufferAddress;
 
-    uint directionalLightCount;
-    uint directionalShadowCasterCount;
-    uint materialCount;
-    uint textureCount;
-
-    uint reserved0;
-    uint reserved1;
+    uint32_t materialCount;
+    uint32_t lightCount;
+    uint32_t meshCount;
+    uint32_t drawableCount;
+    uint32_t nodeCount;
+    uint32_t padding0;
 };
 
 // ============================================================

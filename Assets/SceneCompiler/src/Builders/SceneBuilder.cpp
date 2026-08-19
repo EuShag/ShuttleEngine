@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <iostream>
 
-#include "Runtime/CompiledScene.hpp"
+#include "../../include/Assets/SceneCompiler/CompiledScene.hpp"
 
 namespace shuttle::assets::scene_compiler
 {
 CompiledScene SceneBuilder::build(SceneTextureCompilerResult textures, MaterialBuildResult materials,
-                                  GeometryBuildResult geometry, AnimationBuildResult animation,
+                                  GeometryBuildResult geometry,
                                   SceneGraphBuildResult sceneGraph, LightingBuildResult lighting)
 {
     CompiledScene result{};
@@ -50,48 +50,6 @@ CompiledScene SceneBuilder::build(SceneTextureCompilerResult textures, MaterialB
     result.drawableObjects = std::move(sceneGraph.drawableObjects);
 
     result.transforms = std::move(sceneGraph.transforms);
-
-    //
-    // skeletons
-    //
-
-    result.skeletons = std::move(animation.skeletons);
-
-    result.bones = std::move(animation.bones);
-
-    //
-    // animation clips
-    //
-
-    result.clips = std::move(animation.clips);
-
-    result.transformChannels = std::move(animation.transformChannels);
-
-    //
-    // morphing
-    //
-
-    result.morphTargets = std::move(animation.morphTargets);
-
-    result.morphVertexDeltas = std::move(animation.morphVertexDeltas);
-
-    result.morphChannels = std::move(animation.morphChannels);
-
-    //
-    // material animation
-    //
-
-    result.materialProperties = std::move(animation.materialProperties);
-
-    result.materialChannels = std::move(animation.materialChannels);
-
-    //
-    // keyframes
-    //
-
-    result.keyframeTimes = std::move(animation.keyframeTimes);
-
-    result.keyframeValues = std::move(animation.keyframeValues);
 
     //
     // lighting

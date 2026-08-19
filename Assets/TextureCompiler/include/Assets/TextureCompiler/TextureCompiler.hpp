@@ -54,7 +54,7 @@ class TextureCompiler
                                                     const TextureCompileOptions& options);
 
     [[nodiscard]]
-    static std::optional<CompiledTexture> importDDS(const uint8_t* data, size_t size);
+    static std::optional<CompiledTexture> importDDS(const uint8_t *data, size_t size, bool srgb);
 
     [[nodiscard]]
     static std::vector<uint8_t> compressBlocks(const uint8_t* pixels, int width, int height, int bytesPerPixel,
@@ -67,7 +67,5 @@ class TextureCompiler
 
     [[nodiscard]]
     static std::string normalizeExtension(std::string extension);
-
-    static std::vector<uint8_t> compressBlocksBC5FromRG8(const uint8_t *rgPixels, int width, int height);
 };
 } // namespace shuttle::assets::texture_compiler

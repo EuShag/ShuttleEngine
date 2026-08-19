@@ -37,3 +37,6 @@
 [submodule "external/cmft"]
 	path = external/cmft
 	url = https://github.com/dariomanesku/cmft
+[submodule "external/filament"]
+	path = external/filament
+	url = https://github.com/google/filament/

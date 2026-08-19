@@ -7,11 +7,14 @@ set(IMGUI_SOURCES
     "${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp"
     "${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp" # Для тестирования
     "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp" # Бэкэнд для SDL2
-    "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp")
+    "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp"
+)
 
 add_executable(
     Engine
     ${IMGUI_SOURCES}
+    src/Application/Application.cpp
+    src/Application/Application.hpp
     src/Sdl/SdlLibrary/SdlLibrary.cpp
     src/Sdl/SdlWindow/SdlWindow.cpp
     src/VulkanDebugger/VulkanDebugger.cpp
@@ -19,17 +22,12 @@ add_executable(
     src/ImageLoader/Image.cpp
     src/VulkanHelperFunctions/VulkanHelperFunctions.cpp
     src/Camera/Camera.cpp
-    src/Skybox/Skybox.cpp
-    src/Terrain/Terrain.cpp
-    src/Terrain/Terrain.hpp
-    src/HostRenderData/HostRenderData.cpp
     src/DeviceAllocator/DeviceAllocator.cpp
     src/CameraController/CameraController.cpp
     src/CameraController/CameraController.hpp
     src/main.cpp
     src/Render/Render.hpp
     src/Render/SceneResources.cpp
-    src/Render/RendererResources.cpp
     src/Render/EnvironmentResources.cpp
     src/UiRender/UiRender.cpp
     src/UiRender/UiRender.hpp
@@ -41,27 +39,54 @@ add_executable(
     src/SwapchainFactory/SwapchainFactory.hpp
     src/RetireController/RetireController.cpp
     src/RetireController/RetireController.hpp
-    src/Render/FrameResources.cpp
-    src/Render/FrameCommandRecording.cpp
-    src/Render/TextureCatalog.cpp
-        MainWindow/MainWindow.cpp
-        MainWindow/MainWindow.hpp)
+    src/MainWindow/MainWindow.cpp
+    src/MainWindow/MainWindow.hpp
+    src/Render/MainPass.cpp
+    src/Render/MainPass.hpp
+    src/Render/Common.hpp
+    src/Render/uiPass.cpp
+    src/Render/uiPass.hpp
+    src/Render/CameraSystem.cpp
+    src/Render/CameraSystem.hpp
+    src/Render/WorldTransformUpdatePass.cpp
+    src/Render/WorldTransformUpdatePass.hpp
+    src/Render/PrefixSumPass.cpp
+    src/Render/PrefixSumPass.hpp
+    src/Render/InstanceRemapPass.cpp
+    src/Render/InstanceRemapPass.hpp
+    src/DeviceAllocator/VirtualBlock.cpp
+    src/DeviceAllocator/VirtualBlock.hpp
+    src/Render/DescriptorHeapSet.cpp
+    src/Render/DescriptorHeapSet.hpp
+    src/Render/FallbackTextures.hpp
+    src/Render/FallbackTextures.cpp
+    src/Render/CommonResources.cpp
+    src/Render/CommonResources.hpp
+    src/SceneDataLoader/SceneDataLoader.cpp
+    src/SceneDataLoader/SceneDataLoader.hpp
+    src/Render/SceneData.hpp
+    src/Render/MeshInstancesCountPass.cpp
+    src/Render/MeshInstancesCountPass.hpp
+)
 
 target_include_directories(
     Engine
     PRIVATE
         ${Vulkan_INCLUDE_DIRS}
+        ${Vulkan_INCLUDE_DIRS}/SDL2
         ${PROJECT_SOURCE_DIR}/external/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${PROJECT_SOURCE_DIR}/external/cmft/include
-        ${PROJECT_SOURCE_DIR}/AssetProcessor/include
         ${PROJECT_SOURCE_DIR}/external/VulkanMemoryAllocator/include
         ${PROJECT_SOURCE_DIR}/external/stb
         ${PROJECT_SOURCE_DIR}/external/vk-bootstrap/src
         ${PROJECT_SOURCE_DIR}/external/tinyddsloader
         ${PROJECT_SOURCE_DIR}/external/mio/single_include
-        ${PROJECT_SOURCE_DIR}/AssetProcessor/src/Core/include)
+        ${PROJECT_SOURCE_DIR}/Assets/SceneCompiler/include
+        ${PROJECT_SOURCE_DIR}/Assets/EnvironmentCompiler/include
+        ${PROJECT_SOURCE_DIR}/Assets/TextureCompiler/include
+        ${PROJECT_SOURCE_DIR}/include)
 
 target_compile_definitions(
     Engine
@@ -76,5 +101,13 @@ target_compile_definitions(
 target_link_libraries(Engine PRIVATE vk-bootstrap::vk-bootstrap)
 target_link_libraries(Engine PRIVATE ShuttleAssetFormats)
 target_link_libraries(Engine PRIVATE ${SDL2Libraries})
+target_link_libraries(Engine PRIVATE ShuttleSceneCompiler)
+target_link_libraries(Engine PRIVATE ShuttleEnvironmentCompiler)
+# Найди строку target_link_libraries для Engine и добавь туда comctl32:
+if(WIN32)
+    target_link_libraries(Engine PRIVATE comctl32)
+endif()
+
 
 add_dependencies(Engine CompileShaders)
+add_dependencies(Engine CopyResources)

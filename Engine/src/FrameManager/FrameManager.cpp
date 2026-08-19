@@ -24,23 +24,17 @@ FrameManager::create(vk::Device device,
 
 vk::Result FrameManager::prepareFrameSlot(vk::Device device, uint32_t frameIndex)
 {
-    if (auto fenceWaitResult = device.waitForFences({*uniqueInFlightFences[frameIndex]}, true, UINT64_MAX); fenceWaitResult != vk::Result::eSuccess)
-    {
-        return fenceWaitResult;
-    }
+    return device.waitForFences({*uniqueInFlightFences[frameIndex]}, true, UINT64_MAX);
+}
+
+vk::Result FrameManager::beginFrame(vk::Device device, uint32_t frameIndex) {
     return device.resetFences({*uniqueInFlightFences[frameIndex]});
 }
 
-vk::Result FrameManager::waitRenderIdle(vk::Device device) noexcept
-{
-    std::vector<vk::Fence> fences;
-    fences.reserve(framesInFlightCount);
-    for (uint32_t i = 0; i < framesInFlightCount; i++)
-    {
-        fences.push_back(*uniqueInFlightFences[i]);
-    }
-
-    return device.waitForFences(fences, true, UINT64_MAX);
+void FrameManager::addOldDepthAttachment(resources::UniqueAllocatedImage&& oldDepthImage,
+                                         vk::UniqueImageView&& oldDepthImageView) {
+    oldDepthImages.push_back(std::move(oldDepthImage));
+    oldDepthImageViews.push_back(std::move(oldDepthImageView));
 }
 
 vk::ResultValue<uint32_t> FrameManager::acquireNextImage(vk::Device device, vk::SwapchainKHR swapchain, uint32_t frameIndex)
@@ -76,6 +70,16 @@ vk::Result FrameManager::present(vk::Queue presentQueue, vk::SwapchainKHR swapch
                                     .swapchainCount = 1,
                                     .pSwapchains = &swapchain,
                                     .pImageIndices = &imageIndex});
+}
+
+vk::Result FrameManager::waitRenderIdle(vk::Device device) const noexcept {
+    std::vector<vk::Fence> fences;
+    fences.reserve(uniqueInFlightFences.size());
+    for (const auto& fence : uniqueInFlightFences)
+    {
+        fences.push_back(*fence);
+    }
+    return device.waitForFences(fences, true, UINT64_MAX);
 }
 
 vk::Result FrameManager::init(vk::Device device, FrameManager&& oldFrameManager)

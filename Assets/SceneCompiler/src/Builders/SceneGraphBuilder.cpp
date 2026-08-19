@@ -103,11 +103,11 @@ SceneGraphBuildResult SceneGraphBuilder::build(const ImportedScene& scene, const
 
         decomposeTransform(imported.localTransform, translation, rotation, scale);
 
-        transform.translation = translation;
+        transform.translation = glm::vec4{translation, 0.0f};
 
         transform.rotationQuat = glm::vec4(rotation.x, rotation.y, rotation.z, rotation.w);
 
-        transform.scale = scale;
+        transform.scale = glm::vec4{scale, 0.0f};
 
         const auto transformIndex = static_cast<uint32_t>(result.transforms.size());
 
@@ -207,7 +207,7 @@ SceneGraphBuildResult SceneGraphBuilder::build(const ImportedScene& scene, const
     {
         formats::scene::NodeLevelRange level{};
 
-        level.startNodeIndex = currentLevel.front();
+        level.startIndex = currentLevel.front();
 
         uint32_t nodeCount = 0;
 
@@ -228,7 +228,7 @@ SceneGraphBuildResult SceneGraphBuilder::build(const ImportedScene& scene, const
             }
         }
 
-        level.nodeCount = nodeCount;
+        level.count = nodeCount;
 
         result.levels.push_back(level);
 

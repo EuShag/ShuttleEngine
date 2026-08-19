@@ -1,0 +1,315 @@
+#version 450
+
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+
+#extension GL_KHR_shader_subgroup_basic : require
+#extension GL_KHR_shader_subgroup_arithmetic : require
+
+// Must match PrefixSumPass workgroup size.
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+// ============================================================
+// Constants
+// ============================================================
+
+#define MAX_SUBGROUPS_PER_WORKGROUP 256u
+
+// ============================================================
+// Render Root
+// ============================================================
+
+struct RenderRootData
+{
+    uint64_t commonDataDeviceAddress;
+    uint64_t sceneDataDeviceAddress;
+    uint64_t environmentDataDeviceAddress;
+    uint64_t cameraDataDeviceAddress;
+};
+
+// ============================================================
+// Pass Data
+// ============================================================
+
+struct PrefixSumPassData
+{
+    uint64_t indirectDrawCommandsBufferAddress;
+
+    uint padding0;
+    uint padding1;
+};
+
+layout(push_constant) uniform PushData
+{
+    RenderRootData root;
+    PrefixSumPassData pass;
+} pushData;
+
+// ============================================================
+// Scene Data
+// ============================================================
+
+struct SceneGpuInfo
+{
+    uint64_t sceneNodesBufferDeviceAddress;
+    uint64_t materialDatasBufferAddress;
+    uint64_t lightDatasBufferAddress;
+    uint64_t meshDatasBufferAddress;
+    uint64_t drawablesBufferAddress;
+    uint64_t localTransformsBufferAddress;
+
+    uint materialCount;
+    uint lightCount;
+    uint meshCount;
+    uint drawableCount;
+    uint nodeCount;
+    uint padding0;
+};
+
+struct MeshLodGpuInfo
+{
+    uint firstIndex;
+    uint indexCount;
+
+    float geometricError;
+    float screenThreshold;
+};
+
+struct MeshGpuInfo
+{
+    uint64_t positionAttributeBufferAddress;
+    uint64_t normalUvTangentAttributeBufferAddress;
+
+    vec4 boundingSphere;
+    vec4 minAABB;
+    vec4 maxAABB;
+
+
+    uint meshFlags;
+    uint lodCount;
+    uint64_t reserved0;
+    MeshLodGpuInfo lods[4];
+};
+
+// Must match VkDrawIndexedIndirectCommand.
+struct DrawIndexedIndirectCommand
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+
+// ============================================================
+// Buffer References
+// ============================================================
+
+layout(buffer_reference, std430, buffer_reference_align = 16)
+readonly buffer SceneGpuInfoRef
+{
+    SceneGpuInfo value;
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 16)
+readonly buffer MeshBufferRef
+{
+    MeshGpuInfo values[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4)
+buffer DrawIndexedIndirectCommandBufferRef
+{
+    DrawIndexedIndirectCommand values[];
+};
+
+// ============================================================
+// Shared Memory
+// ============================================================
+
+shared uint subgroupInstanceTotals[MAX_SUBGROUPS_PER_WORKGROUP];
+shared uint subgroupInstanceOffsets[MAX_SUBGROUPS_PER_WORKGROUP];
+
+shared uint sharedBlockBaseOffset;
+
+// ============================================================
+// Main
+// ============================================================
+
+void main()
+{
+    const uint localIndex = gl_LocalInvocationID.x;
+
+    const uint workgroupSize = gl_WorkGroupSize.x;
+
+    SceneGpuInfo scene =
+    SceneGpuInfoRef(
+            pushData.root.sceneDataDeviceAddress
+    ).value;
+
+    MeshBufferRef meshes =
+    MeshBufferRef(
+            scene.meshDatasBufferAddress
+    );
+
+    DrawIndexedIndirectCommandBufferRef commands =
+    DrawIndexedIndirectCommandBufferRef(
+            pushData.pass.indirectDrawCommandsBufferAddress
+    );
+
+    // Only local invocation 0 owns this value.
+    // Other invocations receive it through sharedBlockBaseOffset.
+    uint runningInstanceOffset =
+    0u;
+
+    for (uint blockStart = 0u; blockStart < scene.meshCount; blockStart += workgroupSize)
+    {
+        const uint meshIndex =
+        blockStart + localIndex;
+
+        uint effectiveInstanceCount =
+        0u;
+
+        uint outputIndexCount =
+        0u;
+
+        uint outputFirstIndex =
+        0u;
+
+        int outputVertexOffset =
+        0;
+
+        if (meshIndex < scene.meshCount)
+        {
+            uint rawInstanceCount =
+            commands.values[meshIndex].instanceCount;
+
+            MeshGpuInfo mesh =
+            meshes.values[meshIndex];
+
+            if (rawInstanceCount > 0u &&
+                mesh.lodCount > 0u)
+            {
+                MeshLodGpuInfo lod =
+                mesh.lods[0];
+
+                if (lod.indexCount > 0u)
+                {
+                    effectiveInstanceCount =
+                    rawInstanceCount;
+
+                    outputIndexCount =
+                    lod.indexCount;
+
+                    outputFirstIndex =
+                    lod.firstIndex;
+
+                    outputVertexOffset =
+                    0;
+                }
+            }
+        }
+
+        // ============================================================
+        // Subgroup prefix scan
+        // ============================================================
+
+        uint subgroupLocalExclusiveOffset =
+        subgroupExclusiveAdd(
+                effectiveInstanceCount);
+
+        uint subgroupTotal =
+        subgroupAdd(
+                effectiveInstanceCount);
+
+        if (subgroupElect())
+        {
+            subgroupInstanceTotals[gl_SubgroupID] =
+            subgroupTotal;
+        }
+
+        barrier();
+
+        // ============================================================
+        // Prefix over subgroup totals
+        // ============================================================
+
+        if (localIndex < gl_NumSubgroups)
+        {
+            uint subgroupOffset =
+            0u;
+
+            for (uint subgroupIndex = 0u;
+                subgroupIndex < localIndex;
+            ++subgroupIndex)
+            {
+                subgroupOffset +=
+                subgroupInstanceTotals[subgroupIndex];
+            }
+
+            subgroupInstanceOffsets[localIndex] =
+            subgroupOffset;
+        }
+
+        barrier();
+
+        if (localIndex == 0u)
+        {
+            sharedBlockBaseOffset =
+            runningInstanceOffset;
+        }
+
+        barrier();
+
+        uint localBlockOffset =
+        subgroupInstanceOffsets[gl_SubgroupID] +
+        subgroupLocalExclusiveOffset;
+
+        uint firstInstance =
+        sharedBlockBaseOffset +
+        localBlockOffset;
+
+        // ============================================================
+        // Write final indirect command fields
+        // ============================================================
+
+        if (meshIndex < scene.meshCount)
+        {
+            commands.values[meshIndex].indexCount =
+            outputIndexCount;
+
+            commands.values[meshIndex].instanceCount =
+            effectiveInstanceCount;
+
+            commands.values[meshIndex].firstIndex =
+            outputFirstIndex;
+
+            commands.values[meshIndex].vertexOffset =
+            outputVertexOffset;
+
+            commands.values[meshIndex].firstInstance =
+            firstInstance;
+        }
+
+        barrier();
+
+        if (localIndex == 0u)
+        {
+            uint blockInstanceTotal =
+            0u;
+
+            for (uint subgroupIndex = 0u;
+                subgroupIndex < gl_NumSubgroups;
+            ++subgroupIndex)
+            {
+                blockInstanceTotal +=
+                subgroupInstanceTotals[subgroupIndex];
+            }
+
+            runningInstanceOffset +=
+            blockInstanceTotal;
+        }
+
+        barrier();
+    }
+}

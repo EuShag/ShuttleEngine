@@ -1,40 +1,123 @@
 #version 450
 
-#include "common_bindings.glsl"
-#include "common_frame.glsl"
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 // ============================================================
-// Frame Set
+// Root / Pass Data
 // ============================================================
 
-layout(set = SET_FRAME, binding = FRAME_INFO, std140) uniform FrameInfoBuffer
+struct RenderRootData
 {
-    FrameInfo frame;
+    uint64_t commonDataDeviceAddress;
+    uint64_t sceneDataDeviceAddress;
+    uint64_t environmentDataDeviceAddress;
+    uint64_t cameraDataDeviceAddress;
+};
+
+struct MainPassData
+{
+    uint64_t mainPassSettingsAddress;
+    uint64_t instanceRemapAddress;
+
+    uint output1Mode;
+    uint output2Mode;
+    uint output3Mode;
+    uint output4Mode;
+};
+
+layout(push_constant) uniform PushData
+{
+    RenderRootData root;
+    MainPassData pass;
+} pushData;
+
+// ============================================================
+// Camera
+// ============================================================
+
+struct CameraData
+{
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+    mat4 viewProjectionMatrix;
+
+    mat4 inverseViewMatrix;
+    mat4 inverseProjectionMatrix;
+    mat4 inverseViewProjectionMatrix;
+
+    vec4 cameraPosition;
+
+    float nearPlane;
+    float farPlane;
+    float fov;
+    float aspectRatio;
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 16)
+readonly buffer CameraDataRef
+{
+    CameraData value;
 };
 
 // ============================================================
-// Outputs
+// Output
 // ============================================================
 
 layout(location = 0) out vec3 outDirection;
 
 // ============================================================
-// Cube Vertices
+// Cube
 // ============================================================
 
-const vec3 CubeVertices[36] = {
-    // +X
-    vec3(1, -1, -1), vec3(1, -1, 1), vec3(1, 1, 1), vec3(1, -1, -1), vec3(1, 1, 1), vec3(1, 1, -1),
-    // -X
-    vec3(-1, -1, 1), vec3(-1, -1, -1), vec3(-1, 1, -1), vec3(-1, -1, 1), vec3(-1, 1, -1), vec3(-1, 1, 1),
-    // +Y
-    vec3(-1, 1, -1), vec3(1, 1, -1), vec3(1, 1, 1), vec3(-1, 1, -1), vec3(1, 1, 1), vec3(-1, 1, 1),
-    // -Y
-    vec3(-1, -1, 1), vec3(1, -1, 1), vec3(1, -1, -1), vec3(-1, -1, 1), vec3(1, -1, -1), vec3(-1, -1, -1),
-    // +Z
-    vec3(-1, -1, 1), vec3(-1, 1, 1), vec3(1, 1, 1), vec3(-1, -1, 1), vec3(1, 1, 1), vec3(1, -1, 1),
-    // -Z
-    vec3(1, -1, -1), vec3(1, 1, -1), vec3(-1, 1, -1), vec3(1, -1, -1), vec3(-1, 1, -1), vec3(-1, -1, -1)};
+vec3 getCubeVertex(uint vertexIndex)
+{
+    const vec3 vertices[36] = {
+        vec3(-1.0, -1.0, -1.0),
+        vec3(1.0, -1.0, -1.0),
+        vec3(1.0, 1.0, -1.0),
+        vec3(1.0, 1.0, -1.0),
+        vec3(-1.0, 1.0, -1.0),
+        vec3(-1.0, -1.0, -1.0),
+
+        vec3(-1.0, -1.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, -1.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(-1.0, -1.0, 1.0),
+        vec3(-1.0, 1.0, 1.0),
+
+        vec3(-1.0, 1.0, 1.0),
+        vec3(-1.0, -1.0, 1.0),
+        vec3(-1.0, -1.0, -1.0),
+        vec3(-1.0, -1.0, -1.0),
+        vec3(-1.0, 1.0, -1.0),
+        vec3(-1.0, 1.0, 1.0),
+
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, -1.0, -1.0),
+        vec3(1.0, -1.0, 1.0),
+        vec3(1.0, -1.0, -1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, 1.0, -1.0),
+
+        vec3(-1.0, -1.0, -1.0),
+        vec3(1.0, -1.0, 1.0),
+        vec3(1.0, -1.0, -1.0),
+        vec3(1.0, -1.0, 1.0),
+        vec3(-1.0, -1.0, -1.0),
+        vec3(-1.0, -1.0, 1.0),
+
+        vec3(-1.0, 1.0, -1.0),
+        vec3(1.0, 1.0, -1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(1.0, 1.0, 1.0),
+        vec3(-1.0, 1.0, 1.0),
+        vec3(-1.0, 1.0, -1.0)
+    };
+
+    return vertices[vertexIndex];
+}
 
 // ============================================================
 // Main
@@ -42,11 +125,13 @@ const vec3 CubeVertices[36] = {
 
 void main()
 {
-    vec3 localPosition = CubeVertices[gl_VertexIndex];
-    outDirection = localPosition;
+    CameraData camera = CameraDataRef(pushData.root.cameraDataDeviceAddress).value;
 
-    mat4 viewNoTranslation = mat4(mat3(frame.viewMatrix));
-    vec4 clipPosition = frame.projectionMatrix * viewNoTranslation * vec4(localPosition, 1.0);
+    vec3 position = getCubeVertex(uint(gl_VertexIndex));
+    mat4 viewNoTranslation = camera.viewMatrix;
+    viewNoTranslation[3] = vec4(0.0, 0.0, 0.0, 1.0);
+    vec4 clipPosition = camera.projectionMatrix * viewNoTranslation * vec4(position, 1.0);
 
+    outDirection = position;
     gl_Position = clipPosition.xyww;
 }

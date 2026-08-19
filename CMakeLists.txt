@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(ShuttleEngine)
@@ -69,6 +69,25 @@ add_subdirectory(
     resources
 )
 
+add_subdirectory(
+    external/filament/libs/ibl
+)
+add_subdirectory(
+    external/filament/libs/math
+)
+add_subdirectory(
+    external/filament/libs/utils
+)
+add_subdirectory(
+    external/filament/libs/image
+)
+
+target_include_directories(utils
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/filament/libs/utils/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/filament/third_party/robin-map/include
+)
+
 set(ASSIMP_BUILD_TESTS
     OFF
     CACHE BOOL "" FORCE)
@@ -112,6 +131,8 @@ set(ASSIMP_BUILD_COLLADA_IMPORTER
 add_subdirectory(
     external/assimp
 )
+
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
 if(MSVC AND TARGET assimp)
     target_compile_options(assimp PRIVATE /FS)

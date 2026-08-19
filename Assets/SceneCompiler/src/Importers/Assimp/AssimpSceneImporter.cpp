@@ -365,38 +365,6 @@ void importMaterials(ImportContext& context)
     }
 }
 
-int32_t importNodeRecursive(ImportContext& context, const aiNode* aiNode, int32_t parentIndex)
-{
-    ImportedNode node{};
-    node.name = aiNode->mName.C_Str();
-
-    node.parent = parentIndex;
-
-    node.localTransform = toGlm(aiNode->mTransformation);
-
-    node.meshes.reserve(aiNode->mNumMeshes);
-
-    for (uint32_t i = 0; i < aiNode->mNumMeshes; ++i)
-    {
-        node.meshes.push_back(static_cast<int32_t>(aiNode->mMeshes[i]));
-    }
-
-    const int32_t nodeIndex = static_cast<int32_t>(context.scene.nodes.size());
-
-    context.nodeNameToIndex[node.name] = static_cast<uint32_t>(nodeIndex);
-
-    context.scene.nodes.push_back(std::move(node));
-
-    for (uint32_t i = 0; i < aiNode->mNumChildren; ++i)
-    {
-        const int32_t childIndex = importNodeRecursive(context, aiNode->mChildren[i], nodeIndex);
-
-        context.scene.nodes[nodeIndex].children.push_back(childIndex);
-    }
-
-    return nodeIndex;
-}
-
     void importNodes(ImportContext& context)
 {
     if (!context.assimpScene || !context.assimpScene->mRootNode)
@@ -770,7 +738,7 @@ void importLights(ImportContext& context)
         default: continue;
         }
 
-        const int32_t lightIndex = static_cast<int32_t>(context.scene.lights.size());
+        const auto lightIndex = static_cast<int32_t>(context.scene.lights.size());
 
         context.scene.lights.push_back(light);
 
@@ -781,135 +749,6 @@ void importLights(ImportContext& context)
     }
 }
 
-ImportedInterpolationMode defaultInterpolation()
-{
-    return ImportedInterpolationMode::Linear;
-}
-
-void importAnimations(ImportContext& context)
-{
-    const aiScene* scene = context.assimpScene;
-
-    if (!scene)
-    {
-        return;
-    }
-
-    context.scene.animations.reserve(scene->mNumAnimations);
-
-    for (uint32_t animationIndex = 0; animationIndex < scene->mNumAnimations; ++animationIndex)
-    {
-        const aiAnimation* aiAnimation = scene->mAnimations[animationIndex];
-
-        ImportedAnimation animation{};
-        animation.name = aiAnimation->mName.C_Str();
-
-        animation.ticksPerSecond = aiAnimation->mTicksPerSecond > 0.0 ? aiAnimation->mTicksPerSecond : 1.0;
-
-        animation.duration = aiAnimation->mDuration / animation.ticksPerSecond;
-
-        animation.startTime = 0.0;
-
-        animation.endTime = animation.duration;
-
-        animation.channels.reserve(aiAnimation->mNumChannels);
-
-        for (uint32_t channelIndex = 0; channelIndex < aiAnimation->mNumChannels; ++channelIndex)
-        {
-            const aiNodeAnim* aiChannel = aiAnimation->mChannels[channelIndex];
-
-            const std::string nodeName = aiChannel->mNodeName.C_Str();
-
-            auto nodeIt = context.nodeNameToIndex.find(nodeName);
-
-            if (nodeIt == context.nodeNameToIndex.end())
-            {
-                continue;
-            }
-
-            ImportedAnimationChannel channel{};
-            channel.nodeIndex = nodeIt->second;
-
-            channel.translationInterpolation = defaultInterpolation();
-
-            channel.rotationInterpolation = defaultInterpolation();
-
-            channel.scaleInterpolation = defaultInterpolation();
-
-            channel.positions.reserve(aiChannel->mNumPositionKeys);
-
-            for (uint32_t keyIndex = 0; keyIndex < aiChannel->mNumPositionKeys; ++keyIndex)
-            {
-                const aiVectorKey& key = aiChannel->mPositionKeys[keyIndex];
-
-                PositionKey position{};
-                position.time = key.mTime / animation.ticksPerSecond;
-
-                position.value = toGlm(key.mValue);
-
-                channel.positions.push_back(position);
-            }
-
-            channel.rotations.reserve(aiChannel->mNumRotationKeys);
-
-            for (uint32_t keyIndex = 0; keyIndex < aiChannel->mNumRotationKeys; ++keyIndex)
-            {
-                const aiQuatKey& key = aiChannel->mRotationKeys[keyIndex];
-
-                RotationKey rotation{};
-                rotation.time = key.mTime / animation.ticksPerSecond;
-
-                rotation.value = toGlm(key.mValue);
-
-                channel.rotations.push_back(rotation);
-            }
-
-            channel.scales.reserve(aiChannel->mNumScalingKeys);
-
-            for (uint32_t keyIndex = 0; keyIndex < aiChannel->mNumScalingKeys; ++keyIndex)
-            {
-                const aiVectorKey& key = aiChannel->mScalingKeys[keyIndex];
-
-                ScaleKey scale{};
-                scale.time = key.mTime / animation.ticksPerSecond;
-
-                scale.value = toGlm(key.mValue);
-
-                channel.scales.push_back(scale);
-            }
-
-            animation.channels.push_back(std::move(channel));
-        }
-
-        for (uint32_t meshChannelIndex = 0; meshChannelIndex < aiAnimation->mNumMeshChannels; ++meshChannelIndex)
-        {
-            const aiMeshAnim* aiMeshChannel = aiAnimation->mMeshChannels[meshChannelIndex];
-
-            ImportedAnimationChannel channel{};
-            channel.nodeIndex = InvalidIndexU32;
-
-            channel.weightInterpolation = ImportedInterpolationMode::Linear;
-
-            channel.weights.reserve(aiMeshChannel->mNumKeys);
-
-            for (uint32_t keyIndex = 0; keyIndex < aiMeshChannel->mNumKeys; ++keyIndex)
-            {
-                const aiMeshKey& key = aiMeshChannel->mKeys[keyIndex];
-
-                WeightKey weight{};
-                weight.time = key.mTime / animation.ticksPerSecond;
-
-                weight.value.push_back(static_cast<float>(key.mValue));
-
-                channel.weights.push_back(std::move(weight));
-            }
-
-            animation.channels.push_back(std::move(channel));
-        }
-
-        context.scene.animations.push_back(std::move(animation));
-    }
-}
 } // namespace
 
 std::optional<ImportedScene> AssimpSceneImporter::import(const std::filesystem::path& filePath)
@@ -937,7 +776,6 @@ std::optional<ImportedScene> AssimpSceneImporter::import(const std::filesystem::
     importMaterials(context);
     importMeshes(context);
     importLights(context);
-    importAnimations(context);
 
     return std::move(context.scene);
 }

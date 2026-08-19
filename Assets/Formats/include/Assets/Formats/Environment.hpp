@@ -26,7 +26,7 @@ struct alignas(16) EnvironmentInfo
     float skyboxIntensity{};
     float rotationYRadians{};
 
-    uint32_t flags{};
+    uint32_t prefilteredTextureMipLevels{};
 
     glm::vec4 tint{};
 };

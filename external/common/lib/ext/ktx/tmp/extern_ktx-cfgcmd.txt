@@ -1,1 +1,0 @@
-cmd='E:/Program Files/JetBrains/CLion 2025.2.4/bin/cmake/win/x64/bin/cmake.exe;-DCMAKE_INSTALL_PREFIX:PATH=E:/Users/Shagu/Projects/ShuttleEngine/external/compressonator/../common/lib/ext/ktx;-G;Ninja;-GNinja;-S;<SOURCE_DIR><SOURCE_SUBDIR>;-B;<BINARY_DIR>'

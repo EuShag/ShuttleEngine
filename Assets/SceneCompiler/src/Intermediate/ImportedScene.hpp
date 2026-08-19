@@ -57,7 +57,7 @@ struct ImportedMaterial
     glm::vec4 baseColorFactor{1.0f};
     glm::vec4 emissiveFactor{0.0f};
 
-    float metallicFactor = 0.0f;
+    float metallicFactor = 1.0f;
     float roughnessFactor = 1.0f;
     float occlusionStrength = 1.0f;
     float emissiveStrength = 1.0f;
@@ -165,54 +165,6 @@ using RotationKey = AnimationKey<glm::quat>;
 using ScaleKey = AnimationKey<glm::vec3>;
 using WeightKey = AnimationKey<std::vector<float>>;
 
-struct ImportedAnimationChannel
-{
-    uint32_t nodeIndex = InvalidIndexU32;
-
-    ImportedInterpolationMode translationInterpolation = ImportedInterpolationMode::Linear;
-
-    ImportedInterpolationMode rotationInterpolation = ImportedInterpolationMode::Linear;
-
-    ImportedInterpolationMode scaleInterpolation = ImportedInterpolationMode::Linear;
-
-    ImportedInterpolationMode weightInterpolation = ImportedInterpolationMode::Linear;
-
-    std::vector<PositionKey> positions;
-    std::vector<RotationKey> rotations;
-    std::vector<ScaleKey> scales;
-    std::vector<WeightKey> weights;
-};
-
-struct ImportedAnimationEvent
-{
-    std::string name;
-
-    double time = 0.0;
-};
-
-struct RootMotionTrack
-{
-    std::vector<PositionKey> positions;
-    std::vector<RotationKey> rotations;
-};
-
-struct ImportedAnimation
-{
-    std::string name;
-
-    double startTime = 0.0;
-    double endTime = 0.0;
-    double duration = 0.0;
-    double ticksPerSecond = 0.0;
-
-    bool looping = true;
-
-    RootMotionTrack rootMotion;
-
-    std::vector<ImportedAnimationChannel> channels;
-    std::vector<ImportedAnimationEvent> events;
-};
-
 enum class ImportedLightType : uint32_t
 {
     Directional,
@@ -294,8 +246,6 @@ struct ImportedScene
     std::vector<ImportedLight> lights;
 
     std::vector<ImportedSkin> skins;
-
-    std::vector<ImportedAnimation> animations;
 
     std::vector<ImportedDirectionalLight> directionalLights;
 

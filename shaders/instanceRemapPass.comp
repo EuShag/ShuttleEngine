@@ -1,0 +1,142 @@
+#version 450
+
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+// ============================================================
+// Render Root
+// ============================================================
+
+struct RenderRootData
+{
+    uint64_t commonDataDeviceAddress;
+    uint64_t sceneDataDeviceAddress;
+    uint64_t environmentDataDeviceAddress;
+    uint64_t cameraDataDeviceAddress;
+};
+
+// ============================================================
+// Pass Data
+// ============================================================
+
+struct InstanceRemapPassData
+{
+    uint64_t indirectDrawCommandsBufferAddress;
+    uint64_t instanceRemapBufferAddress;
+    uint64_t meshInstanceCursorBufferAddress;
+
+    uint reserved1;
+    uint reserved2;
+};
+
+layout(push_constant) uniform PushData
+{
+    RenderRootData root;
+    InstanceRemapPassData pass;
+} pushData;
+
+// ============================================================
+// Scene Data
+// ============================================================
+
+struct SceneGpuInfo
+{
+    uint64_t sceneNodesBufferDeviceAddress;
+    uint64_t materialDatasBufferAddress;
+    uint64_t lightDatasBufferAddress;
+    uint64_t meshDatasBufferAddress;
+    uint64_t drawablesBufferAddress;
+    uint64_t localTransformsBufferAddress;
+
+    uint materialCount;
+    uint lightCount;
+    uint meshCount;
+    uint drawableCount;
+    uint nodeCount;
+    uint padding0;
+};
+
+struct DrawableGpuInfo
+{
+    uint meshIndex;
+    uint materialIndex;
+    uint transformIndex;
+    uint reserved;
+};
+
+// ============================================================
+// Indirect Draw Command
+// ============================================================
+
+struct DrawIndexedIndirectCommand
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+
+// ============================================================
+// Buffer References
+// ============================================================
+
+layout(buffer_reference, std430, buffer_reference_align = 16)
+readonly buffer SceneGpuInfoRef
+{
+    SceneGpuInfo value;
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 16)
+readonly buffer DrawableBufferRef
+{
+    DrawableGpuInfo values[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4)
+readonly buffer DrawIndexedIndirectCommandBufferRef
+{
+    DrawIndexedIndirectCommand values[];
+};
+
+layout(buffer_reference, std430, buffer_reference_align = 4)
+buffer UintBufferRef
+{
+    uint values[];
+};
+
+// ============================================================
+// Main
+// ============================================================
+
+void main()
+{
+    uint drawableIndex = gl_GlobalInvocationID.x;
+
+    SceneGpuInfo scene = SceneGpuInfoRef(pushData.root.sceneDataDeviceAddress).value;
+
+    if (drawableIndex >= scene.drawableCount) return;
+
+    DrawableBufferRef drawables = DrawableBufferRef(scene.drawablesBufferAddress);
+    DrawIndexedIndirectCommandBufferRef indirectCommands = DrawIndexedIndirectCommandBufferRef(pushData.pass.indirectDrawCommandsBufferAddress);
+    UintBufferRef instanceRemap = UintBufferRef(pushData.pass.instanceRemapBufferAddress);
+    UintBufferRef meshInstanceCursor = UintBufferRef(pushData.pass.meshInstanceCursorBufferAddress);
+    DrawableGpuInfo drawable = drawables.values[drawableIndex];
+
+    uint meshIndex = drawable.meshIndex;
+
+    if (meshIndex >= scene.meshCount) return;
+
+    DrawIndexedIndirectCommand command = indirectCommands.values[meshIndex];
+
+    if (command.instanceCount == 0u) return;
+
+    uint localInstanceIndex = atomicAdd(meshInstanceCursor.values[meshIndex], 1u);
+
+    if (localInstanceIndex >= command.instanceCount) return;
+
+    uint remapIndex = command.firstInstance + localInstanceIndex;
+    instanceRemap.values[remapIndex] = drawableIndex;
+}

@@ -16,7 +16,6 @@ namespace shuttle
 struct RetiredSwapchain
 {
     vk::UniqueSwapchainKHR swapchain;
-    std::vector<engine::render::RenderTargets> renderTargets;
     FrameManager retiredFrameManager;
 
     uint32_t renderMask = 0;  // Текущая маска кадров (стартует с 0)
@@ -30,17 +29,16 @@ struct SwapchainResources
 {
     Swapchain swapchain;
     FrameManager frameManager;
-    std::vector<engine::render::RenderTargets> renderTargets;
 };
 
 class RetireController
 {
   public:
-    vk::ResultValue<SwapchainResources> updateSwapchainResources(SwapchainContext const& swapchainContext,
-                                                                 vk::Extent2D const& swapchainExtent,
-                                                                 resources::DeviceAllocator const& deviceAllocator,
-                                                                 uint32_t frameCount,
-                                                                 SwapchainResources&& oldSwapchainResources);
+    vk::ResultValue<SwapchainResources> updateSwapchainResources(
+        SwapchainContext const& swapchainContext,
+        vk::Extent2D const& swapchainExtent,
+        uint32_t frameCount,
+        SwapchainResources&& oldSwapchainResources);
 
     void renderRetireUpdate(uint32_t frameIndex);
     void presentRetireUpdate(uint32_t imageIndex);

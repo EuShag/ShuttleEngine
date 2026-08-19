@@ -1,8 +1,7 @@
 #include "Assets/SceneCompiler/SceneCompiler.hpp"
 
-#include "Builders/AnimationBuilder.hpp"
 #include "Importers/Assimp/AssimpSceneImporter.hpp"
-#include "Runtime/CompiledScene.hpp"
+#include "../include/Assets/SceneCompiler/CompiledScene.hpp"
 #include "Texture/SceneTextureResolver.hpp"
 #include "Builders/LightingBuilder.hpp"
 #include "Builders/MaterialBuilder.hpp"
@@ -56,21 +55,10 @@ std::optional<CompiledScene> SceneCompiler::compile(const std::filesystem::path&
     }
 
     //
-    // ma*erials
+    // materials
     //
 
     MaterialBuildResult materials = MaterialBuilder::build(*importedScene, textures);
-
-    //
-    // animation
-    //
-
-    AnimationBuildResult animation = AnimationBuilder::build(*importedScene);
-
-    if (!animation.success)
-    {
-        return std::nullopt;
-    }
 
     //
     // scene graph
@@ -88,7 +76,7 @@ std::optional<CompiledScene> SceneCompiler::compile(const std::filesystem::path&
     // final scene
     //
 
-    return SceneBuilder::build(std::move(textures), std::move(materials), std::move(geometry), std::move(animation),
-                               std::move(graph), std::move(lighting));
+    return SceneBuilder::build(std::move(textures), std::move(materials), std::move(geometry), std::move(graph),
+                               std::move(lighting));
 }
 } // namespace shuttle::assets::scene_compiler

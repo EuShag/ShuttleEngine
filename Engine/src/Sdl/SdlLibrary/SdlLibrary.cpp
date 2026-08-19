@@ -19,15 +19,6 @@ void SdlLibrary::setRelativeMouseMode(bool enabled)
     SDL_SetRelativeMouseMode(enabled ? SDL_TRUE : SDL_FALSE);
 }
 
-SdlKeyState SdlLibrary::getKeyState(SdlKeyCode keyCode) const
-{
-    int keyCount = 0;
-    auto keyState = SDL_GetKeyboardState(&keyCount);
-    if (keyState == nullptr)
-    {
-    }
-}
-
 [[nodiscard]] std::vector<char const*> SdlLibrary::getSurfaceRequiredExtensions()
 {
     uint32_t sdlExtensionCount = 0;
@@ -59,18 +50,18 @@ void SdlLibrary::addCustomEventProcessor(std::function<void(SDL_Event const& eve
     customEventProcessors.push_back(processor);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-bool SdlLibrary::pullEvents()
-{
+bool SdlLibrary::pullEvents() const {
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
         if (event.type == SDL_QUIT) return false;
-        for (auto customEventProcessor : customEventProcessors)
+
+        SdlWindow::processEvent(event);
+
+        for (const auto& customEventProcessor : customEventProcessors)
         {
             customEventProcessor(event);
         }
-        SdlWindow::processEvent(event);
     }
     return true;
 }

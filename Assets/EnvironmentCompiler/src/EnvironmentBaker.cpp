@@ -3,361 +3,182 @@
 #include <Assets/Formats/Environment.hpp>
 #include <Assets/Formats/Texture.hpp>
 
+#include <iostream>
+#include <optional>
+#include <vector>
+#include <algorithm>
 #include <Assets/TextureCompiler/ImageData.hpp>
 #include <Assets/TextureCompiler/TextureCompileOptions.hpp>
 #include <Assets/TextureCompiler/TextureCompiler.hpp>
-
-#include <cmft/cubemapfilter.h>
-
-#include <glm/glm.hpp>
 #include <glm/gtc/packing.hpp>
 
-#include <algorithm>
-#include <cstdint>
-#include <iostream>
-#include <optional>
-#include <span>
-#include <thread>
-#include <vector>
+#include "../include/Assets/EnvironmentCompiler/CpuIblGenerator.hpp"
+#include "stb_image.h"
 
 namespace shuttle::assets::environment_compiler
 {
-namespace
-{
-namespace texture_format = shuttle::assets::formats::texture;
-
-namespace environment_format = shuttle::assets::formats::environment;
-
-struct CmftImageGuard
-{
-    cmft::Image* image = nullptr;
-    cmft::AllocatorI* allocator = nullptr;
-
-    CmftImageGuard() = default;
-
-    CmftImageGuard(cmft::Image* image, cmft::AllocatorI* allocator) : image(image), allocator(allocator) {}
-
-    CmftImageGuard(const CmftImageGuard&) = delete;
-
-    CmftImageGuard& operator=(const CmftImageGuard&) = delete;
-
-    CmftImageGuard(CmftImageGuard&& other) noexcept : image(other.image), allocator(other.allocator)
+    namespace
     {
-        other.image = nullptr;
-        other.allocator = nullptr;
-    }
-
-    CmftImageGuard& operator=(CmftImageGuard&& other) noexcept
-    {
-        if (this != &other)
+        uint16_t floatToHalf(float value)
         {
-            unload();
-
-            image = other.image;
-            allocator = other.allocator;
-
-            other.image = nullptr;
-            other.allocator = nullptr;
+            return glm::packHalf1x16(value);
         }
 
-        return *this;
-    }
-
-    ~CmftImageGuard() { unload(); }
-
-    void unload()
-    {
-        if (image && image->m_data)
+        // Вспомогательная функция: генерирует только "чистые" сырые пиксели без опасных указателей
+        std::vector<std::vector<uint16_t>> convertCubemapToFp16(engine::ibl::Cubemap const& cubemap)
         {
-            cmft::imageUnload(*image, allocator);
-        }
-    }
-};
+            std::vector<std::vector<uint16_t>> mipPixels(cubemap.mips.size());
 
-[[nodiscard]]
-texture_compiler::TextureCompileOptions makeEnvironmentTextureOptions()
-{
-    texture_compiler::TextureCompileOptions options{};
-
-    options.semantic = texture_format::TextureSemantic::IBL;
-
-    options.format = VK_FORMAT_BC6H_UFLOAT_BLOCK;
-
-    options.generateMips = false;
-
-    options.flipY = false;
-
-    return options;
-}
-
-[[nodiscard]]
-uint8_t makeCmftThreadCount()
-{
-    const uint32_t hardwareThreads = std::max(1u, std::thread::hardware_concurrency());
-
-    return static_cast<uint8_t>(std::min(hardwareThreads, 255u));
-}
-
-[[nodiscard]]
-std::optional<texture_compiler::CompiledTexture> convertCmftImageToBc6h(const cmft::Image& image)
-{
-    if (!image.m_data)
-    {
-        std::cerr << "[EnvironmentBaker] CMFT image has no data." << std::endl;
-
-        return std::nullopt;
-    }
-
-    if (image.m_width == 0 || image.m_height == 0)
-    {
-        std::cerr << "[EnvironmentBaker] CMFT image has invalid size." << std::endl;
-
-        return std::nullopt;
-    }
-
-    const uint32_t faceCount = std::max(1u, static_cast<uint32_t>(image.m_numFaces));
-
-    const uint32_t mipCount = std::max(1u, static_cast<uint32_t>(image.m_numMips));
-
-    if (faceCount > CUBE_FACE_NUM)
-    {
-        std::cerr << "[EnvironmentBaker] Unsupported face count: " << faceCount << std::endl;
-
-        return std::nullopt;
-    }
-
-    if (mipCount > MAX_MIP_NUM)
-    {
-        std::cerr << "[EnvironmentBaker] Unsupported mip count: " << mipCount << std::endl;
-
-        return std::nullopt;
-    }
-
-    const auto& imageInfo = cmft::getImageDataInfo(image.m_format);
-
-    const uint32_t bytesPerPixel = imageInfo.m_bytesPerPixel;
-
-    if (bytesPerPixel == 0)
-    {
-        std::cerr << "[EnvironmentBaker] Unsupported CMFT texture format." << std::endl;
-
-        return std::nullopt;
-    }
-
-    uint32_t mipOffsets[CUBE_FACE_NUM][MAX_MIP_NUM]{};
-
-    cmft::imageGetMipOffsets(mipOffsets, image);
-
-    size_t totalTexelCount = 0;
-
-    for (uint32_t mip = 0; mip < mipCount; ++mip)
-    {
-        const uint32_t mipWidth = std::max(1u, image.m_width >> mip);
-
-        const uint32_t mipHeight = std::max(1u, image.m_height >> mip);
-
-        totalTexelCount +=
-            static_cast<size_t>(mipWidth) * static_cast<size_t>(mipHeight) * static_cast<size_t>(faceCount);
-    }
-
-    std::vector<uint16_t> rgba16fData;
-    rgba16fData.resize(totalTexelCount * 4u);
-
-    const auto* sourceBytes = static_cast<const uint8_t*>(image.m_data);
-
-    size_t destinationTexelOffset = 0;
-
-    std::vector<texture_compiler::ImageSizedData> mipChain;
-    mipChain.reserve(mipCount);
-
-    for (uint32_t mip = 0; mip < mipCount; ++mip)
-    {
-        const uint32_t mipWidth = std::max(1u, image.m_width >> mip);
-
-        const uint32_t mipHeight = std::max(1u, image.m_height >> mip);
-
-        const size_t faceTexelCount = static_cast<size_t>(mipWidth) * static_cast<size_t>(mipHeight);
-
-        const size_t mipStartTexelOffset = destinationTexelOffset;
-
-        for (uint32_t face = 0; face < faceCount; ++face)
-        {
-            const uint32_t sourceMipOffset = mipOffsets[face][mip];
-
-            if (sourceMipOffset >= image.m_dataSize)
+            for (size_t mipIndex = 0; mipIndex < cubemap.mips.size(); ++mipIndex)
             {
-                std::cerr << "[EnvironmentBaker] Invalid CMFT mip offset. "
-                          << "Face: " << face << ", mip: " << mip << ", offset: " << sourceMipOffset
-                          << ", data size: " << image.m_dataSize << std::endl;
+                auto const& mip = cubemap.mips[mipIndex];
+                size_t const pixelsPerFace = static_cast<size_t>(mip.size) * mip.size;
 
-                return std::nullopt;
+                std::vector<uint16_t>& pixels = mipPixels[mipIndex];
+                pixels.resize(pixelsPerFace * 6u * 4u); // 6 граней, RGBA
+
+                for (uint32_t face = 0; face < 6; ++face)
+                {
+                    auto const& facePixels = mip.faces[face];
+                    size_t const faceOffset = static_cast<size_t>(face) * pixelsPerFace * 4u;
+
+                    for (size_t i = 0; i < pixelsPerFace; ++i)
+                    {
+                        auto const& src = facePixels[i];
+                        size_t const dstOffset = faceOffset + (i * 4u);
+
+                        pixels[dstOffset + 0] = floatToHalf(std::max(src.x, 0.0f));
+                        pixels[dstOffset + 1] = floatToHalf(std::max(src.y, 0.0f));
+                        pixels[dstOffset + 2] = floatToHalf(std::max(src.z, 0.0f));
+                        pixels[dstOffset + 3] = floatToHalf(src.w);
+                    }
+                }
             }
 
-            const uint8_t* sourceMipData = sourceBytes + sourceMipOffset;
+            return mipPixels;
+        }
+    }
 
-            for (size_t texel = 0; texel < faceTexelCount; ++texel)
-            {
-                const uint8_t* sourcePixel = sourceMipData + texel * bytesPerPixel;
+    std::optional<CompiledEnvironment> EnvironmentBaker::bake(
+        const std::filesystem::path& hdrFile,
+        engine::ibl::IblGenerationSettings const& settings)
+    {
+        using namespace engine::ibl;
+        namespace texture_format = formats::texture;
 
-                float rgba32f[4]{};
+        int hdrWidth = 0;
+        int hdrHeight = 0;
+        int hdrChannels = 0;
 
-                cmft::toRgba32f(rgba32f, image.m_format, sourcePixel);
+        float* loadedHdrPixelsRGBA32F = stbi_loadf(
+            hdrFile.string().c_str(),
+            &hdrWidth,
+            &hdrHeight,
+            &hdrChannels,
+            4);
 
-                const size_t destination = (destinationTexelOffset + texel) * 4u;
-
-                rgba16fData[destination + 0] = glm::packHalf1x16(rgba32f[0]);
-
-                rgba16fData[destination + 1] = glm::packHalf1x16(rgba32f[1]);
-
-                rgba16fData[destination + 2] = glm::packHalf1x16(rgba32f[2]);
-
-                rgba16fData[destination + 3] = glm::packHalf1x16(rgba32f[3]);
-            }
-
-            destinationTexelOffset += faceTexelCount;
+        if (!loadedHdrPixelsRGBA32F)
+        {
+            std::cerr << "[EnvironmentBaker] Failed to load HDR: " << hdrFile << std::endl;
+            return std::nullopt;
         }
 
-        mipChain.push_back(texture_compiler::ImageSizedData{
-            .pixels = reinterpret_cast<const uint8_t*>(rgba16fData.data() + mipStartTexelOffset * 4u),
+        Image2D hdr{};
+        hdr.width = static_cast<uint32_t>(hdrWidth);
+        hdr.height = static_cast<uint32_t>(hdrHeight);
+        hdr.pixels.resize(static_cast<size_t>(hdr.width) * hdr.height);
 
-            .width = mipWidth,
+        for (uint32_t y = 0; y < hdr.height; ++y)
+        {
+            for (uint32_t x = 0; x < hdr.width; ++x)
+            {
+                size_t const srcOffset = (static_cast<size_t>(y) * hdr.width + x) * 4u;
+                size_t const dstOffset = static_cast<size_t>(y) * hdr.width + x;
 
-            .height = mipHeight});
+                hdr.pixels[dstOffset] = {
+                    loadedHdrPixelsRGBA32F[srcOffset + 0],
+                    loadedHdrPixelsRGBA32F[srcOffset + 1],
+                    loadedHdrPixelsRGBA32F[srcOffset + 2],
+                    loadedHdrPixelsRGBA32F[srcOffset + 3]
+                };
+            }
+        }
+
+        stbi_image_free(loadedHdrPixelsRGBA32F);
+
+        // Генерация IBL (все мипы успешно создаются на CPU)
+        GeneratedIbl ibl = generateIblFromEquirectangularHdr(hdr, settings);
+
+        std::cout << "Radiance mips: " << ibl.radiance.mips.size() << std::endl;
+
+        // Конвертируем кубмапы в сырые FP16 данные (безопасное владение памятью)
+        auto skyboxPixels = convertCubemapToFp16(ibl.skybox);
+        auto irradiancePixels = convertCubemapToFp16(ibl.irradiance);
+        auto radiancePixels = convertCubemapToFp16(ibl.radiance);
+
+        // Строим mipViews локально на стеке. Указатели гарантированно будут валидны при компиляции!
+        auto buildMipViews = [](std::vector<std::vector<uint16_t>> const& mipPixels, Cubemap const& cubemap)
+        {
+            std::vector<texture_compiler::ImageSizedData> mipViews(cubemap.mips.size());
+            for (size_t i = 0; i < cubemap.mips.size(); ++i)
+            {
+                mipViews[i] = texture_compiler::ImageSizedData{
+                    .pixels = reinterpret_cast<const uint8_t*>(mipPixels[i].data()),
+                    .width  = cubemap.mips[i].size,
+                    .height = cubemap.mips[i].size
+                };
+            }
+            return mipViews;
+        };
+
+        auto skyboxMipViews = buildMipViews(skyboxPixels, ibl.skybox);
+        auto irradianceMipViews = buildMipViews(irradiancePixels, ibl.irradiance);
+        auto radianceMipViews = buildMipViews(radiancePixels, ibl.radiance);
+
+        texture_compiler::TextureCompileOptions bc6hOptions{};
+        bc6hOptions.format = VK_FORMAT_BC6H_UFLOAT_BLOCK;
+        bc6hOptions.generateMips = false; // Мы передаем уже готовые мипы!
+
+        auto skyboxTexture = texture_compiler::TextureCompiler::compileRGBA16F(
+            skyboxMipViews,
+            bc6hOptions,
+            6,
+            texture_format::ImageViewType::ViewCube);
+
+        auto irradianceTexture = texture_compiler::TextureCompiler::compileRGBA16F(
+            irradianceMipViews,
+            bc6hOptions,
+            6,
+            texture_format::ImageViewType::ViewCube);
+
+        auto radianceTexture = texture_compiler::TextureCompiler::compileRGBA16F(
+            radianceMipViews,
+            bc6hOptions,
+            6,
+            texture_format::ImageViewType::ViewCube);
+
+        // ИСПРАВЛЕНО: Добавлены операторы логического ИЛИ (||)
+        if (!skyboxTexture || !irradianceTexture || !radianceTexture)
+        {
+            std::cerr << "[EnvironmentBaker] Failed to compile BC6H environment textures." << std::endl;
+            return std::nullopt;
+        }
+
+        CompiledEnvironment result{};
+
+        result.textures.push_back(std::move(*skyboxTexture));
+        result.textures.push_back(std::move(*irradianceTexture));
+        result.textures.push_back(std::move(*radianceTexture));
+
+        result.info.skyboxTextureIndex = 0;
+        result.info.irradianceTextureIndex = 1;
+        result.info.prefilteredTextureIndex = 2;
+
+        result.info.intensity = 1.0f;
+        result.info.skyboxIntensity = 1.0f;
+        result.info.rotationYRadians = 0.0f;
+        result.info.prefilteredTextureMipLevels = ibl.radiance.mips.size(); // Сохраняем правильное число мипов!
+
+        return result;
     }
-
-    const texture_compiler::TextureCompileOptions options = makeEnvironmentTextureOptions();
-
-    const texture_format::ImageViewType imageViewType =
-        faceCount == 6 ? texture_format::ImageViewType::ViewCube : texture_format::ImageViewType::View2DArray;
-
-    auto compressed = texture_compiler::TextureCompiler::compileRGBA16F(
-        std::span<const texture_compiler::ImageSizedData>(mipChain.data(), mipChain.size()), options, faceCount,
-        imageViewType);
-
-    if (!compressed)
-    {
-        std::cerr << "[EnvironmentBaker] Failed to compress CMFT image to BC6H." << std::endl;
-
-        return std::nullopt;
-    }
-
-    return compressed;
-}
-} // namespace
-
-std::optional<CompiledEnvironment> EnvironmentBaker::bake(const std::filesystem::path& hdrFile)
-{
-    cmft::Image hdrImage{};
-    cmft::Image skybox{};
-    cmft::Image irradiance{};
-    cmft::Image radiance{};
-
-    CmftImageGuard hdrGuard{&hdrImage, allocator()};
-
-    CmftImageGuard skyboxGuard{&skybox, allocator()};
-
-    CmftImageGuard irradianceGuard{&irradiance, allocator()};
-
-    CmftImageGuard radianceGuard{&radiance, allocator()};
-
-    bool ok = cmft::imageLoad(hdrImage, hdrFile.string().c_str(), cmft::TextureFormat::Null, allocator());
-
-    if (!ok)
-    {
-        std::cerr << "[EnvironmentBaker] Failed to load HDR file: " << hdrFile << std::endl;
-
-        return std::nullopt;
-    }
-
-    std::cout << "[EnvironmentBaker] HDR loaded." << std::endl;
-
-    ok = cmft::imageCubemapFromLatLong(skybox, hdrImage, true, allocator());
-
-    if (!ok)
-    {
-        std::cerr << "[EnvironmentBaker] Failed to generate cubemap." << std::endl;
-
-        return std::nullopt;
-    }
-
-    std::cout << "[EnvironmentBaker] Skybox cubemap generated." << std::endl;
-
-    ok = cmft::imageIrradianceFilterSh(irradiance, 32, skybox, allocator());
-
-    if (!ok)
-    {
-        std::cerr << "[EnvironmentBaker] Failed to generate irradiance map." << std::endl;
-
-        return std::nullopt;
-    }
-
-    std::cout << "[EnvironmentBaker] Irradiance map generated." << std::endl;
-
-    ok = cmft::imageRadianceFilter(radiance, 128, cmft::LightingModel::BlinnBrdf, false, 8, 10, 0, skybox,
-                                   cmft::EdgeFixup::Warp, makeCmftThreadCount(), nullptr, allocator());
-
-    if (!ok)
-    {
-        std::cerr << "[EnvironmentBaker] Failed to generate prefiltered radiance map." << std::endl;
-
-        return std::nullopt;
-    }
-
-    std::cout << "[EnvironmentBaker] Prefiltered radiance map generated." << std::endl;
-
-    std::cout << "[EnvironmentBaker] Compressing environment maps to BC6H..." << std::endl;
-
-    auto skyboxTexture = convertCmftImageToBc6h(skybox);
-
-    auto irradianceTexture = convertCmftImageToBc6h(irradiance);
-
-    auto radianceTexture = convertCmftImageToBc6h(radiance);
-
-    if (!skyboxTexture || !irradianceTexture || !radianceTexture)
-    {
-        std::cerr << "[EnvironmentBaker] Failed to convert environment textures to BC6H." << std::endl;
-
-        return std::nullopt;
-    }
-
-    CompiledEnvironment result{};
-
-    result.textures.reserve(3);
-
-    result.textures.push_back(std::move(*skyboxTexture));
-
-    result.textures.push_back(std::move(*irradianceTexture));
-
-    result.textures.push_back(std::move(*radianceTexture));
-
-    auto& info = result.info;
-
-    info.nameHash = 0;
-
-    info.skyboxTextureIndex = 0;
-
-    info.irradianceTextureIndex = 1;
-
-    info.prefilteredTextureIndex = 2;
-
-    info.intensity = 1.0f;
-
-    info.skyboxIntensity = 1.0f;
-
-    info.rotationYRadians = 0.0f;
-
-    info.flags = static_cast<uint32_t>(environment_format::EnvironmentFlags::VisibleSkybox);
-
-    info.tint = glm::vec4(1.0f);
-
-    std::cout << "[EnvironmentBaker] Environment baked successfully." << std::endl;
-
-    std::cout << "  Skybox bytes:     " << result.textures[0].data.size() << '\n';
-
-    std::cout << "  Irradiance bytes: " << result.textures[1].data.size() << '\n';
-
-    std::cout << "  Radiance bytes:   " << result.textures[2].data.size() << '\n';
-
-    return result;
-}
 } // namespace shuttle::assets::environment_compiler

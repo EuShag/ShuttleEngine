@@ -13,7 +13,6 @@ target_sources(
         # builders
         src/Builders/GeometryBuilder.cpp
         src/Builders/MaterialBuilder.cpp
-        src/Builders/AnimationBuilder.cpp
         src/Builders/SceneGraphBuilder.cpp
         src/Builders/SceneBuilder.cpp
         src/Builders/LightingBuilder.cpp

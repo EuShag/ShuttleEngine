@@ -4,7 +4,6 @@
 #include <Assets/TextureCompiler/TextureCompiler.hpp>
 
 #include <algorithm>
-#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -289,7 +288,7 @@ RgbaImage resizeOrFill(const std::optional<RgbaImage>& source, uint8_t fallbackV
 
     if (!source || !source->valid())
     {
-        std::fill(result.pixels.begin(), result.pixels.end(), fallbackValue);
+        std::ranges::fill(result.pixels, fallbackValue);
 
         return result;
     }
@@ -466,11 +465,11 @@ SceneTextureCompilerResult SceneTextureCompiler::compile(ImportedScene& scene,
 
             generatedTexture.formatHint = "generated-orm";
 
-            const int32_t importedTextureIndex = static_cast<int32_t>(scene.textures.size());
+            const auto importedTextureIndex = static_cast<int32_t>(scene.textures.size());
 
             scene.textures.push_back(std::move(generatedTexture));
 
-            const int32_t compiledTextureIndex = static_cast<int32_t>(result.textures.size());
+            const auto compiledTextureIndex = static_cast<int32_t>(result.textures.size());
 
             result.textures.push_back(std::move(*generatedOrm));
 
@@ -518,7 +517,7 @@ SceneTextureCompilerResult SceneTextureCompiler::compile(ImportedScene& scene,
             continue;
         }
 
-        const int32_t compiledIndex = static_cast<int32_t>(result.textures.size());
+        const auto compiledIndex = static_cast<int32_t>(result.textures.size());
 
         result.textures.push_back(std::move(*compiled));
 

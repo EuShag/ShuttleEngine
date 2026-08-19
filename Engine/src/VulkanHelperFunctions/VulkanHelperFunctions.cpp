@@ -185,3 +185,49 @@ void safeScreenshot(void* screenshotBuffer, uint32_t width, uint32_t height)
         std::cerr << "Failed to save screenshot to " << filepath << std::endl;
     }
 }
+
+vk::ResultValue<AttachmentOutput> createAttachmentOutput(
+    vk::Device device,
+    shuttle::resources::DeviceAllocator const &deviceAllocator,
+    AttachmentOutputCreateInfo const &attachmentOutputCreateInfo) {
+
+    auto [createImageResult, image] = deviceAllocator.createAndAllocateImageUnique({
+        .imageType = vk::ImageType::e2D,
+        .format = attachmentOutputCreateInfo.format,
+        .extent = vk::Extent3D{
+            .width = attachmentOutputCreateInfo.imageSize.width,
+            .height = attachmentOutputCreateInfo.imageSize.height,
+            .depth = 1
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = vk::SampleCountFlagBits::e1,
+        .tiling = vk::ImageTiling::eOptimal,
+        .usage = attachmentOutputCreateInfo.imageUsage,
+        .sharingMode = vk::SharingMode::eExclusive,
+        .initialLayout = vk::ImageLayout::eUndefined },
+    shuttle::resources::MemoryUsage::eGpuOnly);
+
+    if (createImageResult != vk::Result::eSuccess) {
+        return {createImageResult, {}};
+    }
+    auto [createImageViewResult, imageView] = device.createImageViewUnique({
+            .image = *image,
+            .viewType = vk::ImageViewType::e2D,
+            .format = attachmentOutputCreateInfo.format,
+            .subresourceRange = {
+                .aspectMask = attachmentOutputCreateInfo.imageAspectFlags,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1}
+        });
+    if (createImageViewResult != vk::Result::eSuccess) {
+        return {createImageViewResult, {}};
+    }
+
+    return {vk::Result::eSuccess, {
+        .image = std::move(image),
+        .view = std::move(imageView),
+    }};
+}

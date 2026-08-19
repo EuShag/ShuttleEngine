@@ -3,28 +3,15 @@
 #include "../Intermediate/ImportedScene.hpp"
 
 #include <Assets/TextureCompiler/CompiledTexture.hpp>
-#include <Assets/TextureCompiler/TextureCompileOptions.hpp>
+#include <Assets/SceneCompiler/SceneCompiler.hpp>
 
 #include <cstdint>
 #include <string>
 #include <vector>
 
-namespace shuttle::assets::scene_compiler
-{
-struct SceneTextureCompilerOptions
-{
-    bool compileTextures = true;
+namespace shuttle::assets::scene_compiler{
 
-    bool generateOrmTextures = true;
-
-    bool generateMips = true;
-
-    bool flipY = false;
-
-    bool roughnessIsGloss = false;
-};
-
-struct SceneTextureCompilerResult
+    struct SceneTextureCompilerResult
 {
     bool success = true;
 

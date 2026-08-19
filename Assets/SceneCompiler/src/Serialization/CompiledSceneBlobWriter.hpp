@@ -1,8 +1,6 @@
 #pragma once
 
-#include "../Runtime/CompiledScene.hpp"
-
-#include <Assets/Core/BlobWriter.hpp>
+#include "../../include/Assets/SceneCompiler/CompiledScene.hpp"
 
 #include <filesystem>
 

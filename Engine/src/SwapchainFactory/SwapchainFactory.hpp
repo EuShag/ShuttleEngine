@@ -19,6 +19,7 @@ struct Swapchain
     vk::Extent2D extent;
     vk::Format format;
     std::vector<vk::Image> images;
+    std::vector<vk::UniqueImageView> imageViews;
     uint32_t imageCount{0};
 };
 

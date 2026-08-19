@@ -8,5 +8,3 @@ add_subdirectory(
     SceneCompiler)
 add_subdirectory(
     EnvironmentCompiler)
-add_subdirectory(
-    AssetToolkit)

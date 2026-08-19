@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include "IncludeVulkan.hpp"
+#include "DeviceAllocator/DeviceAllocator.hpp"
 
 namespace shuttle
 {
@@ -18,6 +19,8 @@ class FrameManager
                                                               FrameManager&& frameManager = {});
 
     [[nodiscard]] vk::Result prepareFrameSlot(vk::Device device, uint32_t frameIndex);
+    [[nodiscard]] vk::Result beginFrame(vk::Device device, uint32_t frameIndex);
+
 
     [[nodiscard]] vk::ResultValue<uint32_t> acquireNextImage(vk::Device device, vk::SwapchainKHR swapchain, uint32_t frameIndex);
 
@@ -26,7 +29,10 @@ class FrameManager
 
     [[nodiscard]] vk::Result present(vk::Queue presentQueue, vk::SwapchainKHR swapchain, uint32_t imageIndex);
 
-    [[nodiscard]] vk::Result waitRenderIdle(vk::Device device) noexcept;
+    [[nodiscard]] vk::Result waitRenderIdle(vk::Device device) const noexcept;
+
+    void addOldDepthAttachment(resources::UniqueAllocatedImage &&oldDepthImage, vk::UniqueImageView &&oldDepthImageView);
+
     FrameManager() noexcept = default;
 
     // Удаляем копирование, так как vk::Unique... не копируемы
@@ -50,6 +56,8 @@ class FrameManager
     std::vector<vk::UniqueFence> uniqueInFlightFences;
     std::vector<vk::UniqueSemaphore> uniqueImageAvailableSemaphores;
     std::vector<vk::UniqueSemaphore> uniqueRenderFinishedSemaphores;
+    std::vector<resources::UniqueAllocatedImage> oldDepthImages;
+    std::vector<vk::UniqueImageView> oldDepthImageViews;
 
     uint32_t framesInFlightCount;
     uint32_t swapchainImageCount;

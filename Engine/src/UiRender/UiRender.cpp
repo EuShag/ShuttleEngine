@@ -24,6 +24,8 @@ vk::ResultValue<UiRender> UiRender::create(
 
     UiRender result;
 
+    result.device = device;
+
     std::array poolSizes = {
         vk::DescriptorPoolSize{.type = vk::DescriptorType::eSampler, .descriptorCount = 100},
         vk::DescriptorPoolSize{.type = vk::DescriptorType::eCombinedImageSampler, .descriptorCount = 100},
@@ -54,7 +56,6 @@ vk::ResultValue<UiRender> UiRender::create(
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    ;
 
     ImGui::StyleColorsDark();
 
@@ -106,25 +107,20 @@ void UiRender::bindInputEventHandler(SdlLibrary& library)
     library.addCustomEventProcessor([](SDL_Event const& event) { ImGui_ImplSDL2_ProcessEvent(&event); });
 }
 
-void UiRender::drawUi(IuiPainter&& painter)
-{
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui::NewFrame();
-    painter.drawUi();
-    ImGui::Render();
+bool UiRender::operator==(UiRender const &ui_render) const {
+    return *this->uiDescriptorPool == *ui_render.uiDescriptorPool;
 }
 
-void UiRender::recordDrawCommands(vk::CommandBuffer cmdBuffer) const
-{
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmdBuffer);
+    bool UiRender::operator!=(UiRender const &ui_render_result) const {
+        return !(*this == ui_render_result);
 }
 
-void UiRender::destroy(vk::Device device)
-{
-    if (device.waitIdle() != vk::Result::eSuccess) throw std::runtime_error("wait-idle");
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+UiRender::~UiRender() {
+    if (*this->uiDescriptorPool != VK_NULL_HANDLE && this->device != VK_NULL_HANDLE) {
+        if (device.waitIdle() != vk::Result::eSuccess) std::terminate();
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+    }
 }
 } // namespace shuttle

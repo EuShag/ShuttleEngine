@@ -2,6 +2,7 @@
 
 #include <Assets/Core/BlobWriter.hpp>
 #include <Assets/Formats/Texture.hpp>
+#include <Assets/TextureCompiler/CompiledTexture.hpp>
 
 #include <span>
 #include <vector>
@@ -57,7 +58,7 @@ TextureSerializationData buildTextureData(const CompiledScene& scene)
         }
 
         globalMipOffset +=
-            static_cast<uint64_t>(texture.mipMetadata.size()) * sizeof(formats::texture::TextureMipMetadata);
+            texture.mipMetadata.size() * sizeof(formats::texture::TextureMipMetadata);
 
         result.textureData.insert(result.textureData.end(), texture.data.begin(), texture.data.end());
 

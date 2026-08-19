@@ -6,11 +6,11 @@
 #define HELLOTRIANGLE_SUNLIGHTCONTROLPANEL_HPP
 #include <glm/glm.hpp>
 
-#include "UiRender/UiRender.hpp"
+#include "Render/uiPass.hpp"
 
 namespace shuttle
 {
-class SunLightControlPanel : public IuiPainter
+class SunLightControlPanel : public engine::render::IuiPainter
 {
   public:
     // Передаем ссылки на данные, которыми будем управлять

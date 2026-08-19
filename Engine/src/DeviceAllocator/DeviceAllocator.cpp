@@ -37,7 +37,7 @@ vk::ResultValue<DeviceAllocator> DeviceAllocator::create(vk::Instance instance, 
                                        .vkCreateImage = dispatcher.vkCreateImage,
                                        .vkDestroyImage = dispatcher.vkDestroyImage};
 
-    VmaAllocatorCreateInfo allocatorCreateInfo{.flags = 0,
+    VmaAllocatorCreateInfo allocatorCreateInfo{.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
                                                .physicalDevice = physicalDevice,
                                                .device = device,
                                                .preferredLargeHeapBlockSize = 0,

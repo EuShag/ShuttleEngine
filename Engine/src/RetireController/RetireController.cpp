@@ -10,16 +10,12 @@ namespace shuttle
 {
 
 vk::ResultValue<SwapchainResources> RetireController::updateSwapchainResources(
-    SwapchainContext const& swapchainContext, vk::Extent2D const& swapchainExtent,
-    resources::DeviceAllocator const& deviceAllocator, uint32_t frameCount, SwapchainResources&& oldSwapchainResources)
+    SwapchainContext const& swapchainContext, vk::Extent2D const& swapchainExtent, uint32_t frameCount, SwapchainResources&& oldSwapchainResources)
 {
 
     auto [createNewSwapchainResult, newSwapchain] =
         createSwapchain(swapchainContext, swapchainExtent, *oldSwapchainResources.swapchain.swapchain);
     if (createNewSwapchainResult != vk::Result::eSuccess) return {createNewSwapchainResult, {}};
-    auto [createNewRenderTargetsResult, newRenderTargets] = engine::render::createRenderTargets(
-        swapchainContext.device, deviceAllocator, newSwapchain.images, newSwapchain.extent, newSwapchain.format);
-    if (createNewRenderTargetsResult != vk::Result::eSuccess) return {createNewRenderTargetsResult, {}};
     auto [createNewFrameManagerResult, newFrameManager] = FrameManager::create(
         swapchainContext.device, frameCount, newSwapchain.imageCount, std::move(oldSwapchainResources.frameManager));
     if (createNewFrameManagerResult != vk::Result::eSuccess) return {createNewFrameManagerResult, {}};
@@ -29,7 +25,6 @@ vk::ResultValue<SwapchainResources> RetireController::updateSwapchainResources(
     uint32_t targetPresent = (1U << oldSwapchainResources.swapchain.imageCount) - 1U;
 
     retiredSwapchains.emplace_back(std::move(oldSwapchainResources.swapchain.swapchain),
-                                   std::move(oldSwapchainResources.renderTargets),
                                    std::move(oldSwapchainResources.frameManager),
                                    0U,           // renderMask (начинаем с нуля, биты будут загораться по ходу кадра)
                                    0U,           // presentMask (начинаем с нуля)
@@ -41,7 +36,6 @@ vk::ResultValue<SwapchainResources> RetireController::updateSwapchainResources(
             {
                 .swapchain = std::move(newSwapchain),
                 .frameManager = std::move(newFrameManager),
-                .renderTargets = std::move(newRenderTargets),
             }};
 }
 
@@ -86,13 +80,12 @@ void RetireController::cleanupExpired()
             // 1) Все биты кадров в полете на GPU отработали (renderMask догнал целевой targetRenderMask)
             // 2) Все биты изображений старого свопчейна освободились в ОС (presentMask догнал targetPresentMask)
             const bool isSafeToDelete =
-                (retired.renderMask == retired.targetRenderMask) && (retired.presentMask == retired.targetPresentMask);
+                retired.renderMask == retired.targetRenderMask && retired.presentMask == retired.targetPresentMask;
 
             if (isSafeToDelete)
             {
                 std::cout << "[System] Retired swapchain resources successfully and safely destroyed on GPU & CPU!\n";
             }
-
             return isSafeToDelete;
         });
 }

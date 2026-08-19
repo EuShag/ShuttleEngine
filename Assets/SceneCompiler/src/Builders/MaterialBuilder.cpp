@@ -9,22 +9,21 @@ namespace
 {
 using namespace formats::material;
 
-    uint32_t resolveTextureOrFallback(
+    uint32_t resolveTexture(
     const SceneTextureCompilerResult& textures,
-    int32_t importedIndex,
-    uint32_t fallbackIndex)
+    int32_t importedIndex)
     {
         namespace texture_format = formats::texture;
 
         if (importedIndex < 0)
         {
-            return fallbackIndex;
+            return InvalidIndexU32;
         }
 
         if (importedIndex >= static_cast<int32_t>(
                 textures.importedToCompiledTexture.size()))
         {
-            return fallbackIndex;
+            return InvalidIndexU32;
         }
 
         const int32_t compiled =
@@ -32,183 +31,147 @@ using namespace formats::material;
 
         if (compiled < 0)
         {
-            return fallbackIndex;
+            return InvalidIndexU32;
         }
 
-        return texture_format::TextureIndices::FirstUserTexture +
-               static_cast<uint32_t>(compiled);
+        return static_cast<uint32_t>(compiled);
     }
 
-    uint32_t resolveOptionalTexture(
-        const SceneTextureCompilerResult& textures,
-        int32_t importedIndex)
+    uint32_t buildFlags(const ImportedMaterial& material, const SceneTextureCompilerResult& textures)
     {
-        namespace texture_format = formats::texture;
+        MaterialFlags flags = MaterialFlags::None;
 
-        if (importedIndex < 0)
+        auto hasTexture = [&textures](int32_t importedTexture)
         {
-            return InvalidTextureIndex;
-        }
+            if (importedTexture < 0)
+            {
+                return false;
+            }
 
-        if (importedIndex >= static_cast<int32_t>(
-                textures.importedToCompiledTexture.size()))
+            if (importedTexture >= static_cast<int32_t>(textures.importedToCompiledTexture.size()))
+            {
+                return false;
+            }
+
+            return textures.importedToCompiledTexture[importedTexture] >= 0;
+        };
+
+        if (hasTexture(material.albedoTexture))
         {
-            return InvalidTextureIndex;
+            flags |= MaterialFlags::HasAlbedoMap;
         }
 
-        const int32_t compiled =
-            textures.importedToCompiledTexture[importedIndex];
-
-        if (compiled < 0)
+        if (hasTexture(material.normalTexture))
         {
-            return InvalidTextureIndex;
+            flags |= MaterialFlags::HasNormalMap;
         }
 
-        return texture_format::TextureIndices::FirstUserTexture +
-               static_cast<uint32_t>(compiled);
-    }
-
-
-
-uint32_t buildFlags(const ImportedMaterial& material, const SceneTextureCompilerResult& textures)
-{
-    MaterialFlags flags = MaterialFlags::None;
-
-    auto hasTexture = [&textures](int32_t importedTexture)
-    {
-        if (importedTexture < 0)
+        if (hasTexture(material.ormTexture))
         {
-            return false;
+            flags |= MaterialFlags::HasORMMap;
         }
 
-        if (importedTexture >= static_cast<int32_t>(textures.importedToCompiledTexture.size()))
+        if (hasTexture(material.emissiveTexture))
         {
-            return false;
+            flags |= MaterialFlags::HasEmissiveMap;
         }
 
-        return textures.importedToCompiledTexture[importedTexture] >= 0;
-    };
+        if (material.doubleSided)
+        {
+            flags |= MaterialFlags::DoubleSided;
+        }
 
-    if (hasTexture(material.albedoTexture))
-    {
-        flags |= MaterialFlags::HasAlbedoMap;
+        switch (material.alphaMode)
+        {
+        case ImportedAlphaMode::Mask: flags |= MaterialFlags::AlphaMask; break;
+
+        case ImportedAlphaMode::Blend: flags |= MaterialFlags::AlphaBlend; break;
+
+        default: break;
+        }
+
+        const bool emissiveFactor =
+            material.emissiveFactor.r > 0.0f || material.emissiveFactor.g > 0.0f || material.emissiveFactor.b > 0.0f;
+
+        if (emissiveFactor || hasTexture(material.emissiveTexture))
+        {
+            flags |= MaterialFlags::Emissive;
+        }
+
+        return static_cast<uint32_t>(flags);
     }
 
-    if (hasTexture(material.normalTexture))
+    AlphaMode convertAlphaMode(ImportedAlphaMode mode)
     {
-        flags |= MaterialFlags::HasNormalMap;
+        switch (mode)
+        {
+        case ImportedAlphaMode::Mask: return AlphaMode::Mask;
+
+        case ImportedAlphaMode::Blend: return AlphaMode::Blend;
+
+        case ImportedAlphaMode::Opaque:
+        default: return AlphaMode::Opaque;
+        }
     }
+    } // namespace
 
-    if (hasTexture(material.ormTexture))
+    MaterialBuildResult MaterialBuilder::build(const ImportedScene& scene, const SceneTextureCompilerResult& textures)
     {
-        flags |= MaterialFlags::HasORMMap;
-    }
+        MaterialBuildResult result{};
 
-    if (hasTexture(material.emissiveTexture))
-    {
-        flags |= MaterialFlags::HasEmissiveMap;
-    }
+        result.materials.reserve(scene.materials.size());
 
-    if (material.doubleSided)
-    {
-        flags |= MaterialFlags::DoubleSided;
-    }
+        result.importedToCompiledMaterial.resize(scene.materials.size());
 
-    switch (material.alphaMode)
-    {
-    case ImportedAlphaMode::Mask: flags |= MaterialFlags::AlphaMask; break;
+        for (size_t materialIndex = 0; materialIndex < scene.materials.size(); ++materialIndex)
+        {
+            const ImportedMaterial& imported = scene.materials[materialIndex];
 
-    case ImportedAlphaMode::Blend: flags |= MaterialFlags::AlphaBlend; break;
+            MaterialInfo material{};
 
-    default: break;
-    }
+            material.baseColorFactor = imported.baseColorFactor;
 
-    const bool emissiveFactor =
-        material.emissiveFactor.r > 0.0f || material.emissiveFactor.g > 0.0f || material.emissiveFactor.b > 0.0f;
+            material.emissiveFactor = imported.emissiveFactor;
 
-    if (emissiveFactor || hasTexture(material.emissiveTexture))
-    {
-        flags |= MaterialFlags::Emissive;
-    }
+            material.metallicFactor = imported.metallicFactor;
 
-    return static_cast<uint32_t>(flags);
-}
+            material.roughnessFactor = imported.roughnessFactor;
 
-AlphaMode convertAlphaMode(ImportedAlphaMode mode)
-{
-    switch (mode)
-    {
-    case ImportedAlphaMode::Mask: return AlphaMode::Mask;
+            material.occlusionStrength = imported.occlusionStrength;
 
-    case ImportedAlphaMode::Blend: return AlphaMode::Blend;
+            material.emissiveStrength = imported.emissiveStrength;
 
-    case ImportedAlphaMode::Opaque:
-    default: return AlphaMode::Opaque;
-    }
-}
-} // namespace
+            material.alphaCutoff = imported.alphaCutoff;
 
-MaterialBuildResult MaterialBuilder::build(const ImportedScene& scene, const SceneTextureCompilerResult& textures)
-{
-    MaterialBuildResult result{};
+            material.alphaMode = convertAlphaMode(imported.alphaMode);
 
-    result.materials.reserve(scene.materials.size());
+            material.flags = buildFlags(imported, textures);
 
-    result.importedToCompiledMaterial.resize(scene.materials.size());
-
-    for (size_t materialIndex = 0; materialIndex < scene.materials.size(); ++materialIndex)
-    {
-        const ImportedMaterial& imported = scene.materials[materialIndex];
-
-        MaterialInfo material{};
-
-        material.baseColorFactor = imported.baseColorFactor;
-
-        material.emissiveFactor = imported.emissiveFactor;
-
-        material.metallicFactor = imported.metallicFactor;
-
-        material.roughnessFactor = imported.roughnessFactor;
-
-        material.occlusionStrength = imported.occlusionStrength;
-
-        material.emissiveStrength = imported.emissiveStrength;
-
-        material.alphaCutoff = imported.alphaCutoff;
-
-        material.alphaMode = convertAlphaMode(imported.alphaMode);
-
-        material.flags = buildFlags(imported, textures);
-
-        material.albedoTexture =
-        resolveTextureOrFallback(
-            textures,
-            imported.albedoTexture,
-            formats::texture::TextureIndices::FallbackAlbedo);
-
-        material.normalTexture =
-            resolveTextureOrFallback(
+            material.albedoTexture =
+            resolveTexture(
                 textures,
-                imported.normalTexture,
-                formats::texture::TextureIndices::FallbackNormal);
+                imported.albedoTexture);
 
-        material.ormTexture =
-            resolveTextureOrFallback(
-                textures,
-                imported.ormTexture,
-                formats::texture::TextureIndices::FallbackORM);
+            material.normalTexture =
+                resolveTexture(
+                    textures,
+                    imported.normalTexture);
 
-        material.emissiveTexture =
-            resolveTextureOrFallback(
-                textures,
-                imported.emissiveTexture,
-                formats::texture::TextureIndices::FallbackEmissive);
+            material.ormTexture =
+                resolveTexture(
+                    textures,
+                    imported.ormTexture);
 
-        result.importedToCompiledMaterial[materialIndex] = static_cast<int32_t>(result.materials.size());
+            material.emissiveTexture =
+                resolveTexture(
+                    textures,
+                    imported.emissiveTexture);
 
-        result.materials.push_back(material);
+            result.importedToCompiledMaterial[materialIndex] = static_cast<int32_t>(result.materials.size());
+
+            result.materials.push_back(material);
+        }
+
+        return result;
     }
-
-    return result;
-}
 } // namespace shuttle::assets::scene_compiler

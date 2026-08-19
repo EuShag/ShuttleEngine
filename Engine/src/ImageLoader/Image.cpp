@@ -1,5 +1,4 @@
-﻿#define STB_IMAGE_IMPLEMENTATION
-#include "Image.hpp"
+﻿#include "Image.hpp"
 #include "stb_image.h"
 #include <algorithm>
 #include <stdexcept>

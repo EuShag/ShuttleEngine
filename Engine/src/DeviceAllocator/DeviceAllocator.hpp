@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <map>
 #include "IncludeVulkan.hpp"
 #include <vector>
@@ -172,19 +173,25 @@ template <typename TResource, typename TDeleter>
     requires std::same_as<TResource, vk::Buffer> || std::same_as<TResource, vk::Image>
 class UniqueAllocatedResource
 {
-  public:
+public:
     UniqueAllocatedResource() = default;
 
-    UniqueAllocatedResource(AllocatedResource<TResource> allocatedResource, TDeleter deleter) noexcept
-        : allocatedResource{allocatedResource}, deleter{deleter}
+    UniqueAllocatedResource(
+        AllocatedResource<TResource> allocatedResource,
+        TDeleter deleter) noexcept
+        :
+        allocatedResource{allocatedResource},
+        deleter{deleter}
     {
     }
 
     UniqueAllocatedResource(UniqueAllocatedResource const&) = delete;
-    UniqueAllocatedResource& operator=(UniqueAllocatedResource const&) noexcept = delete;
+    UniqueAllocatedResource& operator=(UniqueAllocatedResource const&) = delete;
 
     UniqueAllocatedResource(UniqueAllocatedResource&& other) noexcept
-        : allocatedResource{other.allocatedResource}, deleter{other.deleter}
+        :
+        allocatedResource{other.allocatedResource},
+        deleter{other.deleter}
     {
         other.allocatedResource = AllocatedResource<TResource>{};
         other.deleter = TDeleter{};
@@ -192,32 +199,95 @@ class UniqueAllocatedResource
 
     UniqueAllocatedResource& operator=(UniqueAllocatedResource&& other) noexcept
     {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        reset();
+
         allocatedResource = other.allocatedResource;
         deleter = other.deleter;
-        other.deleter = TDeleter{};
+
         other.allocatedResource = AllocatedResource<TResource>{};
+        other.deleter = TDeleter{};
+
         return *this;
     }
 
-    AllocatedResource<TResource> const& get() const noexcept { return allocatedResource; }
-
-    AllocatedResource<TResource>& get() noexcept { return allocatedResource; }
-
-    AllocatedResource<TResource>* operator->() noexcept { return &allocatedResource; }
-
-    AllocatedResource<TResource> const* operator->() const noexcept { return &allocatedResource; }
-
-    AllocatedResource<TResource>& operator*() noexcept { return allocatedResource; }
-
-    AllocatedResource<TResource> const& operator*() const noexcept { return allocatedResource; }
-
     ~UniqueAllocatedResource()
     {
-        if (allocatedResource != AllocatedResource<TResource>{}) deleter(allocatedResource);
+        reset();
     }
 
-  private:
-    AllocatedResource<TResource> allocatedResource = AllocatedResource<TResource>{};
+    void reset() noexcept
+    {
+        if (allocatedResource != AllocatedResource<TResource>{})
+        {
+            deleter(allocatedResource);
+
+            allocatedResource = AllocatedResource<TResource>{};
+            deleter = TDeleter{};
+        }
+    }
+
+    [[nodiscard]]
+    AllocatedResource<TResource> release() noexcept
+    {
+        AllocatedResource<TResource> released =
+            allocatedResource;
+
+        allocatedResource =
+            AllocatedResource<TResource>{};
+
+        deleter =
+            TDeleter{};
+
+        return released;
+    }
+
+    [[nodiscard]]
+    AllocatedResource<TResource> const& get() const noexcept
+    {
+        return allocatedResource;
+    }
+
+    [[nodiscard]]
+    AllocatedResource<TResource>& get() noexcept
+    {
+        return allocatedResource;
+    }
+
+    AllocatedResource<TResource>* operator->() noexcept
+    {
+        return &allocatedResource;
+    }
+
+    AllocatedResource<TResource> const* operator->() const noexcept
+    {
+        return &allocatedResource;
+    }
+
+    AllocatedResource<TResource>& operator*() noexcept
+    {
+        return allocatedResource;
+    }
+
+    AllocatedResource<TResource> const& operator*() const noexcept
+    {
+        return allocatedResource;
+    }
+
+    [[nodiscard]]
+    explicit operator bool() const noexcept
+    {
+        return allocatedResource != AllocatedResource<TResource>{};
+    }
+
+private:
+    AllocatedResource<TResource> allocatedResource =
+        AllocatedResource<TResource>{};
+
     TDeleter deleter{};
 };
 
@@ -292,6 +362,22 @@ class UniqueAllocator
     {
         other.allocator = DeviceAllocator{};
     }
+    UniqueAllocator& operator=(UniqueAllocator&& other) noexcept
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+
+        if (allocator != DeviceAllocator{}) allocator.destroy();
+
+        allocator = other.allocator;
+        other.allocator = DeviceAllocator{};
+
+        return *this;
+    }
+
+    [[nodiscard]]
 
     DeviceAllocator& get() noexcept { return allocator; }
 

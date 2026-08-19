@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "../SdlKeyboard/SdlKeyMode.hpp"
+#include "../SdlKeyboard/SdlKeyCode.hpp"
 #include "Sdl/SdlWindow/SdlWindow.hpp"
 
 class SdlLibrary
@@ -13,19 +14,23 @@ class SdlLibrary
     SdlLibrary(SdlLibrary&&) = delete;
     SdlLibrary& operator=(SdlLibrary&&) = delete;
 
-    void setRelativeMouseMode(bool enabled);
+    static void setRelativeMouseMode(bool enabled);
 
-    SdlKeyState getKeyState(SdlKeyCode keyCode) const;
+    [[nodiscard]] SdlKeyState getKeyState(SdlKeyCode keyCode) const;
 
     [[nodiscard]] static std::vector<char const*> getSurfaceRequiredExtensions();
     void postQuitEvent();
 
     void addCustomEventProcessor(std::function<void(SDL_Event const& event)> const& processor);
+    void setCurrentWindow(SdlWindow* window) {
+        currentWindow = window;
+    }
 
-    bool pullEvents();
+    [[nodiscard]] bool pullEvents() const;
 
     ~SdlLibrary();
 
   private:
     std::vector<std::function<void(SDL_Event const& event)>> customEventProcessors;
+    SdlWindow* currentWindow = nullptr;
 };
