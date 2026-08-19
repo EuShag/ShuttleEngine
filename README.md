@@ -17,6 +17,10 @@ Shuttle Engine — экспериментальный Vulkan-рендерер и
 - debug-режимы визуализации;
 - собственный editor UI.
 
+##
+
+[▶️ Посмотреть демонстрацию на YouTube](https://www.youtube.com/watch?v=CKNqVKySFt0)
+
 ## Features
 
 ### Rendering
