@@ -47,9 +47,6 @@ if(MSVC)
     add_compile_options(/FS)
 endif()
 
-include(
-    cmake/cmft_target.cmake
-)
 add_subdirectory(
     Assets
 )
@@ -67,25 +64,6 @@ add_subdirectory(
 )
 add_subdirectory(
     resources
-)
-
-add_subdirectory(
-    external/filament/libs/ibl
-)
-add_subdirectory(
-    external/filament/libs/math
-)
-add_subdirectory(
-    external/filament/libs/utils
-)
-add_subdirectory(
-    external/filament/libs/image
-)
-
-target_include_directories(utils
-        PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/filament/libs/utils/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/filament/third_party/robin-map/include
 )
 
 set(ASSIMP_BUILD_TESTS
