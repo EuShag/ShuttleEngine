@@ -25,11 +25,15 @@
 #include <vector>
 #include <optional>
 
-#include <SDL2/SDL.h>
 #include <vulkan/vulkan.hpp>
 
 #include "portable-file-dialogs.h"
-#include "Sdl.hpp"
+
+// Кроссплатформенный слой PAL
+#include "PAL/Platform.hpp"
+#include "PAL/Common/Events/Events.hpp"
+#include "PAL/Common/Window/MainWindow.hpp"
+
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "Camera/Camera.hpp"
 #include "CameraController/CameraController.hpp"
@@ -52,83 +56,39 @@
 
 namespace shuttle::engine
 {
-
     /**
      * @class Application
      * @brief Main application class that orchestrates the engine lifecycle, Vulkan resources, and main loop.
      */
-    class Application
+    class Application : public pal::IWindowListener, public input::IInputListener
     {
     public:
-        /**
-         * @brief Constructs the application and initializes the Vulkan context.
-         * @param argc Argument count from main.
-         * @param argv Argument vector from main.
-         */
         Application(int argc, char** argv);
+        ~Application() override;
 
-        /**
-         * @brief Safely shuts down the application and waits for GPU idle.
-         */
-        ~Application();
-
-        /**
-         * @brief Starts the main application loop.
-         * @return Exit code for main.
-         */
         int run();
 
+        // --- Обработчики событий PAL ---
+        void onWindowResize(const pal::WindowResizeEvent& event) override;
+        void onWindowCloseRequested() override;
+        void onWindowPaint() override;
+        void onKeyboard(const input::KeyboardEvent& event) override;
+        void onMouseButton(const input::MouseButtonEvent& e) override {};
+        void onMouseMove(const input::MouseMoveEvent& e) override {};
+        void onMouseWheel(const input::MouseWheelEvent& e) override {};
+
     private:
-        /**
-         * @brief Creates attachment resources for the viewport.
-         * @param viewportExtent The extent (width, height) of the viewport.
-         */
         void createViewPortResources(vk::Extent2D viewportExtent);
-
-        /**
-         * @brief Recreates viewport resources (e.g., on window resize).
-         * @param viewportExtent The new extent (width, height) of the viewport.
-         */
         void recreateViewportResources(vk::Extent2D viewportExtent);
-
-        /**
-         * @brief Recreates all swapchain-dependent resources.
-         */
         void recreateAllResources();
-
-        /**
-         * @brief Synchronizes internal pointers to the active scene and environment data.
-         */
         void syncPointers();
 
-        /**
-         * @brief Loads a pre-compiled scene file (.sblb) from disk and uploads to GPU.
-         * @param path The filesystem path to the scene file.
-         */
         void loadScene(std::filesystem::path const& path);
-
-        /**
-         * @brief Loads a pre-compiled environment file (.env) from disk and uploads to GPU.
-         * @param path The filesystem path to the environment file.
-         */
         void loadEnvironment(std::filesystem::path const& path);
 
-        /**
-         * @brief Prepares per-frame GPU buffers and systems based on the currently active scene.
-         */
         void updateFrameData();
-
-        /**
-         * @brief Executes the rendering logic for a single frame.
-         * @param isResizeMode True if the frame is being drawn during a window resize operation.
-         * @param dt Delta time in seconds since the last frame.
-         */
         void drawFrame(bool isResizeMode, float dt);
 
-        /**
-         * @struct OpenAsset
-         * @brief Represents an asset (scene or environment) loaded into the engine and UI.
-         */
         struct OpenAsset
         {
             editor::core::ResourceId id = 0;
@@ -143,10 +103,11 @@ namespace shuttle::engine
             std::optional<assets::environment_compiler::CompiledEnvironment> compiledEnvRAM;
         };
 
-        // Core Systems
+        // Core PAL Systems (Строгий порядок объявления!)
         editor::core::ResourceId m_nextId = 1;
-        SdlLibrary m_sdlLibrary;
-        SdlWindow m_window;
+        pal::Platform            m_platform;
+        pal::WindowHandle        m_windowHandle;
+        pal::MainWindow          m_window;
 
         vk::UniqueInstance m_uniqueInstance;
         vk::UniqueDebugUtilsMessengerEXT m_messenger;

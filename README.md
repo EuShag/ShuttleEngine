@@ -1,309 +1,106 @@
 # Shuttle Engine
 
+![Shuttle Engine Preview](logo/photo_2026-08-26_15-17-46.jpg)
+
 Shuttle Engine — экспериментальный Vulkan-рендерер и редактор сцен с GPU-driven pipeline, созданный на C++.
 
 Проект объединяет низкоуровневый рендеринг на Vulkan, систему загрузки сцен и окружений, а также редакторский интерфейс для просмотра и настройки результата в реальном времени.
+
+[▶️ Посмотреть демонстрацию на YouTube](https://www.youtube.com/watch?v=CKNqVKySFt0)
+
+---
 
 ## Overview
 
 Основная цель проекта — исследовать современные подходы к построению realtime-рендерера:
 
-- Vulkan 1.4;
-- GPU-driven rendering;
-- indirect indexed drawing;
-- bindless descriptors;
-- compute passes для подготовки команд отрисовки;
-- HDR-окружения и IBL;
-- debug-режимы визуализации;
-- собственный editor UI.
+- **Vulkan 1.3+** (Dynamic Rendering, Bindless, BDA);
+- **GPU-driven rendering** (Indirect indexed drawing, Compute passes);
+- **HDR & IBL** (Image-based lighting);
+- **Интерактивная отладка** (MRT Visual Debugger);
+- **Нативный UI** (Win32 API/SDL2 с поддержкой кастомных декораций).
 
-##
-
-[▶️ Посмотреть демонстрацию на YouTube](https://www.youtube.com/watch?v=CKNqVKySFt0)
+---
 
 ## Features
 
 ### Rendering
-
-- Vulkan-based rendering backend.
+- Vulkan-based rendering backend с использованием Dynamic Rendering.
 - Динамическое создание и пересоздание swapchain.
-- Отдельные render pass для вычислительных и графических этапов.
-- Индексированная indirect-отрисовка.
-- Поддержка нескольких кадров, находящихся в обработке.
-- Управление ресурсами GPU с отложенным освобождением.
+- Индексированная indirect-отрисовка для эффективного рендеринга больших сцен.
+- Управление ресурсами GPU с отложенным освобождением (`ResourceBin`).
 
 ### GPU-driven pipeline
+Pipeline подготовки сцены переносит максимум нагрузки на GPU:
+1. Обновление мировых трансформаций.
+2. Подсчёт экземпляров мешей.
+3. Prefix sum.
+4. Построение remap-буфера экземпляров.
+5. Подготовка indirect draw commands.
 
-Текущий pipeline подготовки сцены включает:
+### Assets & Editor UI
+Редактор поддерживает импорт и визуализацию сцен (FBX/glTF) и окружений (HDR). Интерфейс включает кастомный заголовок окна, систему вкладок, настройки камеры и рендеринга, а также гибкие режимы отладки.
 
-1. обновление мировых трансформаций;
-2. подсчёт экземпляров мешей;
-3. prefix sum;
-4. построение remap-буфера экземпляров;
-5. подготовку indirect draw commands;
-6. основной проход отрисовки.
-
-Такой подход позволяет перенести значительную часть подготовки данных на GPU и уменьшить объём работы CPU перед отрисовкой.
-
-### Assets
-
-Редактор поддерживает работу с двумя основными типами ресурсов:
-
-- сценами;
-- окружениями.
-
-Для сцен поддерживаются:
-
-- загрузка предварительно скомпилированных файлов;
-- импорт FBX/glTF;
-- загрузка геометрии, материалов и текстур;
-- компрессия текстур в блочные форматы.
-- отображение количества мешей и материалов;
-- отслеживание несохранённых изменений.
-
-Для окружений поддерживаются:
-
-- загрузка скомпилированных environment-файлов;
-- импорт HDR-карт;
-- генерация данных для image-based lighting;
-- настройка размеров карт и количества samples.
-
-### Editor UI
-
-Редактор предоставляет:
-
-- кастомный title bar;
-- меню `File`;
-- открытие сцен и окружений;
-- импорт ассетов;
-- диалог сохранения;
-- список загруженных сцен и окружений;
-- выбор активного ассета;
-- безопасное удаление ассетов;
-- настройки камеры;
-- настройки renderer;
-- debug viewport layouts;
-- FPS overlay.
+---
 
 ## Debug Rendering
 
-В renderer предусмотрены дополнительные режимы визуализации, включая:
+Renderer поддерживает режимы визуализации для глубокой отладки графического конвейера:
 
-- Final;
-- Albedo;
-- Normal;
-- Tangent;
-- Bitangent;
-- Metallic;
-- Roughness;
-- Ambient Occlusion;
-- Emissive;
-- UV;
-- Mesh ID;
-- Material ID;
-- Instance ID;
-- View Depth;
-- Linear Depth;
-- World Position;
-- World Normal.
+- **Геометрия/Пространство:** Albedo, Normal, Tangent, Bitangent, UV, World Position/Normal.
+- **PBR:** Metallic, Roughness, AO, Emissive.
+- **Глубина и ID:** Linear/View Depth, Mesh/Material/Instance ID.
 
-В зависимости от выбранной раскладки debug viewport может отображать один, два или четыре выходных изображения.
+**Режимы вывода (Viewport Layouts):**
+В зависимости от задачи, отладочный вьюпорт может работать в одном из четырех режимов:
+1. **Single** — вывод одного выбранного канала.
+2. **Split Vertical / Horizontal** — разделение экрана на 2 буфера.
+3. **Quad Layout** — одновременный вывод всех 4 отладочных аттачментов в сетке 2x2.
+
+---
 
 ## Architecture
 
-Проект разделён на несколько логических уровней.
+Проект разделён на логические уровни:
+- **Application:** Управление жизненным циклом, событиями и низкоуровневыми ресурсами (Swapchain, Allocator).
+- **MainWindow:** Логика редакторского UI, диалоги файлов и взаимодействие с вьюпортом.
+- **Render passes:** Модульная система проходов (WorldTransformUpdatePass, MeshInstancesCountPass, PrefixSumPass, InstanceRemapPass, MainRenderPass, UiPass).
 
-### Application
-
-`Application` управляет жизненным циклом приложения:
-
-- инициализацией SDL;
-- созданием Vulkan instance;
-- выбором physical device;
-- созданием logical device;
-- инициализацией allocator;
-- созданием swapchain;
-- настройкой frame manager;
-- созданием render passes;
-- запуском главного цикла;
-- обработкой событий окна.
-
-### MainWindow
-
-`MainWindow` отвечает за редакторский интерфейс:
-
-- отображение меню;
-- работу с file dialogs;
-- отображение viewport;
-- настройки камеры;
-- настройки renderer;
-- управление списком ассетов;
-- взаимодействие с callback-функциями приложения.
-
-### Render passes
-
-В проекте используются отдельные этапы для подготовки и отображения сцены:
-
-- `WorldTransformUpdatePass`;
-- `MeshInstancesCountPass`;
-- `PrefixSumPass`;
-- `InstanceRemapPass`;
-- `MainRenderPass`;
-- `UiPass`.
-
-### Resource lifetime
-
-GPU-ресурсы, связанные с viewport и swapchain, не уничтожаются непосредственно во время активного кадра.
-
-Вместо этого они передаются в `ResourceBin`, где освобождаются после завершения соответствующего frame slot. Такой подход позволяет избежать преждевременного уничтожения ресурсов, которые ещё могут использоваться GPU.
-
-## Controls
-
-| Действие | Управление |
-|---|------------|
-| Перемещение камеры | `WASD`     |
-| Вертикальное перемещение | `Q` / `E`  |
-| Вращение камеры | `Arrow Keys`    |
-| Выход | `Escape`   |
-
-## Asset workflow
-
-### Open scene
-
-1. Открыть меню `File`.
-2. Выбрать `Open Scene`.
-3. Указать скомпилированный файл сцены.
-4. Дождаться загрузки GPU-ресурсов.
-5. Сцена появится в разделе `SCENES`.
-
-### Open environment
-
-1. Открыть меню `File`.
-2. Выбрать `Open Environment`.
-3. Указать environment-файл.
-4. Окружение появится в разделе `ENVIRONMENTS`.
-
-### Import scene
-
-1. Выбрать `Import Scene`.
-2. Указать FBX или glTF-файл.
-3. Настроить параметры импорта.
-4. Запустить импорт.
-5. Сцена будет скомпилирована и загружена в память.
-
-### Import environment
-
-1. Выбрать `Import Environment`.
-2. Указать HDR-файл.
-3. Настроить параметры IBL.
-4. Запустить импорт.
-5. Environment-ресурс будет сгенерирован и загружен.
+---
 
 ## Build
 
-Проект использует CMake.
-
-Пример стандартной сборки:
+Проект использует CMake:
 
 ```bash
-bash
-
-git clone 
-
+git clone <repository-url>
 cd ShuttleEngine
-
 cmake -S . -B build
-
 cmake --build build --config Release
 ```
 
-Конкретные требования к Vulkan SDK, SDL2 и остальным зависимостям зависят от конфигурации проекта и платформы.
-
-## Dependencies
-
-Проект использует или интегрируется со следующими технологиями и библиотеками:
-
-- C++;
-- Vulkan;
-- Vulkan-Hpp;
-- SDL2;
-- Dear ImGui;
-- GLM;
-- Vulkan Memory Allocator;
-- VkBootstrap;
-- portable-file-dialogs.
-
-Перед сборкой необходимо убедиться, что все зависимости доступны в конфигурации CMake проекта.
+---
 
 ## Project Status
 
 ### Implemented
+- Полный стек Vulkan (Init, Synchronization, Indirect Rendering).
+- Загрузка и импорт сцен (FBX/glTF) и HDR-окружений.
+- Кастомный редакторский UI с поддержкой кастомных оконных декораций.
+- Развитая система отладки (MRT, Quad Layout).
 
-- Vulkan initialization.
-- Swapchain creation and recreation.
-- Frame synchronization.
-- GPU-driven scene rendering.
-- Indirect drawing pipeline.
-- Scene loading.
-- Environment loading.
-- FBX/glTF scene import.
-- HDR environment import.
-- Asset selection and removal.
-- Save dialog integration.
-- Camera controls.
-- Renderer settings.
-- Debug output layouts.
-- Custom editor UI.
+### Roadmap (Планы развития)
+- **Модульность:** Разделение на `Shuttle Engine Runtime` и `Shuttle Editor`.
+- **UI:** Переход на `RmlUi` для основного интерфейса (ImGui останется для дебаг-панелей).
+- **Инспектор:** Разработка полноценного инспектора ресурсов и иерархии сцены.
+- **Отладка:** Реализация независимого 4-проходного рендеринга для каждого квадранта (возможность сравнивать настройки IBL/Tone Mapping в реальном времени).
 
-### Not implemented
-
-- Scene hierarchy editor.
-- Scene node selection and manipulation.
-- Animation playback.
-- Full editor scene manipulation workflow.
-- Advanced post-processing pipeline.
-
-## Roadmap
-
-Возможные направления развития:
-
-- редактор иерархии сцены;
-- выбор объектов во viewport;
-- трансформационные gizmos;
-- поддержка анимаций;
-- более развитая система материалов;
-- полноценное сохранение environment-ассетов;
-- улучшенная обработка ошибок импорта;
-- автоматизированные тесты;
-- профилирование GPU и CPU;
-- поддержка дополнительных форматов ресурсов.
-
-## Technical Focus
-
-Проект создан как исследовательский и портфолио-проект с фокусом на:
-
-- современный Vulkan API;
-- управление GPU-ресурсами;
-- GPU-driven rendering;
-- асинхронную подготовку данных;
-- работу с indirect draw commands;
-- построение редакторского инструментария;
-- разделение application, rendering и editor layers.
-
-## Screenshots and Demo
-
-Сюда можно добавить скриншоты и видео:
+---
 
 ## License
 
-Собственный код проекта распространяется под лицензией MIT.
-
-Полный текст лицензии находится в файле [`LICENSE`](LICENSE).
-
-Лицензии сторонних библиотек и компонентов должны рассматриваться отдельно в соответствии с их исходными условиями распространения.
+Собственный код проекта распространяется под лицензией MIT. Подробности в файле [`LICENSE`](LICENSE).
 
 ## Author
 
 **Shagu**
-
-Shuttle Engine создаётся как технический проект для изучения realtime-графики, Vulkan и GPU-driven rendering.

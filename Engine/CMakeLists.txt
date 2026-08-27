@@ -1,22 +1,80 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(IMGUI_SOURCES
-    "${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp"
-    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp"
-    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp"
-    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp"
-    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp" # Для тестирования
-    "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp" # Бэкэнд для SDL2
-    "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp"
+# Опция для принудительного использования SDL на Windows
+option(SHUTTLE_FORCE_SDL "Force SDL2 backend on Windows" OFF)
+
+# Список общих файлов PAL
+set(PAL_SOURCES
+        "src/PAL/Common/Window/WindowBase.cpp"
+        # Добавь сюда остальные .cpp если они появятся
 )
+
+set(IMGUI_SOURCES
+        "${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp"
+        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp"
+        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp"
+        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp"
+        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp" # Для тестирования
+        "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp"
+)
+
+# --- Выбор Бэкенда ---
+if(WIN32 AND NOT SHUTTLE_FORCE_SDL)
+    set(IMGUI_SOURCES
+            ${IMGUI_SOURCES}
+            "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_win32.cpp" # Бэкэнд для Win32
+    )
+    message(STATUS "PAL: Using Native Win32 Backend")
+    list(APPEND PAL_SOURCES
+            "src/PAL/Win32/Win32Platform.cpp"
+    )
+    # Системные либы Windows
+    set(PLATFORM_LIBS user32 gdi32 shell32 Shcore Ole32)
+    add_compile_definitions(SHUTTLE_PLATFORM_WIN32)
+else()
+    set(IMGUI_SOURCES
+            ${IMGUI_SOURCES}
+            "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp"
+            src/FpsCounter/FpsCounter.hpp
+    )
+    message(STATUS "PAL: Using SDL2 Backend")
+    list(APPEND PAL_SOURCES
+            "src/PAL/Sdl/SdlPlatform.cpp"
+    )
+    set(PLATFORM_LIBS ${SDL2Libraries})
+    add_compile_definitions(SHUTTLE_PLATFORM_SDL)
+    if(SHUTTLE_FORCE_SDL)
+        add_compile_definitions(SHUTTLE_FORCE_SDL)
+    endif()
+endif()
 
 add_executable(
     Engine
     ${IMGUI_SOURCES}
+    ${PAL_SOURCES}
+    src/PAL/Common/Events/Events.hpp
+    src/PAL/Common/Keyboard/KeyState.hpp
+    src/PAL/Common/Window/WindowBase.hpp
+    src/PAL/Common/Window/MainWindow.hpp
+    src/PAL/Common/Window/ModalDialogWindow.hpp
+    src/PAL/Common/Window/DetachedPanelWindow.hpp
+    src/PAL/Common/Window/WindowBase.cpp
+    src/PAL/Platform.hpp
+    src/PAL/Common/Window/Decorations/HitTestTypes.hpp
+    src/PAL/Common/Window/Decorations/ResizeLayout.hpp
+    src/PAL/Common/Window/Decorations/TitlebarLayout.hpp
+    src/PAL/Common/Window/Decorations/WindowDecorations.hpp
+    src/PAL/Common/Window/Decorations/WindowDecorationFlags.hpp
+    src/PAL/Common/Display/DisplayTypes.hpp
+    src/PAL/Common/Display/MonitorInfo.hpp
+    src/PAL/Common/Display/MonitorHandle.hpp
+    src/PAL/Win32/Win32Platform.cpp
+    src/PAL/Win32/Win32Platform.hpp
+    src/PAL/Common/Window/WindowType.hpp
+    src/PAL/Common/Window/ShowMode.hpp
     src/Application/Application.cpp
     src/Application/Application.hpp
-    src/Sdl/SdlLibrary/SdlLibrary.cpp
-    src/Sdl/SdlWindow/SdlWindow.cpp
+    src/PAL/Sdl/SdlPlatform.cpp
     src/VulkanDebugger/VulkanDebugger.cpp
     src/ImageLoader/Image.hpp
     src/ImageLoader/Image.cpp
@@ -31,8 +89,6 @@ add_executable(
     src/Render/EnvironmentResources.cpp
     src/UiRender/UiRender.cpp
     src/UiRender/UiRender.hpp
-    src/Painters/SunLightControlPanel/SunLightControlPanel.cpp
-    src/Painters/SunLightControlPanel/SunLightControlPanel.hpp
     src/FrameManager/FrameManager.cpp
     src/FrameManager/FrameManager.hpp
     src/SwapchainFactory/SwapchainFactory.cpp
@@ -100,12 +156,15 @@ target_compile_definitions(
 
 target_link_libraries(Engine PRIVATE vk-bootstrap::vk-bootstrap)
 target_link_libraries(Engine PRIVATE ShuttleAssetFormats)
-target_link_libraries(Engine PRIVATE ${SDL2Libraries})
 target_link_libraries(Engine PRIVATE ShuttleSceneCompiler)
 target_link_libraries(Engine PRIVATE ShuttleEnvironmentCompiler)
 # Найди строку target_link_libraries для Engine и добавь туда comctl32:
 if(WIN32)
-    target_link_libraries(Engine PRIVATE comctl32)
+    target_link_libraries(Engine PRIVATE
+            dwmapi      # Для ImGui Win32 (DwmIsCompositionEnabled, DwmEnableBlurBehindWindow)
+            shcore      # Для High DPI (GetDpiForMonitor)
+            comctl32
+    )
 endif()
 
 

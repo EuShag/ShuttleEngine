@@ -2,6 +2,7 @@
 #include <vector>
 #include "IncludeVulkan.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
+#include "PAL/Platform.hpp"
 
 struct AttachmentOutput {
     shuttle::resources::UniqueAllocatedImage image;
@@ -31,3 +32,15 @@ vk::ResultValue<AttachmentOutput> createAttachmentOutput(
     vk::Device device,
     shuttle::resources::DeviceAllocator const& deviceAllocator,
     AttachmentOutputCreateInfo const& attachmentOutputCreateInfo);
+
+vk::ResultValue<vk::SurfaceKHR> createVulkanSurface(
+    vk::Instance instance,
+    shuttle::pal::Platform const& platform,
+    shuttle::pal::WindowHandle handle,
+    vk::detail::DispatchLoaderDynamic const& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER);
+
+vk::ResultValue<vk::UniqueSurfaceKHR> createVulkanSurfaceUnique(
+    vk::Instance instance,
+    shuttle::pal::Platform const& platform,
+    shuttle::pal::WindowHandle handle,
+    vk::detail::DispatchLoaderDynamic const& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER);

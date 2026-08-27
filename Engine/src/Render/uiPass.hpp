@@ -8,6 +8,7 @@
 #include "IncludeVulkan.hpp"
 #include "Common.hpp"
 #include "imgui.h"
+#include "PAL/Platform.hpp"
 
 namespace shuttle::engine::render {
 
@@ -79,7 +80,7 @@ namespace shuttle::engine::render {
     class UiPass {
     public:
 
-        static void drawUi(IuiPainter& painter);
+        static void drawUi(IuiPainter &painter, pal::Platform const &platform);
 
         static void writeRenderCommands(
             vk::CommandBuffer cmd,

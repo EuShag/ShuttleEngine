@@ -245,7 +245,7 @@ namespace shuttle::editor::core
          * @param mainPassSettings Initial rendering pass configuration.
          * @param isMaximized Initial window maximization state.
          */
-        MainWindow(SdlWindow* window, engine::render::MainPassSettings mainPassSettings, bool isMaximized = false);
+        MainWindow(shuttle::pal::WindowBase* window, engine::render::MainPassSettings mainPassSettings, bool isMaximized = false);
 
         /**
          * @brief Default constructor.
@@ -507,7 +507,7 @@ namespace shuttle::editor::core
         void tryExit();
 
         // Window & Render properties
-        SdlWindow* window{nullptr};
+        pal::WindowBase* window{nullptr};
         bool needRecreateViewPortResources{false};
         bool debugModeEnabled{false};
         bool m_openSceneModalRequested{false};

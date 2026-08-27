@@ -87,22 +87,22 @@ namespace shuttle::engine
 {
 
     Application::Application(int argc, char** argv)
-        : m_window("Shuttle Engine - Adriatic Flight", 1800, 1000),
-          m_camera(glm::vec3{10.0f, 30.3f, 0.0f}),
-          m_cameraController(m_camera)
+        : m_windowHandle(m_platform.createWindow(
+            "Shuttle Engine", 1280, 720,
+            pal::WindowType::Main,
+            pal::WindowDecorationFlags::Default))
+        , m_window(m_platform, m_windowHandle, "Shuttle Engine", 1280, 720)
+        , m_camera(glm::vec3{10.0f, 30.3f, 0.0f})
+        , m_cameraController(m_camera)
     {
         VULKAN_HPP_DEFAULT_DISPATCHER.init();
-        m_sdlLibrary.setCurrentWindow(&m_window);
 
-        m_window.setWindowCloseEventCallback(
-            [&](SdlWindow&)
-            {
-                std::cout << "[System] m_window close event received, closing m_window...\n";
-                m_sdlLibrary.postQuitEvent();
-            });
+        // Регистрируем Application как слушатель событий окна и ввода
+        m_window.setWindowListener(this);
+        m_window.setInputListener(this);
 
-        auto requiredSurfaceExtensions =
-            SdlLibrary::getSurfaceRequiredExtensions();
+        // Получаем расширения поверхности от выбранной платформы (Win32 или SDL2)
+        auto requiredSurfaceExtensions = pal::Platform::getSurfaceRequiredExtensions();
         requiredSurfaceExtensions.push_back(vk::EXTDebugUtilsExtensionName);
 
         VulkanDebugger debugger{};
@@ -150,7 +150,17 @@ namespace shuttle::engine
                 nullptr,
                 VULKAN_HPP_DEFAULT_DISPATCHER}};
 
-        m_uniqueSurface = m_window.createVulkanSurfaceUnique(instance);
+        // Создаем Vulkan Surface через абстракцию нашей Платформы
+        auto [result, uniqueSurface] = createVulkanSurfaceUnique(*m_uniqueInstance, m_platform, m_windowHandle);
+
+        if  (result != vk::Result::eSuccess)
+        {
+            throw std::runtime_error(
+                "Failed to create Vulkan surface: " +
+                vk::to_string(result));
+        }
+
+        m_uniqueSurface = std::move(uniqueSurface);
 
         VkPhysicalDeviceFeatures2 features2 = {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
@@ -307,8 +317,9 @@ namespace shuttle::engine
             .graphicsQueueFamily = m_graphicsQueueFamilyIndex,
             .presentQueueFamily = m_graphicsQueueFamilyIndex};
 
+        vk::Extent2D windowExtent{ m_window.getWidth(), m_window.getHeight() };
         auto [createSwapchainResult, swapchain] =
-            createSwapchain(m_swapchainContext, m_window.getExtent());
+            createSwapchain(m_swapchainContext, windowExtent);
 
         if (createSwapchainResult != vk::Result::eSuccess)
         {
@@ -423,24 +434,7 @@ namespace shuttle::engine
         m_camera.lookAt(glm::vec3(0.0f, 0.0f, 0.0f));
         m_camera.setWindowSize(swapchain.extent.width, swapchain.extent.height);
 
-        m_window.setKeyboardEventCallback(
-            [&](SdlWindow&, SdlKeyCode keyCode, SdlKeyMode, SdlKeyState keyState)
-            {
-                m_cameraController.handleKeyboardEvent(
-                    m_window,
-                    keyCode,
-                    SdlKeyModeBits::None,
-                    keyState,
-                    m_sdlLibrary);
-
-                if (keyState == SdlKeyState::Pressed &&
-                    keyCode == SdlKeyCode::Escape)
-                {
-                    std::cout << "[System] Escape key pressed, closing m_window...\n";
-                    m_sdlLibrary.postQuitEvent();
-                }
-            });
-
+        // Создаем UiRender через универсальный WindowBase (m_window)
         auto [uiRenderResult, uiRenderObj] =
             UiRender::create(
                 m_window,
@@ -458,7 +452,7 @@ namespace shuttle::engine
 
         render::MainPassSettings mainPassSettings{};
         m_uiRender = std::move(uiRenderObj);
-        UiRender::bindInputEventHandler(m_sdlLibrary);
+
         m_mainWindow = editor::core::MainWindow(&m_window, mainPassSettings, false);
 
         auto [allocateGraphicsCommandBufferResult, uniqueGraphicsCommandBuffers_] =
@@ -473,12 +467,6 @@ namespace shuttle::engine
         }
 
         m_uniqueGraphicsCommandBuffers = std::move(uniqueGraphicsCommandBuffers_);
-
-        m_window.setWindowShowModeEventCallback(
-            [&](SdlWindow const&, ShowMode showMode)
-            {
-                m_isMinimized = showMode == ShowMode::Minimized;
-            });
 
         m_activeResources = SwapchainResources{
             .swapchain = std::move(swapchain),
@@ -715,7 +703,7 @@ namespace shuttle::engine
                     .isScene = false,
                     .isDirty = true,
                     .envGpuData = std::move(environmentResources_),
-                    .compiledEnvRAM = std::move(*compiledEnvOpt) // <-- ВОТ ТУТ НУЖНО СОХРАНИТЬ ДАННЫЕ В RAM
+                    .compiledEnvRAM = std::move(*compiledEnvOpt)
                 };
 
                 m_mainWindow.addAsset(editor::core::LoadedAsset{
@@ -768,23 +756,21 @@ namespace shuttle::engine
         m_mainWindow.setSaveEnvironmentCallback(
             [this](std::filesystem::path const& savePath)
             {
-                if (m_activeEnvironmentId != 0) // Проверяем, что активное окружение выбрано
+                if (m_activeEnvironmentId != 0)
                 {
                     auto it = std::find_if(
                         m_openAssets.begin(),
                         m_openAssets.end(),
                         [&](const OpenAsset& a)
                         {
-                            // Ищем активное окружение (isScene == false)
                             return a.id == m_activeEnvironmentId && !a.isScene;
                         });
 
-                    // Если окружение найдено и у него есть скомпилированные RAM-данные
                     if (it != m_openAssets.end() && it->compiledEnvRAM.has_value())
                     {
                         bool success =
                             shuttle::assets::environment_compiler::CompiledEnvironmentBlobWriter::write(
-                                *it->compiledEnvRAM, // Записываем скомпилированные данные окружения
+                                *it->compiledEnvRAM,
                                 savePath);
 
                         if (success)
@@ -802,14 +788,8 @@ namespace shuttle::engine
                                       << savePath << '\n';
                         }
                     }
-                    else
-                    {
-                        // Если не найдено или нет данных в RAM, выводим ошибку
-                        std::cerr << "[Editor] Cannot save environment: no active environment or compiled data in RAM.\n";
-                    }
                 }
             });
-
 
         m_mainWindow.setSelectAssetCallback(
             [this](editor::core::ResourceId id)
@@ -898,6 +878,9 @@ namespace shuttle::engine
             });
 
         m_lastTime = std::chrono::high_resolution_clock::now();
+
+        // Показываем окно после завершения всей инициализации
+        m_window.show();
     }
 
     Application::~Application()
@@ -911,6 +894,35 @@ namespace shuttle::engine
         }
 
         std::cout << "[Shutdown] Device idle confirmed. Exiting cleanly.\n";
+    }
+
+    // ---------------------------------------------------------------------
+    // ОБРАБОТЧИКИ СОБЫТИЙ СЛУШАТЕЛЕЙ (PAL Event Listeners)
+    // ---------------------------------------------------------------------
+
+    void Application::onWindowResize(const pal::WindowResizeEvent& event)
+    {
+        // При изменении размеров нативного окна
+    }
+
+    void Application::onWindowCloseRequested()
+    {
+        std::cout << "[System] Window close event received, posting quit...\n";
+        m_platform.postQuitEvent();
+    }
+
+    void Application::onWindowPaint() {
+        drawFrame(true, m_deltaTime);
+    }
+
+    void Application::onKeyboard(const input::KeyboardEvent& event)
+    {
+        m_cameraController.onKeyboard(event);
+        if (event.state == pal::KeyState::Pressed && event.key == pal::KeyCode::Escape)
+        {
+            std::cout << "[System] Escape key pressed, closing application...\n";
+            m_platform.postQuitEvent();
+        }
     }
 
     void Application::createViewPortResources(vk::Extent2D viewportExtent)
@@ -1051,9 +1063,10 @@ namespace shuttle::engine
 
     void Application::recreateAllResources()
     {
+        vk::Extent2D windowExtent{ m_window.getWidth(), m_window.getHeight() };
         auto [result, newResources] = m_retireController.updateSwapchainResources(
             m_swapchainContext,
-            m_window.getExtent(),
+            windowExtent,
             m_frameCount,
             std::move(m_activeResources));
 
@@ -1361,7 +1374,7 @@ namespace shuttle::engine
             });
         }
 
-        engine::render::UiPass::drawUi(m_mainWindow);
+        render::UiPass::drawUi(m_mainWindow, m_platform);
 
         if (m_hasFrameResources && !isResizeMode)
         {
@@ -1959,25 +1972,19 @@ namespace shuttle::engine
     {
         std::cout << "[Run] Entering main render loop. Engine is green.\n";
 
-        m_window.setWindowPaintCallback(
-            [this]
-            {
-                drawFrame(true, m_deltaTime);
-            });
-
-        while (true)
+        while (!m_platform.shouldQuit() && !m_window.shouldClose())
         {
             auto currentTime = std::chrono::high_resolution_clock::now();
             m_deltaTime = std::chrono::duration<float>(currentTime - m_lastTime).count();
             m_lastTime = currentTime;
             m_totalTime += m_deltaTime;
 
-            if (!m_sdlLibrary.pullEvents())
+            if (!m_platform.pollEvents())
             {
                 break;
             }
 
-            if (m_isMinimized)
+            if (m_window.isMinimized())
             {
                 continue;
             }

@@ -231,3 +231,34 @@ vk::ResultValue<AttachmentOutput> createAttachmentOutput(
         .view = std::move(imageView),
     }};
 }
+
+vk::ResultValue<vk::SurfaceKHR> createVulkanSurface(
+    vk::Instance instance,
+    shuttle::pal::Platform const& platform,
+    shuttle::pal::WindowHandle handle,
+    vk::detail::DispatchLoaderDynamic const &dispatcher) {
+
+    VkInstance vk_instance = instance;
+    VkSurfaceKHR vk_surface = VK_NULL_HANDLE;
+    PFN_vkGetInstanceProcAddr vk_get_instance_proc_addr = dispatcher.vkGetInstanceProcAddr;
+
+    auto result = platform.createVulkanSurface(
+        handle, vk_instance,
+        &vk_surface,
+        reinterpret_cast<void *>(vk_get_instance_proc_addr));
+
+    auto vk_result = static_cast<vk::Result>(result);
+
+    return {vk_result, vk_surface};
+}
+
+vk::ResultValue<vk::UniqueSurfaceKHR> createVulkanSurfaceUnique(
+    vk::Instance instance,
+    shuttle::pal::Platform const& platform,
+    shuttle::pal::WindowHandle handle,
+    vk::detail::DispatchLoaderDynamic const &dispatcher) {
+
+    auto [result, surface] = createVulkanSurface(instance, platform, handle, dispatcher);
+
+    return { result, vk::UniqueSurfaceKHR(surface, vk::detail::ObjectDestroy(instance, nullptr, dispatcher)) };
+}

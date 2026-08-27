@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Assets/Formats/Animation.hpp>
 #include <Assets/Formats/Geometry.hpp>
 #include <Assets/Formats/Material.hpp>
 #include <Assets/Formats/Scene.hpp>
@@ -53,31 +52,7 @@ struct CompiledScene
 
     std::vector<formats::scene::GpuDrawableObject> drawableObjects;
 
-    //
-    // animation
-    //
-
-    std::vector<formats::animation::SkeletonData> skeletons;
-
-    std::vector<formats::animation::BoneData> bones;
-
-    std::vector<formats::animation::AnimationClip> clips;
-
-    std::vector<formats::animation::TransformChannel> transformChannels;
-
-    std::vector<formats::animation::MorphTarget> morphTargets;
-
-    std::vector<formats::animation::MorphVertexDelta> morphVertexDeltas;
-
-    std::vector<formats::animation::MorphChannel> morphChannels;
-
-    std::vector<formats::animation::MaterialProperty> materialProperties;
-
-    std::vector<formats::animation::MaterialChannel> materialChannels;
-
     std::vector<float> keyframeTimes;
-
-    std::vector<formats::animation::AnimationKeyframeValue> keyframeValues;
 
     //
     // lighting

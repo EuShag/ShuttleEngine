@@ -1,19 +1,6 @@
-/**
- * @file MainWindow.cpp
- * @brief Implementation of the Shuttle Engine editor main window.
- *
- * @license
- * Copyright (c) 2026 Shuttle Engine Project.
- * All rights reserved.
- *
- * This source code is licensed under the MIT License found in the
- * LICENSE file in the root directory of this source tree.
- */
-
 #include "MainWindow.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <utility>
 
 #include "backends/imgui_impl_vulkan.h"
@@ -22,7 +9,6 @@
 
 namespace shuttle::editor::core
 {
-
     enum class WindowButtonType
     {
         Minimize,
@@ -79,7 +65,7 @@ namespace shuttle::editor::core
             }
             else if (hovered)
             {
-                backgroundColor = IM_COL32(220, 60, 60, 255);
+                backgroundColor = IM_COL32(220, 15, 15, 255);
             }
         }
         else if (active)
@@ -270,7 +256,7 @@ namespace shuttle::editor::core
     }
 
     MainWindow::MainWindow(
-        SdlWindow* window,
+        pal::WindowBase* window,
         engine::render::MainPassSettings initialMainPassSettings,
         bool isMaximized)
         : window(window),
@@ -293,7 +279,8 @@ namespace shuttle::editor::core
             ImGuiWindowFlags_NoMove |
             ImGuiWindowFlags_NoResize;
 
-        const bool isMaximized = window->getIsMaximized();
+        // Вызов кроссплатформенного геттера PAL
+        const bool isMaximized = window ? window->isMaximized() : false;
         if (isMaximized)
         {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -308,11 +295,7 @@ namespace shuttle::editor::core
         drawClientArea();
         ImGui::End();
 
-        ImGui::PopStyleVar();
-        if (isMaximized)
-        {
-            ImGui::PopStyleVar();
-        }
+        ImGui::PopStyleVar(isMaximized ? 2 : 1);
 
         drawImportModals();
         drawExitConfirmationModal();
@@ -432,21 +415,39 @@ namespace shuttle::editor::core
 
         const float windowWidth = ImGui::GetWindowWidth();
 
-        window->setTitlebarLayout(
-            0,
-            static_cast<uint32_t>(titleBarHeight),
-            static_cast<uint32_t>(windowWidth - buttonsWidth),
-            static_cast<uint32_t>(windowWidth),
-            0,
-            static_cast<uint32_t>(windowWidth),
-            static_cast<uint32_t>(windowWidth - buttonsWidth),
-            static_cast<uint32_t>(windowWidth - buttonsWidth + buttonWidth),
-            static_cast<uint32_t>(windowWidth - buttonsWidth + buttonWidth),
-            static_cast<uint32_t>(windowWidth - buttonWidth),
-            static_cast<uint32_t>(windowWidth - buttonWidth),
-            static_cast<uint32_t>(windowWidth),
-            static_cast<uint32_t>(fileX),
-            static_cast<uint32_t>(fileX + 60.0f));
+        // ---------------------------------------------------------------------
+        // ОБНОВЛЕНИЕ ДЕКОРАЦИЙ И HIT-TEST ЗОН ЧЕРЕЗ PAL WINDOW
+        // ---------------------------------------------------------------------
+        if (window)
+        {
+            auto& titlebar = window->getDecorations().titlebar;
+            titlebar.clearElements();
+            titlebar.setBounds({ 0, 0, static_cast<int32_t>(windowWidth), static_cast<int32_t>(titleBarHeight) });
+
+            // Кнопка меню File (не должна таскать окно)
+            titlebar.addElement({
+                .rect = { static_cast<int32_t>(fileX), 0, 60, static_cast<int32_t>(titleBarHeight) },
+                .result = pal::WindowHitTestResult::Client
+            });
+
+            // Кнопка Minimize
+            titlebar.addElement({
+                .rect = { static_cast<int32_t>(windowWidth - buttonsWidth), 0, static_cast<int32_t>(buttonWidth), static_cast<int32_t>(titleBarHeight) },
+                .result = pal::WindowHitTestResult::MinimizeButton
+            });
+
+            // Кнопка Maximize/Restore
+            titlebar.addElement({
+                .rect = { static_cast<int32_t>(windowWidth - buttonsWidth + buttonWidth), 0, static_cast<int32_t>(buttonWidth), static_cast<int32_t>(titleBarHeight) },
+                .result = pal::WindowHitTestResult::MaximizeButton
+            });
+
+            // Кнопка Close
+            titlebar.addElement({
+                .rect = { static_cast<int32_t>(windowWidth - buttonWidth), 0, static_cast<int32_t>(buttonWidth), static_cast<int32_t>(titleBarHeight) },
+                .result = pal::WindowHitTestResult::CloseButton
+            });
+        }
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -571,24 +572,27 @@ namespace shuttle::editor::core
         ImGui::SetCursorPos(ImVec2(windowWidth - buttonsWidth, 0.0f));
         if (drawWindowButton("Minimize", WindowButtonType::Minimize, ImVec2(buttonWidth, titleBarHeight)))
         {
-            window->minimize();
+            if (window) window->minimize();
         }
 
         ImGui::SameLine(0.0f, 0.0f);
 
-        const bool isMaximized = window->getIsMaximized();
+        const bool isMaximized = window ? window->isMaximized() : false;
         if (drawWindowButton(
                 "Maximize",
                 isMaximized ? WindowButtonType::Restore : WindowButtonType::Maximize,
                 ImVec2(buttonWidth, titleBarHeight)))
         {
-            if (isMaximized)
+            if (window)
             {
-                window->restore();
-            }
-            else
-            {
-                window->maximize();
+                if (isMaximized)
+                {
+                    window->restore();
+                }
+                else
+                {
+                    window->maximize();
+                }
             }
         }
 
@@ -1288,14 +1292,14 @@ namespace shuttle::editor::core
                     }
                 }
 
-                window->close();
+                if (window) window->close();
                 ImGui::CloseCurrentPopup();
             }
 
             ImGui::SameLine();
             if (ImGui::Button("Exit Without Saving", ImVec2(150, 0)))
             {
-                window->close();
+                if (window) window->close();
                 ImGui::CloseCurrentPopup();
             }
 
@@ -1324,7 +1328,7 @@ namespace shuttle::editor::core
         }
         else
         {
-            window->close();
+            if (window) window->close();
         }
     }
 

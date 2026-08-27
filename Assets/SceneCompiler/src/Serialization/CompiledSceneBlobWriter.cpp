@@ -133,59 +133,6 @@ bool CompiledSceneBlobWriter::write(const CompiledScene& scene, const std::files
 
     addTypedSection(writer, core::BlobSectionType::GpuSpotLights, scene.spotLights);
 
-    //
-    // animation
-    //
-
-    addTypedSection(writer, core::BlobSectionType::Skeletons, scene.skeletons);
-
-    addTypedSection(writer, core::BlobSectionType::Bones, scene.bones);
-
-    addTypedSection(writer, core::BlobSectionType::TransformChannels, scene.transformChannels);
-
-    addTypedSection(writer, core::BlobSectionType::KeyframeTimes, scene.keyframeTimes);
-
-    addTypedSection(writer, core::BlobSectionType::KeyframeValues, scene.keyframeValues);
-
-    //
-    // future animation sections
-    //
-
-    if (!scene.morphTargets.empty())
-    {
-        writer.addTypedSection(
-            core::BlobSectionType::Custom,
-            std::span<const formats::animation::MorphTarget>(scene.morphTargets.data(), scene.morphTargets.size()));
-    }
-
-    if (!scene.morphVertexDeltas.empty())
-    {
-        writer.addTypedSection(core::BlobSectionType::Custom,
-                               std::span<const formats::animation::MorphVertexDelta>(scene.morphVertexDeltas.data(),
-                                                                                     scene.morphVertexDeltas.size()));
-    }
-
-    if (!scene.morphChannels.empty())
-    {
-        writer.addTypedSection(
-            core::BlobSectionType::Custom,
-            std::span<const formats::animation::MorphChannel>(scene.morphChannels.data(), scene.morphChannels.size()));
-    }
-
-    if (!scene.materialProperties.empty())
-    {
-        writer.addTypedSection(core::BlobSectionType::Custom,
-                               std::span<const formats::animation::MaterialProperty>(scene.materialProperties.data(),
-                                                                                     scene.materialProperties.size()));
-    }
-
-    if (!scene.materialChannels.empty())
-    {
-        writer.addTypedSection(core::BlobSectionType::Custom,
-                               std::span<const formats::animation::MaterialChannel>(scene.materialChannels.data(),
-                                                                                    scene.materialChannels.size()));
-    }
-
     return writer.write(outputPath);
 }
 } // namespace shuttle::assets::scene_compiler

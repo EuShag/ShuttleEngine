@@ -1,59 +1,65 @@
-//
-// Created by Shagu on 14.06.2026.
-//
-
 #ifndef HELLOTRIANGLE_UIRENDER_HPP
 #define HELLOTRIANGLE_UIRENDER_HPP
+
 #include <imgui.h>
-
 #include "IncludeVulkan.hpp"
-#include "Sdl/SdlLibrary/SdlLibrary.hpp"
-#include "Sdl/SdlWindow/SdlWindow.hpp"
-
-class SdlWindow;
+#include "PAL/Platform.hpp"
+#include "PAL/Common/Window/WindowBase.hpp"
 
 namespace shuttle
 {
+    struct UiTargets {};
 
-struct UiTargets
-{
-};
+    class UiRender
+    {
+    public:
+        static vk::ResultValue<UiRender> create(
+            pal::WindowBase& window,
+            vk::Instance instance,
+            vk::PhysicalDevice physicalDevice,
+            vk::Device device,
+            uint32_t queueFamilyIndex,
+            vk::Queue queue,
+            uint32_t imageCount);
 
-class UiRender
-{
-  public:
-    static vk::ResultValue<UiRender> create(SdlWindow& window, vk::Instance instance, vk::PhysicalDevice physicalDevice,
-                                            vk::Device device, uint32_t queueFamilyIndex, vk::Queue queue,
-                                            uint32_t imageCount);
+        UiRender() = default;
 
-    UiRender() = default;
+        UiRender(const UiRender&) = delete;
+        UiRender& operator=(const UiRender&) = delete;
 
-    UiRender(const UiRender&) = delete;
-    UiRender(UiRender&& other) noexcept {
-        uiDescriptorPool = std::move(other.uiDescriptorPool);
-        device = other.device;
-        other.device = VK_NULL_HANDLE;
-    }
-    UiRender& operator=(const UiRender&) = delete;
-    UiRender& operator=(UiRender&& other) noexcept {
-        uiDescriptorPool = std::move(other.uiDescriptorPool);
-        device = other.device;
-        other.device = VK_NULL_HANDLE;
-        return *this;
-    }
+        UiRender(UiRender&& other) noexcept
+            : uiDescriptorPool(std::move(other.uiDescriptorPool))
+            , device(other.device)
+            , m_platform(other.m_platform)
+        {
+            other.device = VK_NULL_HANDLE;
+            other.m_platform = nullptr;
+        }
 
-    static void bindInputEventHandler(SdlLibrary& library);
+        UiRender& operator=(UiRender&& other) noexcept
+        {
+            if (this != &other)
+            {
+                uiDescriptorPool = std::move(other.uiDescriptorPool);
+                device = other.device;
+                m_platform = other.m_platform;
 
-    bool operator==(UiRender const& ui_render) const;
+                other.device = VK_NULL_HANDLE;
+                other.m_platform = nullptr;
+            }
+            return *this;
+        }
 
-    bool operator!=(UiRender const &ui_render_result) const;
+        bool operator==(UiRender const& ui_render) const;
+        bool operator!=(UiRender const& ui_render_result) const;
 
-    ~UiRender();
+        ~UiRender();
 
-  private:
-    vk::UniqueDescriptorPool uiDescriptorPool{};
-    vk::Device device{};
-};
+    private:
+        vk::UniqueDescriptorPool uiDescriptorPool{};
+        vk::Device device{};
+        pal::Platform* m_platform = nullptr; // Сохраняем ссылку на платформу для зачистки бэкенда
+    };
 } // namespace shuttle
 
 #endif // HELLOTRIANGLE_UIRENDER_HPP

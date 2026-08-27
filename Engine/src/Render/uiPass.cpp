@@ -6,13 +6,14 @@
 #include "imgui.h"
 #include "backends/imgui_impl_sdl2.h"
 #include "backends/imgui_impl_vulkan.h"
+#include "PAL/Platform.hpp"
 
 namespace shuttle::engine::render {
 
-    void UiPass::drawUi(IuiPainter& painter)
+    void UiPass::drawUi(IuiPainter& painter, pal::Platform const& platform)
     {
         ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
+        platform.newGuiFrame();
         ImGui::NewFrame();
         painter.drawUi();
         ImGui::Render();
