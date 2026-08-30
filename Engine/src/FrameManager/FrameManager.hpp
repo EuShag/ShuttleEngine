@@ -19,6 +19,7 @@ class FrameManager
                                                               FrameManager&& frameManager = {});
 
     [[nodiscard]] vk::Result prepareFrameSlot(vk::Device device, uint32_t frameIndex);
+    [[nodiscard]] vk::ResultValue<uint32_t> acquireFrameSlot(vk::Device device);
     [[nodiscard]] vk::Result beginFrame(vk::Device device, uint32_t frameIndex);
 
 

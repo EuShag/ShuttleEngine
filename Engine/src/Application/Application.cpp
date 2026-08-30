@@ -22,61 +22,63 @@
 namespace shuttle::engine::render
 {
 
-    struct InMemorySceneData
-    {
-        std::vector<assets::formats::texture::TextureMetadata> textureMetadatas;
-        std::vector<assets::formats::texture::TextureMipMetadata> textureMipMetadatas;
-        std::vector<uint8_t> textureBytes;
-        LoadedSceneData loadedSceneData;
-    };
-
-    InMemorySceneData prepareInMemorySceneUpload(
-        const assets::scene_compiler::CompiledScene& scene)
-    {
-        InMemorySceneData result{};
-        uint64_t globalDataOffset = 0;
-        uint64_t globalMipOffset = 0;
-
-        result.textureMetadatas.reserve(scene.textures.size());
-
-        for (const auto& texture : scene.textures)
+    namespace {
+        struct InMemorySceneData
         {
-            auto metadata = texture.metadata;
-            metadata.mipTableOffset = globalMipOffset;
-            result.textureMetadatas.push_back(metadata);
-
-            for (auto mip : texture.mipMetadata)
-            {
-                mip.dataOffset += globalDataOffset;
-                result.textureMipMetadatas.push_back(mip);
-            }
-
-            globalMipOffset += texture.mipMetadata.size() *
-                               sizeof(assets::formats::texture::TextureMipMetadata);
-            result.textureBytes.insert(
-                result.textureBytes.end(),
-                texture.data.begin(),
-                texture.data.end());
-            globalDataOffset += texture.data.size();
-        }
-
-        result.loadedSceneData = LoadedSceneData{
-            .nodes = scene.nodes,
-            .levels = scene.levels,
-            .transforms = scene.transforms,
-            .drawables = scene.drawableObjects,
-            .directionalLights = scene.directionalLights,
-            .positions = scene.positions,
-            .attributes = scene.attributes,
-            .indices = scene.indices,
-            .meshes = scene.meshes,
-            .materials = scene.materials,
-            .textureMetadatas = result.textureMetadatas,
-            .textureMipMetadatas = result.textureMipMetadatas,
-            .textureBytes = result.textureBytes
+            std::vector<assets::formats::texture::TextureMetadata> textureMetadatas;
+            std::vector<assets::formats::texture::TextureMipMetadata> textureMipMetadatas;
+            std::vector<uint8_t> textureBytes;
+            LoadedSceneData loadedSceneData;
         };
 
-        return result;
+        InMemorySceneData prepareInMemorySceneUpload(
+            const assets::scene_compiler::CompiledScene& scene)
+        {
+            InMemorySceneData result{};
+            uint64_t globalDataOffset = 0;
+            uint64_t globalMipOffset = 0;
+
+            result.textureMetadatas.reserve(scene.textures.size());
+
+            for (const auto& texture : scene.textures)
+            {
+                auto metadata = texture.metadata;
+                metadata.mipTableOffset = globalMipOffset;
+                result.textureMetadatas.push_back(metadata);
+
+                for (auto mip : texture.mipMetadata)
+                {
+                    mip.dataOffset += globalDataOffset;
+                    result.textureMipMetadatas.push_back(mip);
+                }
+
+                globalMipOffset += texture.mipMetadata.size() *
+                                   sizeof(assets::formats::texture::TextureMipMetadata);
+                result.textureBytes.insert(
+                    result.textureBytes.end(),
+                    texture.data.begin(),
+                    texture.data.end());
+                globalDataOffset += texture.data.size();
+            }
+
+            result.loadedSceneData = LoadedSceneData{
+                .nodes = scene.nodes,
+                .levels = scene.levels,
+                .transforms = scene.transforms,
+                .drawables = scene.drawableObjects,
+                .directionalLights = scene.directionalLights,
+                .positions = scene.positions,
+                .attributes = scene.attributes,
+                .indices = scene.indices,
+                .meshes = scene.meshes,
+                .materials = scene.materials,
+                .textureMetadatas = result.textureMetadatas,
+                .textureMipMetadatas = result.textureMipMetadatas,
+                .textureBytes = result.textureBytes
+            };
+
+            return result;
+        }
     }
 
 } // namespace shuttle::engine::render
@@ -1362,6 +1364,27 @@ namespace shuttle::engine
             updateFrameData();
         }
 
+        if (!isResizeMode)
+        {
+            m_cameraController.update(
+                dt, m_mainWindow.getCameraMoveSpeed(),
+                m_mainWindow.getCameraRotationSpeed());
+        }
+
+        auto prepareRes = m_activeResources.frameManager.acquireFrameSlot(m_device);
+
+        if (prepareRes.result == vk::Result::eNotReady) {
+            return;
+        }
+        if (prepareRes.result != vk::Result::eSuccess) {
+            throw std::runtime_error(
+                "Fatal: Failed to acquire frame slot: " +
+                vk::to_string(prepareRes.result));
+        }
+
+        m_retireController.renderRetireUpdate(m_currentFrameIndex);
+        m_resourceBin.release(m_currentFrameIndex);
+
         if (m_hasFrameResources)
         {
             m_mainWindow.setFinalViewportImage(
@@ -1389,24 +1412,6 @@ namespace shuttle::engine
                 return;
             }
         }
-
-        if (!isResizeMode)
-        {
-            m_cameraController.update(
-                dt, m_mainWindow.getCameraMoveSpeed(),
-                m_mainWindow.getCameraRotationSpeed());
-        }
-
-        auto prepareRes = m_activeResources.frameManager.prepareFrameSlot(m_device, m_currentFrameIndex);
-
-        if (prepareRes != vk::Result::eSuccess)
-        {
-            throw std::runtime_error(
-                "Fatal: Failed to prepare frame slot: " + vk::to_string(prepareRes));
-        }
-
-        m_retireController.renderRetireUpdate(m_currentFrameIndex);
-        m_resourceBin.release(m_currentFrameIndex);
 
         auto acquireResult = m_activeResources.frameManager.acquireNextImage(
             m_device,
