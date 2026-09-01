@@ -1,0 +1,13 @@
+//
+// Created by Shagu on 30.08.2026.
+//
+
+#ifndef SHUTTLEENGINE_RENDERGRAPH_HPP
+#define SHUTTLEENGINE_RENDERGRAPH_HPP
+
+
+class RenderGraph {
+};
+
+
+#endif //SHUTTLEENGINE_RENDERGRAPH_HPP

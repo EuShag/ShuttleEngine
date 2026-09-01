@@ -4,6 +4,7 @@
 
 #include "RetireController.hpp"
 
+#include <bitset>
 #include <iostream>
 
 namespace shuttle

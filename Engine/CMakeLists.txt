@@ -35,6 +35,8 @@ else()
     set(IMGUI_SOURCES
             ${IMGUI_SOURCES}
             "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp"
+            src/RenderGraph/RenderGraph.cpp
+            src/RenderGraph/RenderGraph.hpp
     )
     message(STATUS "PAL: Using SDL2 Backend")
     list(APPEND PAL_SOURCES

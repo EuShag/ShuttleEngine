@@ -348,7 +348,7 @@ namespace shuttle::engine
                 .descriptorCount = 512},
             vk::DescriptorPoolSize{
                 .type = vk::DescriptorType::eSampledImage,
-                .descriptorCount = engine::render::MaxBindlessTextures + 128},
+                .descriptorCount = render::MaxBindlessTextures + 128},
             vk::DescriptorPoolSize{
                 .type = vk::DescriptorType::eStorageImage,
                 .descriptorCount = 128}};
@@ -365,7 +365,7 @@ namespace shuttle::engine
             throw std::runtime_error("Failed to create render descriptor pool");
         }
 
-        m_renderContext = engine::render::RenderContext{
+        m_renderContext = render::RenderContext{
             .device = m_device,
             .allocator = *m_allocator,
             .swapchainColorFormat = swapchain.format,
@@ -385,10 +385,10 @@ namespace shuttle::engine
         m_uniqueGraphicsCommandPool = std::move(uniqueGraphicsCommandPool_);
 
         auto [createDescriptorHeapSetResult, m_descriptorHeapSet_] =
-            engine::render::DescriptorHeapSet::create(
+            render::DescriptorHeapSet::create(
                 m_device,
-                engine::render::DescriptorHeapSetCreateInfo{
-                    .textureCount = engine::render::MaxBindlessTextures,
+                render::DescriptorHeapSetCreateInfo{
+                    .textureCount = render::MaxBindlessTextures,
                     .samplerCount = 16,
                     .storageImageCount = 128,
                     .uniformTexelBufferCount = 64,
@@ -404,7 +404,7 @@ namespace shuttle::engine
         m_descriptorHeapSet = std::move(m_descriptorHeapSet_);
 
         auto [createCommonResourcesResult, commonResources_] =
-            engine::render::createCommonResources(
+            render::createCommonResources(
                 m_device,
                 m_graphicsQueue,
                 *m_uniqueGraphicsCommandPool,
@@ -419,7 +419,7 @@ namespace shuttle::engine
         m_commonResources = std::move(commonResources_);
 
         auto [createFallbackTexturesResult, fallbackTextures_] =
-            engine::render::createFallbackTextures(
+            render::createFallbackTextures(
                 m_device,
                 m_graphicsQueue,
                 *m_uniqueGraphicsCommandPool,
@@ -615,9 +615,9 @@ namespace shuttle::engine
                 }
 
                 auto inMemoryData =
-                    shuttle::engine::render::prepareInMemorySceneUpload(*compiledSceneOpt);
+                    render::prepareInMemorySceneUpload(*compiledSceneOpt);
 
-                auto [uploadResult, uploadOutput] = shuttle::engine::render::uploadScene(
+                auto [uploadResult, uploadOutput] = render::uploadScene(
                     inMemoryData.loadedSceneData,
                     m_renderContext,
                     m_graphicsQueue,
@@ -644,19 +644,18 @@ namespace shuttle::engine
                     .path = newAsset.path,
                     .isDirty = true,
                     .id = newAsset.id,
-                    .type = shuttle::editor::core::AssetType::Scene,
+                    .type = editor::core::AssetType::Scene,
                     .isScene = true});
 
                 m_openAssets.push_back(std::move(newAsset));
                 m_activeSceneId = m_openAssets.back().id;
 
-                syncPointers();
             });
 
         m_mainWindow.setImportEnvironmentCallback(
             [this](
                 std::filesystem::path const& inputPath,
-                engine::ibl::IblGenerationSettings const& settings)
+                ibl::IblGenerationSettings const& settings)
             {
                 m_hasFrameResources = false;
                 if (auto waitForResult = m_activeResources.frameManager.waitRenderIdle(m_device);
@@ -668,7 +667,7 @@ namespace shuttle::engine
                 }
 
                 auto compiledEnvOpt =
-                    shuttle::assets::environment_compiler::EnvironmentCompiler::compile(
+                    assets::environment_compiler::EnvironmentCompiler::compile(
                         inputPath,
                         settings);
 
@@ -691,7 +690,7 @@ namespace shuttle::engine
                 }
 
                 auto [createEnvironmentResourcesResult, environmentResources_] =
-                    engine::render::createEnvironmentResources(
+                    render::createEnvironmentResources(
                         m_renderContext,
                         m_graphicsQueue,
                         *m_uniqueGraphicsCommandPool,
@@ -719,7 +718,6 @@ namespace shuttle::engine
                 m_openAssets.push_back(std::move(newAsset));
                 m_activeEnvironmentId = m_openAssets.back().id;
 
-                syncPointers();
             });
 
         m_mainWindow.setSaveSceneCallback(
@@ -727,10 +725,8 @@ namespace shuttle::engine
             {
                 if (m_activeSceneId != 0)
                 {
-                    auto it = std::find_if(
-                        m_openAssets.begin(),
-                        m_openAssets.end(),
-                        [&](const OpenAsset& a)
+                    auto it = std::ranges::find_if(
+                        m_openAssets, [&](const OpenAsset& a)
                         {
                             return a.id == m_activeSceneId && a.isScene;
                         });
@@ -760,11 +756,8 @@ namespace shuttle::engine
             {
                 if (m_activeEnvironmentId != 0)
                 {
-                    auto it = std::find_if(
-                        m_openAssets.begin(),
-                        m_openAssets.end(),
-                        [&](const OpenAsset& a)
-                        {
+                    auto it = std::ranges::find_if(
+                        m_openAssets, [&](const OpenAsset& a) {
                             return a.id == m_activeEnvironmentId && !a.isScene;
                         });
 
@@ -796,11 +789,8 @@ namespace shuttle::engine
         m_mainWindow.setSelectAssetCallback(
             [this](editor::core::ResourceId id)
             {
-                auto it = std::find_if(
-                    m_openAssets.begin(),
-                    m_openAssets.end(),
-                    [id](const OpenAsset& a)
-                    {
+                auto it = std::ranges::find_if(
+                    m_openAssets, [id](const OpenAsset& a) {
                         return a.id == id;
                     });
 
@@ -822,7 +812,6 @@ namespace shuttle::engine
                     {
                         m_activeEnvironmentId = id;
                     }
-                    syncPointers();
                 }
             });
 
@@ -837,11 +826,8 @@ namespace shuttle::engine
                               << '\n';
                 }
 
-                auto it = std::find_if(
-                    m_openAssets.begin(),
-                    m_openAssets.end(),
-                    [id](const OpenAsset& asset)
-                    {
+                auto it = std::ranges::find_if(
+                    m_openAssets, [id](const OpenAsset& asset) {
                         return asset.id == id;
                     });
 
@@ -850,9 +836,7 @@ namespace shuttle::engine
                     return;
                 }
 
-                const bool closingScene = it->isScene;
-
-                if (closingScene)
+                if (it->isScene)
                 {
                     if (m_activeSceneId == id)
                     {
@@ -875,7 +859,6 @@ namespace shuttle::engine
                         return asset.id == id;
                     });
 
-                syncPointers();
                 m_hasFrameResources = false;
             });
 
@@ -1083,78 +1066,56 @@ namespace shuttle::engine
             m_activeResources.swapchain.extent.height);
     }
 
-    void Application::syncPointers()
+    const render::UploadSceneOutput* Application::findActiveScene() const
     {
-        m_scene = nullptr;
-        m_deviceEnvironmentResources = nullptr;
-
-        if (m_openAssets.empty())
-        {
-            m_hasScene = false;
-            m_hasEnvironment = false;
-            return;
-        }
-
         if (m_activeSceneId != 0)
         {
-            auto it = std::find_if(
-                m_openAssets.begin(),
-                m_openAssets.end(),
-                [&](const OpenAsset& a)
-                {
+            auto it = std::ranges::find_if(
+                m_openAssets, [&](const OpenAsset& a) {
                     return a.id == m_activeSceneId && a.isScene;
                 });
 
             if (it != m_openAssets.end() && it->sceneGpuData.has_value())
             {
-                m_scene = &it->sceneGpuData.value();
+                return &it->sceneGpuData.value();
             }
         }
 
-        if (m_scene == nullptr)
+        for (const auto& asset : m_openAssets)
         {
-            for (auto& asset : m_openAssets)
+            if (asset.isScene && asset.sceneGpuData.has_value())
             {
-                if (asset.isScene && asset.sceneGpuData.has_value())
-                {
-                    m_scene = &asset.sceneGpuData.value();
-                    m_activeSceneId = asset.id;
-                    break;
-                }
+                return &asset.sceneGpuData.value();
             }
         }
 
+        return nullptr;
+    }
+
+    const render::DeviceEnvironmentResources* Application::findActiveEnvironment() const
+    {
         if (m_activeEnvironmentId != 0)
         {
-            auto it = std::find_if(
-                m_openAssets.begin(),
-                m_openAssets.end(),
-                [&](const OpenAsset& a)
-                {
+            auto const it = std::ranges::find_if(
+                m_openAssets, [&](const OpenAsset& a) {
                     return a.id == m_activeEnvironmentId && !a.isScene;
                 });
 
             if (it != m_openAssets.end() && it->envGpuData.has_value())
             {
-                m_deviceEnvironmentResources = &it->envGpuData.value();
+                return &it->envGpuData.value();
             }
         }
 
-        if (m_deviceEnvironmentResources == nullptr)
+        for (const auto& asset : m_openAssets)
         {
-            for (auto& asset : m_openAssets)
+            if (!asset.isScene && asset.envGpuData.has_value())
             {
-                if (!asset.isScene && asset.envGpuData.has_value())
-                {
-                    m_deviceEnvironmentResources = &asset.envGpuData.value();
-                    m_activeEnvironmentId = asset.id;
-                    break;
-                }
+                return &asset.envGpuData.value();
             }
         }
 
-        m_hasScene = (m_scene != nullptr);
-        m_hasEnvironment = (m_deviceEnvironmentResources != nullptr);
+        return nullptr;
     }
 
     void Application::loadScene(std::filesystem::path const& path)
@@ -1168,13 +1129,13 @@ namespace shuttle::engine
                 std::to_string(static_cast<int>(waitForResult)));
         }
 
-        auto loadedSceneData = engine::render::loadSceneData(path);
+        auto loadedSceneData = render::loadSceneData(path);
         if (loadedSceneData.result != vk::Result::eSuccess)
         {
             return;
         }
 
-        auto [uploadSceneResult, uploadSceneOutput] = engine::render::uploadScene(
+        auto [uploadSceneResult, uploadSceneOutput] = render::uploadScene(
             *loadedSceneData,
             m_renderContext,
             m_graphicsQueue,
@@ -1206,7 +1167,6 @@ namespace shuttle::engine
         m_openAssets.push_back(std::move(item));
         m_activeSceneId = m_openAssets.back().id;
 
-        syncPointers();
     }
 
     void Application::loadEnvironment(std::filesystem::path const& path)
@@ -1221,7 +1181,7 @@ namespace shuttle::engine
         }
 
         auto [createEnvironmentResourcesResult, environmentResources_] =
-            engine::render::createEnvironmentResources(
+            render::createEnvironmentResources(
                 m_renderContext,
                 m_graphicsQueue,
                 *m_uniqueGraphicsCommandPool,
@@ -1251,18 +1211,22 @@ namespace shuttle::engine
 
         m_openAssets.push_back(std::move(item));
         m_activeEnvironmentId = m_openAssets.back().id;
-
-        syncPointers();
     }
 
     void Application::updateFrameData()
     {
+        auto const* scene = findActiveScene();
+        if (scene == nullptr)
+        {
+            throw std::runtime_error("Fatal: Scene resources are not available");
+        }
+
         for (int i = 0; i < m_frameCount; i++)
         {
             auto [createWorldTransformBufferResult, worldTransformBuffer] =
                 m_allocator->createAndAllocateBufferUnique(
                     vk::BufferCreateInfo{
-                        .size = sizeof(glm::mat4) * m_scene->hostSceneData.nodes.size(),
+                        .size = sizeof(glm::mat4) * scene->hostSceneData.nodes.size(),
                         .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
                                  vk::BufferUsageFlagBits::eTransferDst,
                         .sharingMode = vk::SharingMode::eExclusive},
@@ -1278,7 +1242,7 @@ namespace shuttle::engine
                 m_allocator->createAndAllocateBufferUnique(
                     vk::BufferCreateInfo{
                         .size = sizeof(uint32_t) *
-                                m_scene->hostSceneData.drawableObjects.size(),
+                                scene->hostSceneData.drawableObjects.size(),
                         .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
                                  vk::BufferUsageFlagBits::eTransferDst,
                         .sharingMode = vk::SharingMode::eExclusive},
@@ -1294,7 +1258,7 @@ namespace shuttle::engine
                 m_allocator->createAndAllocateBufferUnique(
                     vk::BufferCreateInfo{
                         .size = sizeof(uint32_t) *
-                                m_scene->sceneFrameRequirements.meshCount,
+                                scene->sceneFrameRequirements.meshCount,
                         .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
                                  vk::BufferUsageFlagBits::eTransferDst,
                         .sharingMode = vk::SharingMode::eExclusive},
@@ -1310,7 +1274,7 @@ namespace shuttle::engine
                 m_allocator->createAndAllocateBufferUnique(
                     vk::BufferCreateInfo{
                         .size = sizeof(vk::DrawIndexedIndirectCommand) *
-                                m_scene->sceneFrameRequirements.meshCount,
+                                scene->sceneFrameRequirements.meshCount,
                         .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
                                  vk::BufferUsageFlagBits::eTransferDst |
                                  vk::BufferUsageFlagBits::eIndirectBuffer,
@@ -1329,7 +1293,7 @@ namespace shuttle::engine
             m_indirectDrawCommandsBufferAddresses[i] = m_device.getBufferAddress({.buffer = *m_indirectDrawCommandsBuffers[i]});
 
             auto [createCameraSystemResult, m_cameraSystem] =
-                engine::render::CameraSystem::create(m_device, *m_allocator);
+                render::CameraSystem::create(m_device, *m_allocator);
 
             if (createCameraSystemResult != vk::Result::eSuccess)
             {
@@ -1340,7 +1304,7 @@ namespace shuttle::engine
             m_cameraSystems[i] = std::move(m_cameraSystem);
 
             auto [createMainPassSettingSystemResult, mainPassSettingSystem] =
-                engine::render::MainPassSettingSystem::create(m_device, *m_allocator);
+                render::MainPassSettingSystem::create(m_device, *m_allocator);
 
             if (createMainPassSettingSystemResult != vk::Result::eSuccess)
             {
@@ -1354,12 +1318,579 @@ namespace shuttle::engine
         m_hasFrameResources = true;
     }
 
+    vk::ResultValue<Application::RenderIndices> Application::prepareFrame() {
+        auto [prepareRes, currentFrameIndex] = m_activeResources.frameManager.acquireFrameSlot(m_device);
+
+        if (prepareRes != vk::Result::eSuccess) {
+            return {prepareRes, {}};
+        }
+        m_retireController.renderRetireUpdate(currentFrameIndex);
+        m_resourceBin.release(currentFrameIndex);
+        auto [acquireResult, currentImageIndex] = m_activeResources.frameManager.acquireNextImage(
+            m_device,
+            *m_activeResources.swapchain.swapchain,
+            currentFrameIndex);
+        if (acquireResult != vk::Result::eSuccess) {
+            return {acquireResult, {}};
+        }
+        m_retireController.presentRetireUpdate(currentImageIndex);
+        return {vk::Result::eSuccess, {.frameIndex = currentFrameIndex, .imageIndex = currentImageIndex}};
+    }
+
+    void Application::doFrameRender(
+        RenderIndices renderIndices,
+        render::UploadSceneOutput const& scene,
+        render::DeviceEnvironmentResources const& environment,
+        bool isResizeMode) {
+
+        if (m_hasFrameResources)
+        {
+            m_mainWindow.setFinalViewportImage(
+                *m_colorAttachmentSets[renderIndices.frameIndex]);
+            m_mainWindow.setDebugViewportImages({
+                *m_debugAttachmentSets1[renderIndices.frameIndex],
+                *m_debugAttachmentSets2[renderIndices.frameIndex],
+                *m_debugAttachmentSets3[renderIndices.frameIndex],
+                *m_debugAttachmentSets4[renderIndices.frameIndex]});
+        }
+
+        render::UiPass::drawUi(m_mainWindow, m_platform);
+
+        if (m_hasFrameResources && !isResizeMode)
+        {
+            if (!m_mainWindow.hasViewport())
+            {
+                createViewPortResources(m_mainWindow.getViewportExtent());
+            }
+            if (m_mainWindow.needViewPortResourcesRecreate())
+            {
+                recreateViewportResources(m_mainWindow.getViewportExtent());
+            }
+        }
+
+        m_retireController.presentRetireUpdate(renderIndices.imageIndex);
+        if (auto result = m_activeResources.frameManager.beginFrame(m_device, renderIndices.frameIndex);
+            result != vk::Result::eSuccess)
+        {
+            throw std::runtime_error(
+                "Fatal: Failed to begin frame: " + vk::to_string(result));
+        }
+
+        uint32_t const imageIndex = renderIndices.imageIndex;
+
+        vk::CommandBuffer cmd = *m_uniqueGraphicsCommandBuffers[renderIndices.frameIndex];
+        if (auto resetResult = cmd.reset(); resetResult != vk::Result::eSuccess)
+        {
+            throw std::runtime_error("Failed to reset graphics command buffer");
+        }
+
+        if (auto beginResult = cmd.begin(
+                {.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
+            beginResult != vk::Result::eSuccess)
+        {
+            throw std::runtime_error("Failed to begin graphics command buffer");
+        }
+
+        if (m_hasFrameResources && !isResizeMode) {
+            m_cameraSystems[renderIndices.frameIndex].updateData(m_camera);
+
+            render::RenderRootData renderRootData{
+                .commonDataDeviceAddress = m_commonResources.infoAddress,
+                .sceneDataDeviceAddress = m_device.getBufferAddress({.buffer = *scene.deviceSceneResources.sceneRootBuffer}),
+                .environmentDataDeviceAddress = m_device.getBufferAddress({.buffer = *environment.environmentBuffer}),
+                .cameraDataDeviceAddress = m_cameraSystems[renderIndices.frameIndex].getCameraDataAddress()};
+
+            cmd.pushConstants(
+                *m_pipelineLayout,
+                vk::ShaderStageFlagBits::eVertex |
+                    vk::ShaderStageFlagBits::eFragment |
+                    vk::ShaderStageFlagBits::eCompute,
+                0,
+                sizeof(renderRootData),
+                &renderRootData);
+
+            auto heapDescriptorSet = m_descriptorHeapSet.getDescriptorSet();
+
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics,
+                *m_pipelineLayout,
+                0, 1,
+                &heapDescriptorSet,
+                0, nullptr);
+
+            cmd.bindDescriptorSets(
+                vk::PipelineBindPoint::eCompute,
+                *m_pipelineLayout,
+                0, 1,
+                &heapDescriptorSet,
+                0, nullptr);
+
+            cmd.bindIndexBuffer(
+                *scene.deviceSceneResources.indexBuffer,
+                0,
+                vk::IndexType::eUint32);
+
+            render::WorldTransformUpdatePassInfo worldTransformUpdatePassInfo{
+                .worldTransformBufferAddress = m_worldTransformBufferAddresses[renderIndices.frameIndex],
+                .worldTransformBuffer = *m_worldTransformBuffers[renderIndices.frameIndex],
+                .nodeLevelRanges = scene.hostSceneData.levels};
+
+            m_worldTransformUpdatePass.writeRenderCommands(
+                cmd,
+                worldTransformUpdatePassInfo);
+
+            vk::BufferMemoryBarrier2 worldTransformToMeshInstanceCountBufferBarrier{
+                .srcStageMask = vk::PipelineStageFlagBits2::eDrawIndirect,
+                .srcAccessMask = vk::AccessFlagBits2::eIndirectCommandRead,
+                .dstStageMask = render::MeshInstancesCountPass::
+                    clearIndirectDrawCommandsBuffer.stageFlags,
+                .dstAccessMask = render::MeshInstancesCountPass::
+                    clearIndirectDrawCommandsBuffer.accessFlags,
+                .buffer = *m_worldTransformBuffers[renderIndices.frameIndex],
+                .offset = 0,
+                .size = vk::WholeSize};
+
+            cmd.pipelineBarrier2({
+                .bufferMemoryBarrierCount = 1,
+                .pBufferMemoryBarriers =
+                    &worldTransformToMeshInstanceCountBufferBarrier});
+
+            render::MeshInstancesCountPassInfo meshInstancesCountPassInfo{
+                .indirectDrawCommandsBufferAddress = m_indirectDrawCommandsBufferAddresses[renderIndices.frameIndex],
+                .indirectDrawCommandsBuffer = *m_indirectDrawCommandsBuffers[renderIndices.frameIndex],
+                .drawableCount = scene.sceneFrameRequirements.drawableObjectCount,
+                .meshCount = scene.sceneFrameRequirements.meshCount,
+                .clearIndirectDrawCommandsBuffer = true};
+
+            m_meshInstanceCountPass.writeRenderCommands(
+                cmd,
+                meshInstancesCountPassInfo);
+
+            std::array countToPrefixSumBufferBarriers{
+                vk::BufferMemoryBarrier2{
+                    .srcStageMask = render::MeshInstancesCountPass::
+                        outputIndirectDrawCommandsBuffer.stageFlags,
+                    .srcAccessMask = render::MeshInstancesCountPass::
+                        outputIndirectDrawCommandsBuffer.accessFlags,
+                    .dstStageMask = render::PrefixSumPass::
+                        inputIndirectDrawCommandsBuffer.stageFlags,
+                    .dstAccessMask = render::PrefixSumPass::
+                        inputIndirectDrawCommandsBuffer.accessFlags,
+                    .buffer = *m_indirectDrawCommandsBuffers[renderIndices.frameIndex],
+                    .offset = 0,
+                    .size = vk::WholeSize}};
+
+            cmd.pipelineBarrier2({
+                .bufferMemoryBarrierCount = static_cast<uint32_t>(countToPrefixSumBufferBarriers.size()),
+                .pBufferMemoryBarriers = countToPrefixSumBufferBarriers.data()});
+
+            render::PrefixSumPassInfo prefixSumPassInfo{
+                .indirectDrawCommandsBufferAddress = m_indirectDrawCommandsBufferAddresses[renderIndices.frameIndex],
+                .indirectDrawCommandsBuffer = *m_indirectDrawCommandsBuffers[renderIndices.frameIndex],
+            };
+
+            m_prefixSumPass.writeRenderCommands(cmd, prefixSumPassInfo);
+
+            std::array prefixSumToInstanceRemapBufferBarriers{
+                vk::BufferMemoryBarrier2{
+                    .srcStageMask = render::PrefixSumPass::
+                        outputIndirectDrawCommandsBuffer.stageFlags,
+                    .srcAccessMask = render::PrefixSumPass::
+                        outputIndirectDrawCommandsBuffer.accessFlags,
+                    .dstStageMask = render::InstanceRemapPass::
+                        inputIndirectDrawCommandsBuffer.stageFlags,
+                    .dstAccessMask = render::InstanceRemapPass::
+                        inputIndirectDrawCommandsBuffer.accessFlags,
+                    .buffer = *m_indirectDrawCommandsBuffers[renderIndices.frameIndex],
+                    .offset = 0,
+                    .size = vk::WholeSize}};
+
+            cmd.pipelineBarrier2({
+                .bufferMemoryBarrierCount = static_cast<uint32_t>(
+                    prefixSumToInstanceRemapBufferBarriers.size()),
+                .pBufferMemoryBarriers =
+                    prefixSumToInstanceRemapBufferBarriers.data()});
+
+            render::InstanceRemapPassInfo instanceRemapPassInfo{
+                .indirectDrawCommandsBufferAddress =
+                    m_indirectDrawCommandsBufferAddresses[renderIndices.frameIndex],
+                .instanceRemapBufferAddress =
+                    m_instanceRemapBufferAddresses[renderIndices.frameIndex],
+                .meshInstanceCursorBufferAddress =
+                    m_meshInstanceCursorBufferAddresses[renderIndices.frameIndex],
+                .meshInstanceCursorBuffer =
+                    *m_meshInstanceCursorBuffers[renderIndices.frameIndex],
+                .drawableCount = scene.sceneFrameRequirements.drawableObjectCount,
+                .meshCount = scene.sceneFrameRequirements.meshCount,
+                .clearMeshInstanceCursorBuffer = true};
+
+            m_instanceRemapPass.writeRenderCommands(cmd, instanceRemapPassInfo);
+
+            std::array toMainRenderPassBufferMemoryBarriers{
+                vk::BufferMemoryBarrier2{
+                    .srcStageMask = render::InstanceRemapPass::
+                        outputInstanceRemapBuffer.stageFlags,
+                    .srcAccessMask = render::InstanceRemapPass::
+                        outputInstanceRemapBuffer.accessFlags,
+                    .dstStageMask = render::MainRenderPass::
+                        inputInstanceRemapBuffer.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        inputInstanceRemapBuffer.accessFlags,
+                    .buffer = *m_instanceRemapBuffers[renderIndices.frameIndex],
+                    .offset = 0,
+                    .size = vk::WholeSize},
+                vk::BufferMemoryBarrier2{
+                    .srcStageMask = render::PrefixSumPass::
+                        outputIndirectDrawCommandsBuffer.stageFlags,
+                    .srcAccessMask = render::PrefixSumPass::
+                        outputIndirectDrawCommandsBuffer.accessFlags,
+                    .dstStageMask = render::MainRenderPass::
+                        inputIndirectDrawCommandsBuffer.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        inputIndirectDrawCommandsBuffer.accessFlags,
+                    .buffer = *m_indirectDrawCommandsBuffers[renderIndices.frameIndex],
+                    .offset = 0,
+                    .size = vk::WholeSize},
+                vk::BufferMemoryBarrier2{
+                    .srcStageMask = render::WorldTransformUpdatePass::
+                        outputWorldTransformBuffer.stageFlags,
+                    .srcAccessMask = render::WorldTransformUpdatePass::
+                        outputWorldTransformBuffer.accessFlags,
+                    .dstStageMask = render::MainRenderPass::
+                        inputWorldTransformBuffer.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        inputWorldTransformBuffer.accessFlags,
+                    .buffer = *m_worldTransformBuffers[renderIndices.frameIndex],
+                    .offset = 0,
+                    .size = vk::WholeSize}};
+
+            std::array toMainRenderPassImageMemoryBarriers{
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = render::MainRenderPass::
+                        colorAttachmentInput.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        colorAttachmentInput.accessFlags,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *m_colorAttachmentOutputs[renderIndices.frameIndex].image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1}},
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = render::MainRenderPass::
+                        depthAttachmentInput.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        depthAttachmentInput.accessFlags,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *m_depthAttachmentOutputs[renderIndices.frameIndex].image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eDepth,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1}},
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = render::MainRenderPass::
+                        colorAttachmentOutput.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        colorAttachmentOutput.accessFlags,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *m_debugOutputs1[renderIndices.frameIndex].image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1}},
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = render::MainRenderPass::
+                        colorAttachmentOutput.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        colorAttachmentOutput.accessFlags,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *m_debugOutputs2[renderIndices.frameIndex].image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1}},
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = render::MainRenderPass::
+                        colorAttachmentOutput.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        colorAttachmentOutput.accessFlags,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *m_debugOutputs3[renderIndices.frameIndex].image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1}},
+                vk::ImageMemoryBarrier2{
+                    .srcStageMask = vk::PipelineStageFlagBits2::eNone,
+                    .srcAccessMask = vk::AccessFlagBits2::eNone,
+                    .dstStageMask = render::MainRenderPass::
+                        colorAttachmentOutput.stageFlags,
+                    .dstAccessMask = render::MainRenderPass::
+                        colorAttachmentOutput.accessFlags,
+                    .oldLayout = vk::ImageLayout::eUndefined,
+                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                    .image = *m_debugOutputs4[renderIndices.frameIndex].image,
+                    .subresourceRange = {
+                        .aspectMask = vk::ImageAspectFlagBits::eColor,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1}}};
+
+            cmd.pipelineBarrier2({
+                .bufferMemoryBarrierCount = static_cast<uint32_t>(
+                    toMainRenderPassBufferMemoryBarriers.size()),
+                .pBufferMemoryBarriers =
+                    toMainRenderPassBufferMemoryBarriers.data(),
+                .imageMemoryBarrierCount = static_cast<uint32_t>(
+                    toMainRenderPassImageMemoryBarriers.size()),
+                .pImageMemoryBarriers =
+                    toMainRenderPassImageMemoryBarriers.data()});
+
+            m_mainPassSettingSystems[renderIndices.frameIndex].updateSettings(
+                m_mainWindow.getMainPassSettings());
+
+            render::MainRenderPassInfo mainRenderPassInfo{
+                .instanceRemapBufferAddress =
+                    m_instanceRemapBufferAddresses[renderIndices.frameIndex],
+                .mainPassSettingsBufferAddress =
+                    m_mainPassSettingSystems[renderIndices.frameIndex]
+                        .getMainPassSettingsBufferAddress(),
+                .worldTransformBufferAddress =
+                    m_worldTransformBufferAddresses[renderIndices.frameIndex],
+                .colorAttachment = *m_colorAttachmentOutputs[renderIndices.frameIndex].view,
+                .depthAttachment = *m_depthAttachmentOutputs[renderIndices.frameIndex].view,
+                .indirectDrawCommandsBuffer =
+                    *m_indirectDrawCommandsBuffers[renderIndices.frameIndex],
+                .debugModeEnable = m_mainWindow.isDebugModeEnabled(),
+                .debugOutputsInfo =
+                    {.debugOutput1Attachment =
+                         *m_debugOutputs1[renderIndices.frameIndex].view,
+                     .debugOutput2Attachment =
+                         *m_debugOutputs2[renderIndices.frameIndex].view,
+                     .debugOutput3Attachment =
+                         *m_debugOutputs3[renderIndices.frameIndex].view,
+                     .debugOutput4Attachment =
+                         *m_debugOutputs4[renderIndices.frameIndex].view},
+                .meshCount = scene.sceneFrameRequirements.meshCount};
+
+            m_mainRenderPass.writeRenderCommands(
+                cmd,
+                mainRenderPassInfo,
+                m_mainWindow.getViewportExtent());
+        }
+
+        std::array mainRenderPassToPresentImageBarriers{
+            vk::ImageMemoryBarrier2{
+                .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+                .srcAccessMask = vk::AccessFlagBits2::eNone,
+                .dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                .dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
+                .oldLayout = vk::ImageLayout::eUndefined,
+                .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = m_activeResources.swapchain.images[imageIndex],
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1}},
+            vk::ImageMemoryBarrier2{
+                .srcStageMask = render::MainRenderPass::
+                    colorAttachmentOutput.stageFlags,
+                .srcAccessMask = render::MainRenderPass::
+                    colorAttachmentOutput.accessFlags,
+                .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
+                .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = *m_colorAttachmentOutputs[renderIndices.frameIndex].image,
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1}},
+            vk::ImageMemoryBarrier2{
+                .srcStageMask = render::MainRenderPass::
+                    colorAttachmentOutput.stageFlags,
+                .srcAccessMask = render::MainRenderPass::
+                    colorAttachmentOutput.accessFlags,
+                .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
+                .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = *m_debugOutputs1[renderIndices.frameIndex].image,
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1}},
+            vk::ImageMemoryBarrier2{
+                .srcStageMask = render::MainRenderPass::
+                    colorAttachmentOutput.stageFlags,
+                .srcAccessMask = render::MainRenderPass::
+                    colorAttachmentOutput.accessFlags,
+                .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
+                .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = *m_debugOutputs2[renderIndices.frameIndex].image,
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1}},
+            vk::ImageMemoryBarrier2{
+                .srcStageMask = render::MainRenderPass::
+                    colorAttachmentOutput.stageFlags,
+                .srcAccessMask = render::MainRenderPass::
+                    colorAttachmentOutput.accessFlags,
+                .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
+                .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = *m_debugOutputs3[renderIndices.frameIndex].image,
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1}},
+            vk::ImageMemoryBarrier2{
+                .srcStageMask = render::MainRenderPass::
+                    colorAttachmentOutput.stageFlags,
+                .srcAccessMask = render::MainRenderPass::
+                    colorAttachmentOutput.accessFlags,
+                .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
+                .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
+                .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = *m_debugOutputs4[renderIndices.frameIndex].image,
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1}}};
+
+        uint32_t barrierCount = 1;
+        if (m_hasFrameResources && !isResizeMode)
+        {
+            barrierCount =
+                static_cast<uint32_t>(mainRenderPassToPresentImageBarriers.size());
+        }
+
+        cmd.pipelineBarrier2({
+            .imageMemoryBarrierCount = barrierCount,
+            .pImageMemoryBarriers = mainRenderPassToPresentImageBarriers.data()});
+
+        render::UiPassInfo uiPassInfo{
+            .colorAttachment = *m_activeResources.swapchain.imageViews[imageIndex],
+            .extent = m_activeResources.swapchain.extent};
+
+        render::UiPass::writeRenderCommands(cmd, uiPassInfo);
+
+        std::array uiPassToPresentImageBarriers{
+            vk::ImageMemoryBarrier2{
+                .srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                .srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
+                .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+                .dstAccessMask = vk::AccessFlagBits2::eNone,
+                .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
+                .newLayout = vk::ImageLayout::ePresentSrcKHR,
+                .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
+                .image = m_activeResources.swapchain.images[imageIndex],
+                .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1}}};
+
+        cmd.pipelineBarrier2({
+            .imageMemoryBarrierCount = 1,
+            .pImageMemoryBarriers = uiPassToPresentImageBarriers.data()});
+
+        if (auto endResult = cmd.end(); endResult != vk::Result::eSuccess)
+        {
+            throw std::runtime_error("Failed to end graphics command buffer");
+        }
+
+        auto submitRes = m_activeResources.frameManager.submitRenderCommands(
+            m_graphicsQueue,
+            cmd,
+            renderIndices.frameIndex,
+            imageIndex);
+
+        if (submitRes != vk::Result::eSuccess)
+        {
+            throw std::runtime_error(
+                "Failed to submit command buffer to graphics queue");
+        }
+    }
+
     void Application::drawFrame(bool isResizeMode, float dt)
     {
         m_mainWindow.pollFileDialogs();
         m_mainWindow.setResizeMode(isResizeMode);
 
-        if (m_hasScene && m_hasEnvironment && !m_hasFrameResources)
+        auto const* scene = findActiveScene();
+        auto const* environment = findActiveEnvironment();
+
+        if (scene != nullptr && environment != nullptr && !m_hasFrameResources)
         {
             updateFrameData();
         }
@@ -1371,605 +1902,39 @@ namespace shuttle::engine
                 m_mainWindow.getCameraRotationSpeed());
         }
 
-        auto prepareRes = m_activeResources.frameManager.acquireFrameSlot(m_device);
-
-        if (prepareRes.result == vk::Result::eNotReady) {
+        auto [prepareResult, renderIndices] = prepareFrame();
+        if (prepareResult == vk::Result::eNotReady) {
             return;
         }
-        if (prepareRes.result != vk::Result::eSuccess) {
+        if (prepareResult == vk::Result::eSuboptimalKHR || prepareResult == vk::Result::eErrorOutOfDateKHR) {
+            recreateAllResources();
+            return;
+        }
+        if (prepareResult != vk::Result::eSuccess) {
             throw std::runtime_error(
-                "Fatal: Failed to acquire frame slot: " +
-                vk::to_string(prepareRes.result));
+                "Fatal: Failed to prepare frame: " + vk::to_string(prepareResult));
         }
 
-        m_retireController.renderRetireUpdate(m_currentFrameIndex);
-        m_resourceBin.release(m_currentFrameIndex);
+        doFrameRender(renderIndices, *scene, *environment, isResizeMode);
 
-        if (m_hasFrameResources)
-        {
-            m_mainWindow.setFinalViewportImage(
-                *m_colorAttachmentSets[m_currentFrameIndex]);
-            m_mainWindow.setDebugViewportImages({
-                *m_debugAttachmentSets1[m_currentFrameIndex],
-                *m_debugAttachmentSets2[m_currentFrameIndex],
-                *m_debugAttachmentSets3[m_currentFrameIndex],
-                *m_debugAttachmentSets4[m_currentFrameIndex]
-            });
-        }
-
-        render::UiPass::drawUi(m_mainWindow, m_platform);
-
-        if (m_hasFrameResources && !isResizeMode)
-        {
-            if (!m_mainWindow.hasViewport())
-            {
-                createViewPortResources(m_mainWindow.getViewportExtent());
-                return;
-            }
-            if (m_mainWindow.needViewPortResourcesRecreate())
-            {
-                recreateViewportResources(m_mainWindow.getViewportExtent());
-                return;
-            }
-        }
-
-        auto acquireResult = m_activeResources.frameManager.acquireNextImage(
-            m_device,
+        auto presentResult = m_activeResources.frameManager.present(
+            m_graphicsQueue,
             *m_activeResources.swapchain.swapchain,
-            m_currentFrameIndex);
+            renderIndices.imageIndex);
 
-        if (acquireResult.result == vk::Result::eSuccess)
-        {
-            if (auto result = m_activeResources.frameManager.beginFrame(m_device, m_currentFrameIndex);
-                result != vk::Result::eSuccess)
-            {
-                throw std::runtime_error(
-                    "Fatal: Failed to begin frame: " + vk::to_string(result));
-            }
-
-            uint32_t const imageIndex = acquireResult.value;
-            m_retireController.presentRetireUpdate(m_currentFrameIndex);
-
-            vk::CommandBuffer cmd = *m_uniqueGraphicsCommandBuffers[m_currentFrameIndex];
-            if (auto resetResult = cmd.reset(); resetResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error("Failed to reset graphics command buffer");
-            }
-
-            if (auto beginResult = cmd.begin(
-                    {.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
-                beginResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error("Failed to begin graphics command buffer");
-            }
-
-            if (m_hasFrameResources && !isResizeMode)
-            {
-                m_cameraSystems[m_currentFrameIndex].updateData(m_camera);
-
-                engine::render::RenderRootData renderRootData{
-                    .commonDataDeviceAddress = m_commonResources.infoAddress,
-                    .sceneDataDeviceAddress = m_device.getBufferAddress({.buffer = *m_scene->deviceSceneResources.sceneRootBuffer}),
-                    .environmentDataDeviceAddress = m_device.getBufferAddress({.buffer = *m_deviceEnvironmentResources->environmentBuffer}),
-                    .cameraDataDeviceAddress = m_cameraSystems[m_currentFrameIndex].getCameraDataAddress()};
-
-                cmd.pushConstants(
-                    *m_pipelineLayout,
-                    vk::ShaderStageFlagBits::eVertex |
-                        vk::ShaderStageFlagBits::eFragment |
-                        vk::ShaderStageFlagBits::eCompute,
-                    0,
-                    sizeof(renderRootData),
-                    &renderRootData);
-
-                auto heapDescriptorSet = m_descriptorHeapSet.getDescriptorSet();
-
-                cmd.bindDescriptorSets(
-                    vk::PipelineBindPoint::eGraphics,
-                    *m_pipelineLayout,
-                    0,
-                    1,
-                    &heapDescriptorSet,
-                    0,
-                    nullptr);
-
-                cmd.bindDescriptorSets(
-                    vk::PipelineBindPoint::eCompute,
-                    *m_pipelineLayout,
-                    0,
-                    1,
-                    &heapDescriptorSet,
-                    0,
-                    nullptr);
-
-                cmd.bindIndexBuffer(
-                    *m_scene->deviceSceneResources.indexBuffer,
-                    0,
-                    vk::IndexType::eUint32);
-
-                engine::render::WorldTransformUpdatePassInfo worldTransformUpdatePassInfo{
-                    .worldTransformBufferAddress = m_worldTransformBufferAddresses[m_currentFrameIndex],
-                    .worldTransformBuffer = *m_worldTransformBuffers[m_currentFrameIndex],
-                    .nodeLevelRanges = m_scene->hostSceneData.levels};
-
-                m_worldTransformUpdatePass.writeRenderCommands(
-                    cmd,
-                    worldTransformUpdatePassInfo);
-
-                vk::BufferMemoryBarrier2 worldTransformToMeshInstanceCountBufferBarrier{
-                    .srcStageMask = vk::PipelineStageFlagBits2::eDrawIndirect,
-                    .srcAccessMask = vk::AccessFlagBits2::eIndirectCommandRead,
-                    .dstStageMask = engine::render::MeshInstancesCountPass::
-                        clearIndirectDrawCommandsBuffer.stageFlags,
-                    .dstAccessMask = engine::render::MeshInstancesCountPass::
-                        clearIndirectDrawCommandsBuffer.accessFlags,
-                    .buffer = *m_worldTransformBuffers[m_currentFrameIndex],
-                    .offset = 0,
-                    .size = vk::WholeSize};
-
-                cmd.pipelineBarrier2({
-                    .bufferMemoryBarrierCount = 1,
-                    .pBufferMemoryBarriers =
-                        &worldTransformToMeshInstanceCountBufferBarrier});
-
-                engine::render::MeshInstancesCountPassInfo meshInstancesCountPassInfo{
-                    .indirectDrawCommandsBufferAddress = m_indirectDrawCommandsBufferAddresses[m_currentFrameIndex],
-                    .indirectDrawCommandsBuffer = *m_indirectDrawCommandsBuffers[m_currentFrameIndex],
-                    .drawableCount = m_scene->sceneFrameRequirements.drawableObjectCount,
-                    .meshCount = m_scene->sceneFrameRequirements.meshCount,
-                    .clearIndirectDrawCommandsBuffer = true};
-
-                m_meshInstanceCountPass.writeRenderCommands(
-                    cmd,
-                    meshInstancesCountPassInfo);
-
-                std::array countToPrefixSumBufferBarriers{
-                    vk::BufferMemoryBarrier2{
-                        .srcStageMask = engine::render::MeshInstancesCountPass::
-                            outputIndirectDrawCommandsBuffer.stageFlags,
-                        .srcAccessMask = engine::render::MeshInstancesCountPass::
-                            outputIndirectDrawCommandsBuffer.accessFlags,
-                        .dstStageMask = engine::render::PrefixSumPass::
-                            inputIndirectDrawCommandsBuffer.stageFlags,
-                        .dstAccessMask = engine::render::PrefixSumPass::
-                            inputIndirectDrawCommandsBuffer.accessFlags,
-                        .buffer = *m_indirectDrawCommandsBuffers[m_currentFrameIndex],
-                        .offset = 0,
-                        .size = vk::WholeSize}};
-
-                cmd.pipelineBarrier2({
-                    .bufferMemoryBarrierCount = static_cast<uint32_t>(countToPrefixSumBufferBarriers.size()),
-                    .pBufferMemoryBarriers = countToPrefixSumBufferBarriers.data()});
-
-                engine::render::PrefixSumPassInfo prefixSumPassInfo{
-                    .indirectDrawCommandsBufferAddress = m_indirectDrawCommandsBufferAddresses[m_currentFrameIndex],
-                    .indirectDrawCommandsBuffer = *m_indirectDrawCommandsBuffers[m_currentFrameIndex],
-                };
-
-                m_prefixSumPass.writeRenderCommands(cmd, prefixSumPassInfo);
-
-                std::array prefixSumToInstanceRemapBufferBarriers{
-                    vk::BufferMemoryBarrier2{
-                        .srcStageMask = engine::render::PrefixSumPass::
-                            outputIndirectDrawCommandsBuffer.stageFlags,
-                        .srcAccessMask = engine::render::PrefixSumPass::
-                            outputIndirectDrawCommandsBuffer.accessFlags,
-                        .dstStageMask = engine::render::InstanceRemapPass::
-                            inputIndirectDrawCommandsBuffer.stageFlags,
-                        .dstAccessMask = engine::render::InstanceRemapPass::
-                            inputIndirectDrawCommandsBuffer.accessFlags,
-                        .buffer = *m_indirectDrawCommandsBuffers[m_currentFrameIndex],
-                        .offset = 0,
-                        .size = vk::WholeSize}};
-
-                cmd.pipelineBarrier2({
-                    .bufferMemoryBarrierCount = static_cast<uint32_t>(
-                        prefixSumToInstanceRemapBufferBarriers.size()),
-                    .pBufferMemoryBarriers =
-                        prefixSumToInstanceRemapBufferBarriers.data()});
-
-                engine::render::InstanceRemapPassInfo instanceRemapPassInfo{
-                    .indirectDrawCommandsBufferAddress =
-                        m_indirectDrawCommandsBufferAddresses[m_currentFrameIndex],
-                    .instanceRemapBufferAddress =
-                        m_instanceRemapBufferAddresses[m_currentFrameIndex],
-                    .meshInstanceCursorBufferAddress =
-                        m_meshInstanceCursorBufferAddresses[m_currentFrameIndex],
-                    .meshInstanceCursorBuffer =
-                        *m_meshInstanceCursorBuffers[m_currentFrameIndex],
-                    .drawableCount = m_scene->sceneFrameRequirements.drawableObjectCount,
-                    .meshCount = m_scene->sceneFrameRequirements.meshCount,
-                    .clearMeshInstanceCursorBuffer = true};
-
-                m_instanceRemapPass.writeRenderCommands(cmd, instanceRemapPassInfo);
-
-                std::array toMainRenderPassBufferMemoryBarriers{
-                    vk::BufferMemoryBarrier2{
-                        .srcStageMask = engine::render::InstanceRemapPass::
-                            outputInstanceRemapBuffer.stageFlags,
-                        .srcAccessMask = engine::render::InstanceRemapPass::
-                            outputInstanceRemapBuffer.accessFlags,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            inputInstanceRemapBuffer.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            inputInstanceRemapBuffer.accessFlags,
-                        .buffer = *m_instanceRemapBuffers[m_currentFrameIndex],
-                        .offset = 0,
-                        .size = vk::WholeSize},
-                    vk::BufferMemoryBarrier2{
-                        .srcStageMask = engine::render::PrefixSumPass::
-                            outputIndirectDrawCommandsBuffer.stageFlags,
-                        .srcAccessMask = engine::render::PrefixSumPass::
-                            outputIndirectDrawCommandsBuffer.accessFlags,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            inputIndirectDrawCommandsBuffer.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            inputIndirectDrawCommandsBuffer.accessFlags,
-                        .buffer = *m_indirectDrawCommandsBuffers[m_currentFrameIndex],
-                        .offset = 0,
-                        .size = vk::WholeSize},
-                    vk::BufferMemoryBarrier2{
-                        .srcStageMask = engine::render::WorldTransformUpdatePass::
-                            outputWorldTransformBuffer.stageFlags,
-                        .srcAccessMask = engine::render::WorldTransformUpdatePass::
-                            outputWorldTransformBuffer.accessFlags,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            inputWorldTransformBuffer.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            inputWorldTransformBuffer.accessFlags,
-                        .buffer = *m_worldTransformBuffers[m_currentFrameIndex],
-                        .offset = 0,
-                        .size = vk::WholeSize}};
-
-                std::array toMainRenderPassImageMemoryBarriers{
-                    vk::ImageMemoryBarrier2{
-                        .srcStageMask = vk::PipelineStageFlagBits2::eNone,
-                        .srcAccessMask = vk::AccessFlagBits2::eNone,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            colorAttachmentInput.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            colorAttachmentInput.accessFlags,
-                        .oldLayout = vk::ImageLayout::eUndefined,
-                        .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                        .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .image = *m_colorAttachmentOutputs[m_currentFrameIndex].image,
-                        .subresourceRange = {
-                            .aspectMask = vk::ImageAspectFlagBits::eColor,
-                            .baseMipLevel = 0,
-                            .levelCount = 1,
-                            .baseArrayLayer = 0,
-                            .layerCount = 1}},
-                    vk::ImageMemoryBarrier2{
-                        .srcStageMask = vk::PipelineStageFlagBits2::eNone,
-                        .srcAccessMask = vk::AccessFlagBits2::eNone,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            depthAttachmentInput.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            depthAttachmentInput.accessFlags,
-                        .oldLayout = vk::ImageLayout::eUndefined,
-                        .newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
-                        .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .image = *m_depthAttachmentOutputs[m_currentFrameIndex].image,
-                        .subresourceRange = {
-                            .aspectMask = vk::ImageAspectFlagBits::eDepth,
-                            .baseMipLevel = 0,
-                            .levelCount = 1,
-                            .baseArrayLayer = 0,
-                            .layerCount = 1}},
-                    vk::ImageMemoryBarrier2{
-                        .srcStageMask = vk::PipelineStageFlagBits2::eNone,
-                        .srcAccessMask = vk::AccessFlagBits2::eNone,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.accessFlags,
-                        .oldLayout = vk::ImageLayout::eUndefined,
-                        .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                        .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .image = *m_debugOutputs1[m_currentFrameIndex].image,
-                        .subresourceRange = {
-                            .aspectMask = vk::ImageAspectFlagBits::eColor,
-                            .baseMipLevel = 0,
-                            .levelCount = 1,
-                            .baseArrayLayer = 0,
-                            .layerCount = 1}},
-                    vk::ImageMemoryBarrier2{
-                        .srcStageMask = vk::PipelineStageFlagBits2::eNone,
-                        .srcAccessMask = vk::AccessFlagBits2::eNone,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.accessFlags,
-                        .oldLayout = vk::ImageLayout::eUndefined,
-                        .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                        .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .image = *m_debugOutputs2[m_currentFrameIndex].image,
-                        .subresourceRange = {
-                            .aspectMask = vk::ImageAspectFlagBits::eColor,
-                            .baseMipLevel = 0,
-                            .levelCount = 1,
-                            .baseArrayLayer = 0,
-                            .layerCount = 1}},
-                    vk::ImageMemoryBarrier2{
-                        .srcStageMask = vk::PipelineStageFlagBits2::eNone,
-                        .srcAccessMask = vk::AccessFlagBits2::eNone,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.accessFlags,
-                        .oldLayout = vk::ImageLayout::eUndefined,
-                        .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                        .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .image = *m_debugOutputs3[m_currentFrameIndex].image,
-                        .subresourceRange = {
-                            .aspectMask = vk::ImageAspectFlagBits::eColor,
-                            .baseMipLevel = 0,
-                            .levelCount = 1,
-                            .baseArrayLayer = 0,
-                            .layerCount = 1}},
-                    vk::ImageMemoryBarrier2{
-                        .srcStageMask = vk::PipelineStageFlagBits2::eNone,
-                        .srcAccessMask = vk::AccessFlagBits2::eNone,
-                        .dstStageMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.stageFlags,
-                        .dstAccessMask = engine::render::MainRenderPass::
-                            colorAttachmentOutput.accessFlags,
-                        .oldLayout = vk::ImageLayout::eUndefined,
-                        .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                        .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                        .image = *m_debugOutputs4[m_currentFrameIndex].image,
-                        .subresourceRange = {
-                            .aspectMask = vk::ImageAspectFlagBits::eColor,
-                            .baseMipLevel = 0,
-                            .levelCount = 1,
-                            .baseArrayLayer = 0,
-                            .layerCount = 1}}};
-
-                cmd.pipelineBarrier2({
-                    .bufferMemoryBarrierCount = static_cast<uint32_t>(
-                        toMainRenderPassBufferMemoryBarriers.size()),
-                    .pBufferMemoryBarriers =
-                        toMainRenderPassBufferMemoryBarriers.data(),
-                    .imageMemoryBarrierCount = static_cast<uint32_t>(
-                        toMainRenderPassImageMemoryBarriers.size()),
-                    .pImageMemoryBarriers =
-                        toMainRenderPassImageMemoryBarriers.data()});
-
-                m_mainPassSettingSystems[m_currentFrameIndex].updateSettings(
-                    m_mainWindow.getMainPassSettings());
-
-                engine::render::MainRenderPassInfo mainRenderPassInfo{
-                    .instanceRemapBufferAddress =
-                        m_instanceRemapBufferAddresses[m_currentFrameIndex],
-                    .mainPassSettingsBufferAddress =
-                        m_mainPassSettingSystems[m_currentFrameIndex]
-                            .getMainPassSettingsBufferAddress(),
-                    .worldTransformBufferAddress =
-                        m_worldTransformBufferAddresses[m_currentFrameIndex],
-                    .colorAttachment = *m_colorAttachmentOutputs[m_currentFrameIndex].view,
-                    .depthAttachment = *m_depthAttachmentOutputs[m_currentFrameIndex].view,
-                    .indirectDrawCommandsBuffer =
-                        *m_indirectDrawCommandsBuffers[m_currentFrameIndex],
-                    .debugModeEnable = m_mainWindow.isDebugModeEnabled(),
-                    .debugOutputsInfo =
-                        {.debugOutput1Attachment =
-                             *m_debugOutputs1[m_currentFrameIndex].view,
-                         .debugOutput2Attachment =
-                             *m_debugOutputs2[m_currentFrameIndex].view,
-                         .debugOutput3Attachment =
-                             *m_debugOutputs3[m_currentFrameIndex].view,
-                         .debugOutput4Attachment =
-                             *m_debugOutputs4[m_currentFrameIndex].view},
-                    .meshCount = m_scene->sceneFrameRequirements.meshCount};
-
-                m_mainRenderPass.writeRenderCommands(
-                    cmd,
-                    mainRenderPassInfo,
-                    m_mainWindow.getViewportExtent());
-            }
-
-            std::array mainRenderPassToPresentImageBarriers{
-                vk::ImageMemoryBarrier2{
-                    .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-                    .srcAccessMask = vk::AccessFlagBits2::eNone,
-                    .dstStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                    .dstAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
-                    .oldLayout = vk::ImageLayout::eUndefined,
-                    .newLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .image = m_activeResources.swapchain.images[imageIndex],
-                    .subresourceRange = {
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1}},
-                vk::ImageMemoryBarrier2{
-                    .srcStageMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.stageFlags,
-                    .srcAccessMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.accessFlags,
-                    .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
-                    .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
-                    .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                    .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .image = *m_colorAttachmentOutputs[m_currentFrameIndex].image,
-                    .subresourceRange = {
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1}},
-                vk::ImageMemoryBarrier2{
-                    .srcStageMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.stageFlags,
-                    .srcAccessMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.accessFlags,
-                    .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
-                    .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
-                    .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                    .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .image = *m_debugOutputs1[m_currentFrameIndex].image,
-                    .subresourceRange = {
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1}},
-                vk::ImageMemoryBarrier2{
-                    .srcStageMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.stageFlags,
-                    .srcAccessMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.accessFlags,
-                    .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
-                    .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
-                    .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                    .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .image = *m_debugOutputs2[m_currentFrameIndex].image,
-                    .subresourceRange = {
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1}},
-                vk::ImageMemoryBarrier2{
-                    .srcStageMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.stageFlags,
-                    .srcAccessMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.accessFlags,
-                    .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
-                    .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
-                    .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                    .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .image = *m_debugOutputs3[m_currentFrameIndex].image,
-                    .subresourceRange = {
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1}},
-                vk::ImageMemoryBarrier2{
-                    .srcStageMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.stageFlags,
-                    .srcAccessMask = engine::render::MainRenderPass::
-                        colorAttachmentOutput.accessFlags,
-                    .dstStageMask = vk::PipelineStageFlagBits2::eFragmentShader,
-                    .dstAccessMask = vk::AccessFlagBits2::eShaderSampledRead,
-                    .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                    .newLayout = vk::ImageLayout::eShaderReadOnlyOptimal,
-                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .image = *m_debugOutputs4[m_currentFrameIndex].image,
-                    .subresourceRange = {
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1}}};
-
-            uint32_t barrierCount = 1;
-            if (m_hasFrameResources && !isResizeMode)
-            {
-                barrierCount =
-                    static_cast<uint32_t>(mainRenderPassToPresentImageBarriers.size());
-            }
-
-            cmd.pipelineBarrier2({
-                .imageMemoryBarrierCount = barrierCount,
-                .pImageMemoryBarriers = mainRenderPassToPresentImageBarriers.data()});
-
-            engine::render::UiPassInfo uiPassInfo{
-                .colorAttachment = *m_activeResources.swapchain.imageViews[imageIndex],
-                .extent = m_activeResources.swapchain.extent};
-
-            engine::render::UiPass::writeRenderCommands(cmd, uiPassInfo);
-
-            std::array uiPassToPresentImageBarriers{
-                vk::ImageMemoryBarrier2{
-                    .srcStageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                    .srcAccessMask = vk::AccessFlagBits2::eColorAttachmentWrite,
-                    .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
-                    .dstAccessMask = vk::AccessFlagBits2::eNone,
-                    .oldLayout = vk::ImageLayout::eColorAttachmentOptimal,
-                    .newLayout = vk::ImageLayout::ePresentSrcKHR,
-                    .srcQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .dstQueueFamilyIndex = vk::QueueFamilyIgnored,
-                    .image = m_activeResources.swapchain.images[imageIndex],
-                    .subresourceRange = {
-                        .aspectMask = vk::ImageAspectFlagBits::eColor,
-                        .baseMipLevel = 0,
-                        .levelCount = 1,
-                        .baseArrayLayer = 0,
-                        .layerCount = 1}}};
-
-            cmd.pipelineBarrier2({
-                .imageMemoryBarrierCount = 1,
-                .pImageMemoryBarriers = uiPassToPresentImageBarriers.data()});
-
-            if (auto endResult = cmd.end(); endResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error("Failed to end graphics command buffer");
-            }
-
-            auto submitRes = m_activeResources.frameManager.submitRenderCommands(
-                m_graphicsQueue,
-                cmd,
-                m_currentFrameIndex,
-                imageIndex);
-
-            if (submitRes != vk::Result::eSuccess)
-            {
-                throw std::runtime_error(
-                    "Failed to submit command buffer to graphics queue");
-            }
-
-            auto presentResult = m_activeResources.frameManager.present(
-                m_graphicsQueue,
-                *m_activeResources.swapchain.swapchain,
-                imageIndex);
-
-            if (presentResult == vk::Result::eSuboptimalKHR ||
-                presentResult == vk::Result::eErrorOutOfDateKHR)
-            {
-                recreateAllResources();
-            }
-            else if (presentResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error(
-                    "Fatal: Failed to present rendered image to queue");
-            }
-            else
-            {
-                m_swapchainImageLayouts[imageIndex] = vk::ImageLayout::ePresentSrcKHR;
-            }
-
-            m_currentFrameIndex = (m_currentFrameIndex + 1) % m_frameCount;
-        }
-        else if (
-            acquireResult.result == vk::Result::eSuboptimalKHR ||
-            acquireResult.result == vk::Result::eErrorOutOfDateKHR)
+        if (presentResult == vk::Result::eSuboptimalKHR ||
+            presentResult == vk::Result::eErrorOutOfDateKHR)
         {
             recreateAllResources();
         }
-        else
+        else if (presentResult != vk::Result::eSuccess)
         {
             throw std::runtime_error(
-                "Fatal: Failed to acquire next image from swapchain!");
+                "Fatal: Failed to present rendered image to queue");
+        }
+        else
+        {
+            m_swapchainImageLayouts[renderIndices.imageIndex] = vk::ImageLayout::ePresentSrcKHR;
         }
     }
 
@@ -1984,16 +1949,8 @@ namespace shuttle::engine
             m_lastTime = currentTime;
             m_totalTime += m_deltaTime;
 
-            if (!m_platform.pollEvents())
-            {
-                break;
-            }
-
-            if (m_window.isMinimized())
-            {
-                continue;
-            }
-
+            if (!m_platform.pollEvents()) break;
+            if (m_window.isMinimized()) continue;
             drawFrame(false, m_deltaTime);
         }
 

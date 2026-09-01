@@ -78,12 +78,22 @@ namespace shuttle::engine
         void createViewPortResources(vk::Extent2D viewportExtent);
         void recreateViewportResources(vk::Extent2D viewportExtent);
         void recreateAllResources();
-        void syncPointers();
+        const render::UploadSceneOutput* findActiveScene() const;
+        const render::DeviceEnvironmentResources* findActiveEnvironment() const;
 
         void loadScene(std::filesystem::path const& path);
         void loadEnvironment(std::filesystem::path const& path);
 
+        struct RenderIndices
+        {
+            uint32_t frameIndex = 0;
+            uint32_t imageIndex = 0;
+        };
+
         void updateFrameData();
+        vk::ResultValue<RenderIndices> prepareFrame();
+        void doFrameRender(RenderIndices renderIndices, render::UploadSceneOutput const &scene, render::DeviceEnvironmentResources const &
+                           environment, bool isResizeMode);
         void drawFrame(bool isResizeMode, float dt);
 
         struct OpenAsset
@@ -132,7 +142,6 @@ namespace shuttle::engine
         core::Camera m_camera;
         core::CameraController m_cameraController;
 
-        uint32_t m_currentFrameIndex = 0U;
         UiRender m_uiRender;
         std::vector<vk::UniqueCommandBuffer> m_uniqueGraphicsCommandBuffers;
 
@@ -163,16 +172,11 @@ namespace shuttle::engine
         render::MainRenderPass m_mainRenderPass;
 
         // State
-        bool m_hasScene = false;
-        bool m_hasEnvironment = false;
         bool m_hasFrameResources = false;
 
         std::vector<OpenAsset> m_openAssets;
         editor::core::ResourceId m_activeSceneId = 0;
         editor::core::ResourceId m_activeEnvironmentId = 0;
-
-        render::UploadSceneOutput* m_scene = nullptr;
-        render::DeviceEnvironmentResources* m_deviceEnvironmentResources = nullptr;
 
         // Per-frame Data
         std::vector<render::CameraSystem> m_cameraSystems;
