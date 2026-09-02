@@ -242,49 +242,54 @@ vec3 sampleTextureCubeLod(uint textureIndex, uint samplerIndex, vec3 direction, 
 // Normal Mapping
 // ============================================================
 
-// Измененная функция: теперь она возвращает также модификатор шероховатости
-struct MappedNormalResult
-{
-    vec3 normal;
-    float roughnessModifier; // Новый модификатор
-};
-
-MappedNormalResult computeMappedNormal(
+vec3 computeMappedNormal(
         MaterialGpuInfo material,
         CommonResourcesInfo commonResources,
         vec3 geometryNormal,
         vec4 worldTangent,
         vec2 uv)
 {
+    // [Код функции computeMappedNormal с вычислением screen-space TBN через dFdx/dFdy сохранен для автономной работы шейдера]
     vec3 N = normalize(geometryNormal);
-    float roughnessModifier = 0.0; // По умолчанию нет модификации
-
-    if (dot(worldTangent.xyz, worldTangent.xyz) <= 1e-8 || abs(worldTangent.w) <= 1e-5)
-    {
-        return MappedNormalResult(N, roughnessModifier);
-    }
-
     vec2 rawNormalXY = sampleTexture2D(
             material.normalTexture,
             commonResources.materialSampler,
             uv,
             vec4(0.5, 0.5, 1.0, 1.0)).rg * 2.0 - 1.0;
 
-    float rawLengthSq = dot(rawNormalXY, rawNormalXY);
-    roughnessModifier = saturate(1.0 - sqrt(rawLengthSq)); // Расчет модификатора!
+    rawNormalXY.y = -rawNormalXY.y;
 
-    vec2 normalXY = rawNormalXY;
-    normalXY.y = -normalXY.y;
+    float normalZ = sqrt(clamp(1.0 - dot(rawNormalXY, rawNormalXY), 0.0, 1.0));
+    vec3 tangentNormal = vec3(rawNormalXY, normalZ);
 
-    float normalZ = sqrt(clamp(1.0 - rawLengthSq, 0.0, 1.0));
-    vec3 tangentNormal = vec3(normalXY, normalZ);
+    if (dot(rawNormalXY, rawNormalXY) > 0.0001) {
+        tangentNormal = normalize(tangentNormal);
+    }
 
-    vec3 T = normalize(worldTangent.xyz - N * dot(worldTangent.xyz, N));
-    vec3 B = cross(N, T) * worldTangent.w;
-    mat3 TBN = mat3(T, B, N);
 
-    return MappedNormalResult(normalize(TBN * tangentNormal), roughnessModifier);
+    vec3 dp1 = dFdx(inWorldPosition);
+    vec3 dp2 = dFdy(inWorldPosition);
+    vec2 duv1 = dFdx(uv);
+    vec2 duv2 = dFdy(uv);
+
+    vec3 dp2perp = cross(dp2, N);
+    vec3 dp1perp = cross(N, dp1);
+    vec3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    vec3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+
+    // Замените финальный расчет TBN в функции computeMappedNormal на этот:
+    float dotT = dot(T, T);
+    float dotB = dot(B, B);
+
+    // Защита от деления на ноль на дальних дистанциях и острых углах
+    vec3 finalT = (dotT > 1e-6) ? T * inversesqrt(dotT) : vec3(1.0, 0.0, 0.0);
+    vec3 finalB = (dotB > 1e-6) ? B * inversesqrt(dotB) : vec3(0.0, 1.0, 0.0);
+
+    mat3 TBN = mat3(finalT, finalB, N);
+    return normalize(TBN * tangentNormal);
 }
+
+
 
 // ============================================================
 // PBR Helpers
@@ -414,27 +419,16 @@ void main()
     if (baseColor.a < material.alphaCutoff) discard;
 
     vec3 albedo = baseColor.rgb;
-
-    float ao = 1.0; // Temporarily forced to 1.0. Use ormSample.r for actual AO.
-    float baseRoughness = clamp(ormSample.g * material.roughnessFactor, 0.04, 1.0); // Базовая шероховатость
-    float metallic = clamp(ormSample.b * material.metallicFactor, 0.0, 1.0);
     vec3 emissive = emissiveSample.rgb * material.emissiveFactor.rgb * material.emissiveStrength * settings.emissiveIntensity;
 
-    // ============================================================
-    // Basis & Normals (with roughness modification)
-    // ============================================================
+    float ao = 1.0;
+    float roughness = clamp(ormSample.g * material.roughnessFactor, 0.04, 1.0); // Просто и честно!
+    float metallic = clamp(ormSample.b * material.metallicFactor, 0.0, 1.0);
 
+    // Basis & Normals
     vec3 worldNormal = normalize(inWorldNormal);
-    MappedNormalResult normalResult = computeMappedNormal(
-            material,
-            commonResources,
-            worldNormal,
-            inWorldTangent,
-            inUv);
+    vec3 N = computeMappedNormal(material, commonResources, worldNormal, inWorldTangent, inUv);
 
-    vec3 N = normalResult.normal;
-    // МОДИФИЦИРУЕМ ROUGHNESS НА ОСНОВЕ ФАКТОРА НОРМАЛИ!
-    float roughness = clamp(baseRoughness + normalResult.roughnessModifier * 0.5, 0.04, 1.0);
 
     vec3 V = normalize(camera.cameraPosition.xyz - inWorldPosition);
     float NoV = max(dot(N, V), 0.0);

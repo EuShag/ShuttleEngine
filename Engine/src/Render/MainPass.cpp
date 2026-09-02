@@ -5,7 +5,6 @@
 #include "MainPass.hpp"
 
 #include "Render.hpp"
-#include "uiPass.hpp"
 #include "backends/imgui_impl_vulkan.h"
 #include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 

@@ -2,75 +2,75 @@
 
 ![Shuttle Engine Preview](logo/photo_2026-08-26_15-17-46.jpg)
 
-Shuttle Engine — экспериментальный Vulkan-рендерер и редактор сцен с GPU-driven pipeline, созданный на C++.
+Shuttle Engine is an experimental Vulkan 1.3+ renderer and scene editor featuring a GPU-driven pipeline, built from scratch in C++.
 
-Проект объединяет низкоуровневый рендеринг на Vulkan, систему загрузки сцен и окружений, а также редакторский интерфейс для просмотра и настройки результата в реальном времени.
+The project combines low-level Vulkan rendering, a robust scene and environment asset loading system, and an editor interface for real-time inspection and tweaking.
 
-[▶️ Посмотреть демонстрацию на YouTube](https://www.youtube.com/watch?v=CKNqVKySFt0)
+[▶️ Watch the Demo on YouTube](https://www.youtube.com/watch?v=CKNqVKySFt0)
 
 ---
 
 ## Overview
 
-Основная цель проекта — исследовать современные подходы к построению realtime-рендерера:
+The primary goal of the project is to explore modern approaches to building a high-performance real-time renderer:
 
-- **Vulkan 1.3+** (Dynamic Rendering, Bindless, BDA);
+- **Vulkan 1.3+** (Dynamic Rendering, Bindless Descriptors, Buffer Device Address);
 - **GPU-driven rendering** (Indirect indexed drawing, Compute passes);
-- **HDR & IBL** (Image-based lighting);
-- **Интерактивная отладка** (MRT Visual Debugger);
-- **Нативный UI** (Win32 API/SDL2 с поддержкой кастомных декораций).
+- **HDR & IBL** (Image-Based Lighting);
+- **Interactive debugging** (MRT Visual Debugger);
+- **Native UI integration** (Win32 API / SDL2 with custom window decorations).
 
 ---
 
 ## Features
 
 ### Rendering
-- Vulkan-based rendering backend с использованием Dynamic Rendering.
-- Динамическое создание и пересоздание swapchain.
-- Индексированная indirect-отрисовка для эффективного рендеринга больших сцен.
-- Управление ресурсами GPU с отложенным освобождением (`ResourceBin`).
+- Vulkan-based rendering backend utilizing Dynamic Rendering.
+- Dynamic creation and recreation of the swapchain.
+- Indexed indirect drawing for efficient multi-mesh scene rendering.
+- GPU resource management with deferred destruction (`ResourceBin`).
 
-### GPU-driven pipeline
-Pipeline подготовки сцены переносит максимум нагрузки на GPU:
-1. Обновление мировых трансформаций.
-2. Подсчёт экземпляров мешей.
-3. Prefix sum.
-4. Построение remap-буфера экземпляров.
-5. Подготовка indirect draw commands.
+### GPU-driven Pipeline
+The scene preparation pipeline offloads maximum workload to the GPU:
+1. World transform updates.
+2. Mesh instance counting.
+3. Prefix sum (scan).
+4. Instance remap buffer generation.
+5. Indirect draw commands preparation.
 
 ### Assets & Editor UI
-Редактор поддерживает импорт и визуализацию сцен (FBX/glTF) и окружений (HDR). Интерфейс включает кастомный заголовок окна, систему вкладок, настройки камеры и рендеринга, а также гибкие режимы отладки.
+The editor supports importing and visualizing 3D scenes (FBX/glTF) and environments (HDR). The interface includes custom window decorations, a tab system, camera and rendering settings, and flexible debug modes.
 
 ---
 
 ## Debug Rendering
 
-Renderer поддерживает режимы визуализации для глубокой отладки графического конвейера:
+The renderer supports advanced visualization modes for deep inspection of the graphics pipeline:
 
-- **Геометрия/Пространство:** Albedo, Normal, Tangent, Bitangent, UV, World Position/Normal.
+- **Geometry & Space:** Albedo, Normal, Tangent, Bitangent, UV, World Position/Normal.
 - **PBR:** Metallic, Roughness, AO, Emissive.
-- **Глубина и ID:** Linear/View Depth, Mesh/Material/Instance ID.
+- **Depth & IDs:** Linear/View Depth, Mesh/Material/Instance ID.
 
-**Режимы вывода (Viewport Layouts):**
-В зависимости от задачи, отладочный вьюпорт может работать в одном из четырех режимов:
-1. **Single** — вывод одного выбранного канала.
-2. **Split Vertical / Horizontal** — разделение экрана на 2 буфера.
-3. **Quad Layout** — одновременный вывод всех 4 отладочных аттачментов в сетке 2x2.
+**Viewport Layout Modes:**
+Depending on the task, the debug viewport can operate in one of four layout modes:
+1. **Single** — output of a single selected channel.
+2. **Split Vertical / Horizontal** — screen split into 2 buffers.
+3. **Quad Layout** — simultaneous output of all 4 debug attachments in a 2x2 grid.
 
 ---
 
 ## Architecture
 
-Проект разделён на логические уровни:
-- **Application:** Управление жизненным циклом, событиями и низкоуровневыми ресурсами (Swapchain, Allocator).
-- **MainWindow:** Логика редакторского UI, диалоги файлов и взаимодействие с вьюпортом.
-- **Render passes:** Модульная система проходов (WorldTransformUpdatePass, MeshInstancesCountPass, PrefixSumPass, InstanceRemapPass, MainRenderPass, UiPass).
+The project is structured into logical layers:
+- **Application:** Lifecycle management, event handling, and low-level resource orchestration (Swapchain, Allocator).
+- **MainWindow:** Editor UI logic, file dialogs, and viewport interaction.
+- **Render Passes:** Modular pass-based architecture (`WorldTransformUpdatePass`, `MeshInstancesCountPass`, `PrefixSumPass`, `InstanceRemapPass`, `MainRenderPass`, `UiPass`).
 
 ---
 
 ## Build
 
-Проект использует CMake:
+The project uses CMake:
 
 ```bash
 git clone <repository-url>
@@ -84,22 +84,22 @@ cmake --build build --config Release
 ## Project Status
 
 ### Implemented
-- Полный стек Vulkan (Init, Synchronization, Indirect Rendering).
-- Загрузка и импорт сцен (FBX/glTF) и HDR-окружений.
-- Кастомный редакторский UI с поддержкой кастомных оконных декораций.
-- Развитая система отладки (MRT, Quad Layout).
+- Complete Vulkan stack (Initialization, Synchronization, Indirect Rendering).
+- Scene loading and importing (FBX/glTF) and HDR environments.
+- Custom editor UI with window decorations support.
+- Advanced debugging system (MRT, Quad Layout).
 
-### Roadmap (Планы развития)
-- **Модульность:** Разделение на `Shuttle Engine Runtime` и `Shuttle Editor`.
-- **UI:** Переход на `RmlUi` для основного интерфейса (ImGui останется для дебаг-панелей).
-- **Инспектор:** Разработка полноценного инспектора ресурсов и иерархии сцены.
-- **Отладка:** Реализация независимого 4-проходного рендеринга для каждого квадранта (возможность сравнивать настройки IBL/Tone Mapping в реальном времени).
+### Roadmap
+- **Modularity:** Splitting into `Shuttle Engine Runtime` and `Shuttle Editor`.
+- **UI:** Migration to `RmlUi` for production UI (keeping Dear ImGui strictly for debug panels).
+- **Inspector:** Development of a full-featured asset and scene hierarchy inspector.
+- **Debugging:** Implementation of independent 4-pass rendering for each quadrant (enabling real-time comparison of IBL/Tone Mapping settings).
 
 ---
 
 ## License
 
-Собственный код проекта распространяется под лицензией MIT. Подробности в файле [`LICENSE`](LICENSE).
+The source code of this project is licensed under the MIT License. See the [`LICENSE`](LICENSE) file for details.
 
 ## Author
 

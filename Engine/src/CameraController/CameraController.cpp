@@ -12,6 +12,9 @@
 
 #include "CameraController.hpp"
 
+#include <iostream>
+#include <ostream>
+
 namespace shuttle::engine::core
 {
     CameraController::CameraController(Camera& camera)
@@ -25,39 +28,41 @@ namespace shuttle::engine::core
 
     void CameraController::handleKeyboardEvent(pal::KeyCode key, pal::KeyState state)
     {
-        const bool pressed = (state == pal::KeyState::Pressed);
+        const bool pressed = state == pal::KeyState::Pressed;
 
         switch (key)
         {
             case pal::KeyCode::W:
-                (pressed ? moveFlags |= Forward : moveFlags &= ~Forward);
+                pressed ? moveFlags |= Forward : moveFlags &= ~Forward;
                 break;
             case pal::KeyCode::S:
-                (pressed ? moveFlags |= Backward : moveFlags &= ~Backward);
+                pressed ? moveFlags |= Backward : moveFlags &= ~Backward;
                 break;
             case pal::KeyCode::A:
-                (pressed ? moveFlags |= Left : moveFlags &= ~Left);
+                pressed ? moveFlags |= Left : moveFlags &= ~Left;
                 break;
             case pal::KeyCode::D:
-                (pressed ? moveFlags |= Right : moveFlags &= ~Right);
+                pressed ? moveFlags |= Right : moveFlags &= ~Right;
                 break;
-            case pal::KeyCode::Q:
-                (pressed ? moveFlags |= Up : moveFlags &= ~Up);
+            case pal::KeyCode::LCtrl:
+            case pal::KeyCode::RCtrl:
+                pressed ? moveFlags |= Up : moveFlags &= ~Up;
                 break;
-            case pal::KeyCode::E:
-                (pressed ? moveFlags |= Down : moveFlags &= ~Down);
+            case pal::KeyCode::LShift:
+            case pal::KeyCode::RShift:
+                pressed ? moveFlags |= Down : moveFlags &= ~Down;
                 break;
             case pal::KeyCode::Up:
-                (pressed ? rotateFlags |= PitchUp : rotateFlags &= ~PitchUp);
+                pressed ? rotateFlags |= PitchUp : rotateFlags &= ~PitchUp;
                 break;
             case pal::KeyCode::Down:
-                (pressed ? rotateFlags |= PitchDown : rotateFlags &= ~PitchDown);
+                pressed ? rotateFlags |= PitchDown : rotateFlags &= ~PitchDown;
                 break;
             case pal::KeyCode::Left:
-                (pressed ? rotateFlags |= YawLeft : rotateFlags &= ~YawLeft);
+                pressed ? rotateFlags |= YawLeft : rotateFlags &= ~YawLeft;
                 break;
             case pal::KeyCode::Right:
-                (pressed ? rotateFlags |= YawRight : rotateFlags &= ~YawRight);
+                pressed ? rotateFlags |= YawRight : rotateFlags &= ~YawRight;
                 break;
             default:
                 break;

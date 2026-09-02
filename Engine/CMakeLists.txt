@@ -35,8 +35,6 @@ else()
     set(IMGUI_SOURCES
             ${IMGUI_SOURCES}
             "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp"
-            src/RenderGraph/RenderGraph.cpp
-            src/RenderGraph/RenderGraph.hpp
     )
     message(STATUS "PAL: Using SDL2 Backend")
     list(APPEND PAL_SOURCES
@@ -101,9 +99,7 @@ add_executable(
     src/Render/MainPass.cpp
     src/Render/MainPass.hpp
     src/Render/Common.hpp
-    src/Render/uiPass.cpp
-    src/Render/uiPass.hpp
-    src/Render/CameraSystem.cpp
+        src/Render/CameraSystem.cpp
     src/Render/CameraSystem.hpp
     src/Render/WorldTransformUpdatePass.cpp
     src/Render/WorldTransformUpdatePass.hpp

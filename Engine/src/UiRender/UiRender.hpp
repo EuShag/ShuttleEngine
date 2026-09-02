@@ -1,19 +1,26 @@
 #ifndef HELLOTRIANGLE_UIRENDER_HPP
 #define HELLOTRIANGLE_UIRENDER_HPP
 
-#include <imgui.h>
 #include "IncludeVulkan.hpp"
 #include "PAL/Platform.hpp"
 #include "PAL/Common/Window/WindowBase.hpp"
 
 namespace shuttle
 {
-    struct UiTargets {};
+    struct IUiPainter {
+        virtual void drawUi() = 0;
+        virtual ~IUiPainter() = default;
+    };
 
-    class UiRender
+    struct UiPassInfo {
+        vk::ImageView colorAttachment;
+        vk::Extent2D extent;
+    };
+
+    class ImGuiContextM
     {
     public:
-        static vk::ResultValue<UiRender> create(
+        static vk::ResultValue<ImGuiContextM> create(
             pal::WindowBase& window,
             vk::Instance instance,
             vk::PhysicalDevice physicalDevice,
@@ -22,42 +29,43 @@ namespace shuttle
             vk::Queue queue,
             uint32_t imageCount);
 
-        UiRender() = default;
+        void drawUi(IUiPainter &painter) const;
 
-        UiRender(const UiRender&) = delete;
-        UiRender& operator=(const UiRender&) = delete;
+        void writeRenderCommands(vk::CommandBuffer cmd, UiPassInfo const& info) const;
 
-        UiRender(UiRender&& other) noexcept
+        ImGuiContextM() = default;
+
+        ImGuiContextM(const ImGuiContextM&) = delete;
+        ImGuiContextM& operator=(const ImGuiContextM&) = delete;
+
+        ImGuiContextM(ImGuiContextM&& other) noexcept
             : uiDescriptorPool(std::move(other.uiDescriptorPool))
-            , device(other.device)
             , m_platform(other.m_platform)
+            , m_imguiContext(other.m_imguiContext)
         {
-            other.device = VK_NULL_HANDLE;
             other.m_platform = nullptr;
+            other.m_imguiContext = nullptr;
         }
 
-        UiRender& operator=(UiRender&& other) noexcept
+        ImGuiContextM& operator=(ImGuiContextM&& other) noexcept
         {
             if (this != &other)
             {
                 uiDescriptorPool = std::move(other.uiDescriptorPool);
-                device = other.device;
                 m_platform = other.m_platform;
+                m_imguiContext = other.m_imguiContext;
 
-                other.device = VK_NULL_HANDLE;
                 other.m_platform = nullptr;
+                other.m_imguiContext = nullptr;
             }
             return *this;
         }
 
-        bool operator==(UiRender const& ui_render) const;
-        bool operator!=(UiRender const& ui_render_result) const;
-
-        ~UiRender();
+        ~ImGuiContextM();
 
     private:
         vk::UniqueDescriptorPool uiDescriptorPool{};
-        vk::Device device{};
+        void* m_imguiContext = nullptr;
         pal::Platform* m_platform = nullptr; // Сохраняем ссылку на платформу для зачистки бэкенда
     };
 } // namespace shuttle

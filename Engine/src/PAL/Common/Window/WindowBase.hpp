@@ -4,6 +4,7 @@
 #include <string_view>
 #include <utility> // Для std::exchange в move-конструкторе
 
+#include "imgui_internal.h"
 #include "PAL/Common/Window/WindowType.hpp"
 #include "PAL/Common/Window/Decorations/WindowDecorations.hpp"
 
@@ -131,6 +132,8 @@ namespace shuttle::pal
         void internalOnMaximized(bool maximized) noexcept;
         void internalOnMinimized(bool minimized) noexcept;
         void internalOnCloseRequested() noexcept;
+        void setImGuiContext(void* context) noexcept { m_imguiContext = context; }
+        [[nodiscard]] void* getImGuiContext() const noexcept { return m_imguiContext; }
 
     protected:
         Platform&     m_platform;
@@ -151,6 +154,7 @@ namespace shuttle::pal
         bool          m_shouldClose = false;
 
         WindowDecorations m_decorations{};
+        void* m_imguiContext = nullptr;
 
         IWindowListener*       m_windowListener = nullptr;
         input::IInputListener* m_inputListener = nullptr;

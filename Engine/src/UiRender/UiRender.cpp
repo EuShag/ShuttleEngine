@@ -51,7 +51,7 @@ namespace shuttle
 {
     thread_local VkResult UiRenderCreateResult = VK_SUCCESS;
 
-    vk::ResultValue<UiRender> UiRender::create(
+    vk::ResultValue<ImGuiContextM> ImGuiContextM::create(
         pal::WindowBase& window,
         vk::Instance instance,
         vk::PhysicalDevice physicalDevice,
@@ -60,8 +60,7 @@ namespace shuttle
         vk::Queue queue,
         uint32_t imageCount)
     {
-        UiRender result;
-        result.device = device;
+        ImGuiContextM result;
         result.m_platform = &window.platform(); // Сохраняем указатель на платформу
 
         std::array poolSizes = {
@@ -91,7 +90,9 @@ namespace shuttle
         result.uiDescriptorPool = std::move(uniqueDescriptorPool);
 
         IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
+        ::ImGuiContext* context = ImGui::CreateContext();
+        ImGui::SetCurrentContext(context);
+        result.m_imguiContext = context;
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -146,15 +147,54 @@ namespace shuttle
         );
 
         ImGui_ImplVulkan_Init(&initInfo);
+        window.setImGuiContext(context);
 
         return {static_cast<vk::Result>(UiRenderCreateResult), std::move(result)};
     }
 
-        UiRender::~UiRender() {
-        if (device)
-        {
-            device.waitIdle();
+    void ImGuiContextM::drawUi(IUiPainter &painter) const {
+        auto oldContext = ImGui::GetCurrentContext();
+        ImGui::SetCurrentContext(static_cast<ImGuiContext*>(m_imguiContext));
+        ImGui_ImplVulkan_NewFrame();
+        m_platform->newGuiFrame();
+        ImGui::NewFrame();
+        painter.drawUi();
+        ImGui::Render();
+        ImGui::SetCurrentContext(oldContext);
+    }
 
+    void ImGuiContextM::writeRenderCommands(vk::CommandBuffer cmd, UiPassInfo const &info) const {
+        auto oldContext = ImGui::GetCurrentContext();
+        ImGui::SetCurrentContext(static_cast<ImGuiContext*>(m_imguiContext));
+
+        vk::RenderingAttachmentInfo colorAttachment {
+            .imageView = info.colorAttachment,
+            .imageLayout = vk::ImageLayout::eColorAttachmentOptimal,
+            .loadOp = vk::AttachmentLoadOp::eClear,
+            .storeOp = vk::AttachmentStoreOp::eStore,
+            .clearValue = vk::ClearValue{
+                .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}
+            },
+        };
+
+        cmd.beginRendering({
+            .renderArea ={ .offset = {.x = 0, .y = 0}, .extent = info.extent },
+            .layerCount = 1,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colorAttachment
+        });
+
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+
+        cmd.endRendering();
+        ImGui::SetCurrentContext(oldContext);
+    }
+
+
+    ImGuiContextM::~ImGuiContextM() {
+        if (m_imguiContext){
+            auto oldContext = ImGui::GetCurrentContext();
+            ImGui::SetCurrentContext(static_cast<ImGuiContext*>(m_imguiContext));
             // Завершаем работу ImGui Vulkan backend
             ImGui_ImplVulkan_Shutdown();
 
@@ -163,12 +203,8 @@ namespace shuttle
             {
                 m_platform->shutdownGuiBackend();
             }
-
-            // Уничтожаем контекст ImGui
-            if (ImGui::GetCurrentContext())
-            {
-                ImGui::DestroyContext();
-            }
+            ImGui::DestroyContext(static_cast<ImGuiContext*>(m_imguiContext));
+            ImGui::SetCurrentContext(oldContext);
         }
     }
 }

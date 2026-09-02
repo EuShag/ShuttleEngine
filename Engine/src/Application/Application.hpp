@@ -142,7 +142,7 @@ namespace shuttle::engine
         core::Camera m_camera;
         core::CameraController m_cameraController;
 
-        UiRender m_uiRender;
+        ImGuiContextM m_uiRender;
         std::vector<vk::UniqueCommandBuffer> m_uniqueGraphicsCommandBuffers;
 
         bool m_isMinimized = false;

@@ -436,9 +436,9 @@ namespace shuttle::engine
         m_camera.lookAt(glm::vec3(0.0f, 0.0f, 0.0f));
         m_camera.setWindowSize(swapchain.extent.width, swapchain.extent.height);
 
-        // Создаем UiRender через универсальный WindowBase (m_window)
+        // Создаем ImGuiContext через универсальный WindowBase (m_window)
         auto [uiRenderResult, uiRenderObj] =
-            UiRender::create(
+            ImGuiContextM::create(
                 m_window,
                 instance,
                 m_physicalDevice,
@@ -449,7 +449,7 @@ namespace shuttle::engine
 
         if (uiRenderResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Failed to create UI render");
+            throw std::runtime_error("Failed to create ImGuiContext");
         }
 
         render::MainPassSettings mainPassSettings{};
@@ -1354,7 +1354,7 @@ namespace shuttle::engine
                 *m_debugAttachmentSets4[renderIndices.frameIndex]});
         }
 
-        render::UiPass::drawUi(m_mainWindow, m_platform);
+        m_uiRender.drawUi(m_mainWindow);
 
         if (m_hasFrameResources && !isResizeMode)
         {
@@ -1828,19 +1828,18 @@ namespace shuttle::engine
         uint32_t barrierCount = 1;
         if (m_hasFrameResources && !isResizeMode)
         {
-            barrierCount =
-                static_cast<uint32_t>(mainRenderPassToPresentImageBarriers.size());
+            barrierCount = static_cast<uint32_t>(mainRenderPassToPresentImageBarriers.size());
         }
 
         cmd.pipelineBarrier2({
             .imageMemoryBarrierCount = barrierCount,
             .pImageMemoryBarriers = mainRenderPassToPresentImageBarriers.data()});
 
-        render::UiPassInfo uiPassInfo{
+        UiPassInfo uiPassInfo{
             .colorAttachment = *m_activeResources.swapchain.imageViews[imageIndex],
             .extent = m_activeResources.swapchain.extent};
 
-        render::UiPass::writeRenderCommands(cmd, uiPassInfo);
+        m_uiRender.writeRenderCommands(cmd, uiPassInfo);
 
         std::array uiPassToPresentImageBarriers{
             vk::ImageMemoryBarrier2{

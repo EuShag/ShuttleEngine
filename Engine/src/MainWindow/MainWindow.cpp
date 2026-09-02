@@ -9,13 +9,15 @@
 
 namespace shuttle::editor::core
 {
-    enum class WindowButtonType
-    {
-        Minimize,
-        Maximize,
-        Restore,
-        Close
-    };
+    namespace {
+        enum class WindowButtonType
+        {
+            Minimize,
+            Maximize,
+            Restore,
+            Close
+        };
+    }
 
     static bool drawSliderProperty(
         const char* label,
@@ -244,11 +246,8 @@ namespace shuttle::editor::core
 
     LoadedAsset* MainWindow::findAsset(ResourceId id)
     {
-        auto it = std::find_if(
-            m_loadedAssets.begin(),
-            m_loadedAssets.end(),
-            [id](const LoadedAsset& asset)
-            {
+        auto it = std::ranges::find_if(
+            m_loadedAssets, [id](const LoadedAsset& asset) {
                 return asset.id == id;
             });
 
@@ -257,7 +256,7 @@ namespace shuttle::editor::core
 
     MainWindow::MainWindow(
         pal::WindowBase* window,
-        engine::render::MainPassSettings initialMainPassSettings,
+        engine::render::MainPassSettings const &initialMainPassSettings,
         bool isMaximized)
         : window(window),
           settings(initialMainPassSettings)
@@ -517,20 +516,18 @@ namespace shuttle::editor::core
             if (m_selectedSceneId != 0)
             {
                 assetToSave = findAsset(m_selectedSceneId);
-                canSave = assetToSave && assetToSave->isDirty;
             }
             else if (m_selectedEnvironmentId != 0)
             {
                 assetToSave = findAsset(m_selectedEnvironmentId);
-                canSave = assetToSave && assetToSave->isDirty;
             }
 
-            if (ImGui::MenuItem("Save", nullptr, false, canSave) && assetToSave)
+            if (ImGui::MenuItem("Save", nullptr, false) && assetToSave)
             {
                 pendingSaveType = assetToSave->type;
                 const bool isScene = assetToSave->type == AssetType::Scene;
                 const std::string filterName = isScene ? "Shuttle Scene" : "Shuttle Environment";
-                const std::string filterPattern = isScene ? "*.sblb" : "*.env";
+                const std::string filterPattern = "*.sblb";
 
                 saveFileDialog = std::make_unique<pfd::save_file>(
                     "Save Asset As",
@@ -1314,11 +1311,8 @@ namespace shuttle::editor::core
 
     void MainWindow::tryExit()
     {
-        const bool hasDirty = std::any_of(
-            m_loadedAssets.begin(),
-            m_loadedAssets.end(),
-            [](const LoadedAsset& asset)
-            {
+        const bool hasDirty = std::ranges::any_of(
+            m_loadedAssets, [](const LoadedAsset& asset) {
                 return asset.isDirty;
             });
 
@@ -1350,11 +1344,8 @@ namespace shuttle::editor::core
 
     void MainWindow::removeAsset(ResourceId id)
     {
-        auto it = std::find_if(
-            m_loadedAssets.begin(),
-            m_loadedAssets.end(),
-            [id](const LoadedAsset& asset)
-            {
+        auto it = std::ranges::find_if(
+            m_loadedAssets, [id](const LoadedAsset& asset) {
                 return asset.id == id;
             });
 
@@ -1377,11 +1368,8 @@ namespace shuttle::editor::core
 
     void MainWindow::markAssetDirty(ResourceId id, bool dirty)
     {
-        auto it = std::find_if(
-            m_loadedAssets.begin(),
-            m_loadedAssets.end(),
-            [id](const LoadedAsset& asset)
-            {
+        auto it = std::ranges::find_if(
+            m_loadedAssets, [id](const LoadedAsset& asset) {
                 return asset.id == id;
             });
 
@@ -1396,11 +1384,8 @@ namespace shuttle::editor::core
         const std::string& newName,
         const std::filesystem::path& newPath)
     {
-        auto it = std::find_if(
-            m_loadedAssets.begin(),
-            m_loadedAssets.end(),
-            [id](const LoadedAsset& asset)
-            {
+        auto it = std::ranges::find_if(
+            m_loadedAssets, [id](const LoadedAsset& asset) {
                 return asset.id == id;
             });
 
@@ -1475,13 +1460,13 @@ namespace shuttle::editor::core
         return viewportExtent;
     }
 
-    void MainWindow::setFinalViewportImage(vk::DescriptorSet finalSet)
+    void MainWindow::setFinalViewportImage(vk::DescriptorSet finalDescriptorSet)
     {
-        outDescriptorSet = finalSet;
+        outDescriptorSet = finalDescriptorSet;
     }
 
     void MainWindow::setDebugViewportImages(
-        std::array<VkDescriptorSet, 4> debugSets)
+        std::array<VkDescriptorSet, 4> const &debugSets)
     {
         viewportDebugDescriptorSets = debugSets;
     }
@@ -1503,13 +1488,11 @@ namespace shuttle::editor::core
 
         for (size_t i = 0; i < m_descriptorSets.size();)
         {
-            if (m_descriptorSets[i].id == id)
-            {
+            if (m_descriptorSets[i].id == id) {
                 m_descriptorSets[i] = std::move(m_descriptorSets.back());
                 m_descriptorSets.pop_back();
             }
-            else
-            {
+            else {
                 ++i;
             }
         }

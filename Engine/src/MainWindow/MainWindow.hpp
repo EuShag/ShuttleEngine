@@ -24,7 +24,6 @@
 #include "Assets/SceneCompiler/SceneCompiler.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "Render/MainPass.hpp"
-#include "Render/uiPass.hpp"
 #include "UiRender/UiRender.hpp"
 #include "backends/imgui_impl_vulkan.h"
 
@@ -229,7 +228,7 @@ namespace shuttle::editor::core
     /**
      * @brief Main Editor GUI Window class responsible for rendering dockspaces, toolbars, and viewports.
      */
-    class MainWindow : public engine::render::IuiPainter
+    class MainWindow : public IUiPainter
     {
     public:
         /**
@@ -245,7 +244,7 @@ namespace shuttle::editor::core
          * @param mainPassSettings Initial rendering pass configuration.
          * @param isMaximized Initial window maximization state.
          */
-        MainWindow(shuttle::pal::WindowBase* window, engine::render::MainPassSettings mainPassSettings, bool isMaximized = false);
+        MainWindow(shuttle::pal::WindowBase* window, engine::render::MainPassSettings const &mainPassSettings, bool isMaximized = false);
 
         /**
          * @brief Default constructor.
@@ -285,7 +284,7 @@ namespace shuttle::editor::core
          * @brief Sets descriptor sets for debug/attachment viewport outputs.
          * @param outputDescriptorSets Array of 4 debug layer descriptor sets.
          */
-        void setDebugViewportImages(std::array<VkDescriptorSet, 4> outputDescriptorSets);
+        void setDebugViewportImages(std::array<VkDescriptorSet, 4> const &outputDescriptorSets);
 
         // Callbacks
 

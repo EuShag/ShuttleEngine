@@ -524,7 +524,7 @@ namespace shuttle::engine::render
                     .compareEnable = vk::False,
                     .compareOp = vk::CompareOp::eAlways,
                     .minLod = 0.0f,
-                    .maxLod = VK_LOD_CLAMP_NONE,
+                    .maxLod = vk::LodClampNone,
                     .borderColor = vk::BorderColor::eIntOpaqueBlack,
                     .unnormalizedCoordinates = vk::False
                 });

@@ -4,6 +4,8 @@
 #include "PAL/Common/Events/Events.hpp" // Добавлено, если IWindowListener нужен здесь
 #include <utility> // Для std::exchange, std::move
 
+#include "imgui.h"
+
 
 namespace shuttle::pal
 {
@@ -25,6 +27,8 @@ namespace shuttle::pal
 
     WindowBase::~WindowBase()
     {
+        m_imguiContext = nullptr; // Обнуляем ImGui контекст, если он был создан
+
         // Если окно уничтожается С++ деструктором (например, при выходе из области видимости),
         // просим платформу физически закрыть нативный дескриптор.
         // Проверяем m_handle, т.к. оно может быть обнулено при move-семантике
