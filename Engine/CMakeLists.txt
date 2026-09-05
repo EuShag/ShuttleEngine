@@ -86,8 +86,6 @@ add_executable(
     src/Render/Render.hpp
     src/Render/SceneResources.cpp
     src/Render/EnvironmentResources.cpp
-    src/UiRender/UiRender.cpp
-    src/UiRender/UiRender.hpp
     src/FrameManager/FrameManager.cpp
     src/FrameManager/FrameManager.hpp
     src/SwapchainFactory/SwapchainFactory.cpp
@@ -120,6 +118,10 @@ add_executable(
     src/Render/SceneData.hpp
     src/Render/MeshInstancesCountPass.cpp
     src/Render/MeshInstancesCountPass.hpp
+    src/ImGuiContextM/ImGuiContextM.hpp
+    src/ImGuiContextM/ImGuiContextM.cpp
+    src/Engine/Engine.cpp
+    src/Engine/Engine.hpp
 )
 
 target_include_directories(

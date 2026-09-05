@@ -370,7 +370,7 @@ namespace shuttle::engine::render {
                 .resolveImageLayout = vk::ImageLayout::eUndefined,
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
-                .clearValue = vk::ClearValue{.color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}}
+                .clearValue = vk::ClearValue{.color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}}}
             },
             vk::RenderingAttachmentInfo {
                 .imageView = mainRenderPassInfo.debugOutputsInfo.debugOutput1Attachment,
@@ -381,7 +381,7 @@ namespace shuttle::engine::render {
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
                 .clearValue = vk::ClearValue{
-                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}
+                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}}
                 }
             },
             vk::RenderingAttachmentInfo {
@@ -393,7 +393,7 @@ namespace shuttle::engine::render {
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
                 .clearValue = vk::ClearValue{
-                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}
+                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}}
                 }
             },
             vk::RenderingAttachmentInfo {
@@ -405,7 +405,7 @@ namespace shuttle::engine::render {
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
                 .clearValue = vk::ClearValue{
-                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}
+                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}}
                 }
             },
             vk::RenderingAttachmentInfo {
@@ -417,7 +417,7 @@ namespace shuttle::engine::render {
                 .loadOp = vk::AttachmentLoadOp::eClear,
                 .storeOp = vk::AttachmentStoreOp::eStore,
                 .clearValue = vk::ClearValue{
-                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}
+                    .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}}
                 }
             }
         };

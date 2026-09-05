@@ -31,25 +31,13 @@
 #include "PAL/Common/Events/Events.hpp"
 #include "PAL/Common/Window/MainWindow.hpp"
 
-#include "DeviceAllocator/DeviceAllocator.hpp"
 #include "Camera/Camera.hpp"
 #include "CameraController/CameraController.hpp"
 #include "Render/Render.hpp"
 #include "MainWindow/MainWindow.hpp"
-#include "Render/CameraSystem.hpp"
-#include "Render/CommonResources.hpp"
-#include "Render/FallbackTextures.hpp"
-#include "Render/InstanceRemapPass.hpp"
-#include "Render/MainPass.hpp"
-#include "Render/MeshInstancesCountPass.hpp"
-#include "Render/PrefixSumPass.hpp"
-#include "Render/WorldTransformUpdatePass.hpp"
-#include "RetireController/RetireController.hpp"
-#include "SwapchainFactory/SwapchainFactory.hpp"
-#include "UiRender/UiRender.hpp"
-#include "VulkanHelperFunctions/VulkanHelperFunctions.hpp"
 #include "Assets/SceneCompiler/SceneCompiler.hpp"
 #include "Assets/EnvironmentCompiler/CompiledEnvironment.hpp"
+#include "Engine/Engine.hpp"
 
 namespace shuttle::engine
 {
@@ -61,7 +49,7 @@ namespace shuttle::engine
     {
     public:
         Application(int argc, char** argv);
-        ~Application() override;
+        ~Application() override = default;
 
         int run();
 
@@ -75,9 +63,6 @@ namespace shuttle::engine
         void onMouseWheel(const input::MouseWheelEvent& e) override {};
 
     private:
-        void createViewPortResources(vk::Extent2D viewportExtent);
-        void recreateViewportResources(vk::Extent2D viewportExtent);
-        void recreateAllResources();
         const render::UploadSceneOutput* findActiveScene() const;
         const render::DeviceEnvironmentResources* findActiveEnvironment() const;
 
@@ -89,12 +74,6 @@ namespace shuttle::engine
             uint32_t frameIndex = 0;
             uint32_t imageIndex = 0;
         };
-
-        void updateFrameData();
-        vk::ResultValue<RenderIndices> prepareFrame();
-        void doFrameRender(RenderIndices renderIndices, render::UploadSceneOutput const &scene, render::DeviceEnvironmentResources const &
-                           environment, bool isResizeMode);
-        void drawFrame(bool isResizeMode, float dt);
 
         struct OpenAsset
         {
@@ -116,80 +95,17 @@ namespace shuttle::engine
         pal::WindowHandle        m_windowHandle;
         pal::MainWindow          m_window;
 
-        vk::UniqueInstance m_uniqueInstance;
-        vk::UniqueDebugUtilsMessengerEXT m_messenger;
-        vk::UniqueSurfaceKHR m_uniqueSurface;
-
-        vk::PhysicalDevice m_physicalDevice;
-        vk::Device m_device;
-        vk::UniqueDevice m_uniqueDevice;
-        vk::Queue m_graphicsQueue;
-        uint32_t m_graphicsQueueFamilyIndex = 0;
-
-        resources::UniqueAllocator m_allocator;
-        static constexpr uint32_t m_frameCount = 2U;
-        SwapchainContext m_swapchainContext;
-        SwapchainResources m_activeResources;
-        std::vector<vk::ImageLayout> m_swapchainImageLayouts;
-        RetireController m_retireController;
-
-        render::RenderContext m_renderContext;
-        vk::UniqueCommandPool m_uniqueGraphicsCommandPool;
-        render::DescriptorHeapSet m_descriptorHeapSet;
-        render::CommonResources m_commonResources;
-        render::FallbackTextures m_fallbackTextures;
-
         core::Camera m_camera;
         core::CameraController m_cameraController;
 
-        ImGuiContextM m_uiRender;
-        std::vector<vk::UniqueCommandBuffer> m_uniqueGraphicsCommandBuffers;
-
         bool m_isMinimized = false;
         editor::core::MainWindow m_mainWindow;
-
-        // Viewport Attachments
-        std::vector<AttachmentOutput> m_depthAttachmentOutputs;
-        std::vector<AttachmentOutput> m_colorAttachmentOutputs;
-        std::vector<AttachmentOutput> m_debugOutputs1;
-        std::vector<AttachmentOutput> m_debugOutputs2;
-        std::vector<AttachmentOutput> m_debugOutputs3;
-        std::vector<AttachmentOutput> m_debugOutputs4;
-
-        std::vector<editor::core::UniqueViewportDescriptorSet> m_colorAttachmentSets;
-        std::vector<editor::core::UniqueViewportDescriptorSet> m_debugAttachmentSets1;
-        std::vector<editor::core::UniqueViewportDescriptorSet> m_debugAttachmentSets2;
-        std::vector<editor::core::UniqueViewportDescriptorSet> m_debugAttachmentSets3;
-        std::vector<editor::core::UniqueViewportDescriptorSet> m_debugAttachmentSets4;
-
-        editor::core::ResourceBin m_resourceBin;
-        vk::UniquePipelineLayout m_pipelineLayout;
-
-        render::WorldTransformUpdatePass m_worldTransformUpdatePass;
-        render::MeshInstancesCountPass m_meshInstanceCountPass;
-        render::PrefixSumPass m_prefixSumPass;
-        render::InstanceRemapPass m_instanceRemapPass;
-        render::MainRenderPass m_mainRenderPass;
-
-        // State
-        bool m_hasFrameResources = false;
 
         std::vector<OpenAsset> m_openAssets;
         editor::core::ResourceId m_activeSceneId = 0;
         editor::core::ResourceId m_activeEnvironmentId = 0;
 
-        // Per-frame Data
-        std::vector<render::CameraSystem> m_cameraSystems;
-        std::vector<render::MainPassSettingSystem> m_mainPassSettingSystems;
-        std::vector<resources::UniqueAllocatedBuffer> m_worldTransformBuffers;
-        std::vector<resources::UniqueAllocatedBuffer> m_instanceRemapBuffers;
-        std::vector<resources::UniqueAllocatedBuffer> m_meshInstanceCursorBuffers;
-        std::vector<resources::UniqueAllocatedBuffer> m_indirectDrawCommandsBuffers;
-
-        std::vector<vk::DeviceAddress> m_worldTransformBufferAddresses;
-        std::vector<vk::DeviceAddress> m_instanceRemapBufferAddresses;
-        std::vector<vk::DeviceAddress> m_meshInstanceCursorBufferAddresses;
-        std::vector<vk::DeviceAddress> m_indirectDrawCommandsBufferAddresses;
+        Engine m_engine;
 
         std::chrono::high_resolution_clock::time_point m_lastTime;
         float m_deltaTime = 0.0f;

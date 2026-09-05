@@ -1,4 +1,4 @@
-#include "UiRender.hpp"
+#include "ImGuiContextM.hpp"
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
 
@@ -12,7 +12,7 @@
         const void* vk_allocator,
         ImU64* out_vk_surface)
     {
-        VkInstance instance = reinterpret_cast<VkInstance>(vk_instance);
+        auto instance = reinterpret_cast<VkInstance>(vk_instance);
 
         // Динамически запрашиваем указатель на vkCreateWin32SurfaceKHR через Dispatcher
         auto pfnCreateWin32SurfaceKHR = reinterpret_cast<PFN_vkCreateWin32SurfaceKHR>(
@@ -173,7 +173,7 @@ namespace shuttle
             .loadOp = vk::AttachmentLoadOp::eClear,
             .storeOp = vk::AttachmentStoreOp::eStore,
             .clearValue = vk::ClearValue{
-                .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 1.0f}}
+                .color = vk::ClearColorValue{std::array{0.0f, 0.0f, 0.0f, 0.0f}}
             },
         };
 

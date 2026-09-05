@@ -386,44 +386,32 @@ namespace shuttle::engine::render
                 ddsFile.GetFormat() ==
                 tinyddsloader::DDSFile::DXGIFormat::R16G16_Float);
 
-            constexpr vk::Format Format =
-                vk::Format::eR16G16Sfloat;
+            constexpr vk::Format Format = vk::Format::eR16G16Sfloat;
 
-            const uint32_t width =
-                ddsFile.GetWidth();
-
-            const uint32_t height =
-                ddsFile.GetHeight();
-
-            const uint32_t mipCount =
-                ddsFile.GetMipCount();
+            const uint32_t width = ddsFile.GetWidth();
+            const uint32_t height = ddsFile.GetHeight();
+            const uint32_t mipCount = ddsFile.GetMipCount();
 
             vk::DeviceSize totalSize = 0;
 
             for (uint32_t mip = 0; mip < mipCount; ++mip)
             {
-                const auto* imageData =
-                    ddsFile.GetImageData(mip, 0);
-
+                const auto* imageData = ddsFile.GetImageData(mip, 0);
                 totalSize += imageData->m_memSlicePitch;
             }
 
             std::vector<std::byte> textureBytes;
-            textureBytes.resize(
-                static_cast<size_t>(totalSize));
+            textureBytes.resize(totalSize);
 
             std::vector<vk::BufferImageCopy> regions;
             regions.reserve(mipCount);
 
-            std::byte* dst =
-                textureBytes.data();
-
+            std::byte* dst = textureBytes.data();
             vk::DeviceSize offset = 0;
 
             for (uint32_t mip = 0; mip < mipCount; ++mip)
             {
-                const auto* imageData =
-                    ddsFile.GetImageData(mip, 0);
+                const auto* imageData =ddsFile.GetImageData(mip, 0);
 
                 std::memcpy(
                     dst,
@@ -432,33 +420,27 @@ namespace shuttle::engine::render
 
                 dst += imageData->m_memSlicePitch;
 
-                const uint32_t mipWidth =
-                    std::max(1u, width >> mip);
+                const uint32_t mipWidth = std::max(1u, width >> mip);
 
-                const uint32_t mipHeight =
-                    std::max(1u, height >> mip);
+                const uint32_t mipHeight = std::max(1u, height >> mip);
 
-                regions.push_back(
-                    vk::BufferImageCopy{
-                        .bufferOffset = offset,
-                        .bufferRowLength = 0,
-                        .bufferImageHeight = 0,
-                        .imageSubresource =
-                            vk::ImageSubresourceLayers{
-                                .aspectMask =
-                                    vk::ImageAspectFlagBits::eColor,
-                                .mipLevel = mip,
-                                .baseArrayLayer = 0,
-                                .layerCount = 1
-                            },
-                        .imageOffset =
-                            vk::Offset3D{0, 0, 0},
-                        .imageExtent =
-                            vk::Extent3D{
-                                .width = mipWidth,
-                                .height = mipHeight,
-                                .depth = 1
-                            }
+                regions.push_back({
+                    .bufferOffset = offset,
+                    .bufferRowLength = 0,
+                    .bufferImageHeight = 0,
+                    .imageSubresource =
+                        vk::ImageSubresourceLayers{
+                            .aspectMask = vk::ImageAspectFlagBits::eColor,
+                            .mipLevel = mip,
+                            .baseArrayLayer = 0,
+                            .layerCount = 1
+                        },
+                    .imageOffset = {.x = 0, .y = 0, .z = 0},
+                    .imageExtent = {
+                            .width = mipWidth,
+                            .height = mipHeight,
+                            .depth = 1
+                        }
                     });
 
                 offset += imageData->m_memSlicePitch;

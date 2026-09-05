@@ -24,7 +24,7 @@
 #include "Assets/SceneCompiler/SceneCompiler.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "Render/MainPass.hpp"
-#include "UiRender/UiRender.hpp"
+#include "ImGuiContextM/ImGuiContextM.hpp"
 #include "backends/imgui_impl_vulkan.h"
 
 namespace pfd
@@ -406,6 +406,12 @@ namespace shuttle::editor::core
         [[nodiscard]] bool hasViewport() const;
 
         /**
+         * @brief Checks if the viewport is currently focused.
+         * @return True if the viewport is focused.
+         */
+        [[nodiscard]] bool isViewportFocused() const { return m_isViewportFocused; }
+
+        /**
          * @brief Gets number of active output viewports according to current layout.
          * @return Output viewport panel count.
          */
@@ -512,6 +518,7 @@ namespace shuttle::editor::core
         bool m_openSceneModalRequested{false};
         bool m_openEnvModalRequested{false};
         bool m_resizeMode{false};
+        bool m_isViewportFocused{false};
 
         ImVec2 g_actualMainWindowPos{0.0f, 0.0f};
         ImVec2 g_actualMainWindowSize{0.0f, 0.0f};

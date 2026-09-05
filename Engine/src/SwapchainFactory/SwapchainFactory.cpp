@@ -20,6 +20,7 @@ vk::ResultValue<Swapchain> createSwapchain(SwapchainContext const& ctx, vk::Exte
                                   .set_desired_extent(extent.width, extent.height)
                                   .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)
                                   .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+                                  .set_composite_alpha_flags(VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR)
                                   .build();
 
     if (!vkbSwapchainResult)

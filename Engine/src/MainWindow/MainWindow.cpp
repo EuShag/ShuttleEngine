@@ -284,17 +284,30 @@ namespace shuttle::editor::core
         {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
         }
+        else {
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+        }
 
         ImGui::PushStyleVar(
             ImGuiStyleVar_WindowPadding,
             ImVec2(0.0f, 0.0f));
+
+        // 1. Получаем текущий цвет фона окна из стиля
+        ImVec4 window_bg_color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+
+        // 2. Устанавливаем альфа-канал в 1.0f (полная непрозрачность)
+        window_bg_color.w = 1.0f;
+
+        // 3. Проталкиваем измененный цвет в стек стилей
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, window_bg_color);
 
         ImGui::Begin("MainWindow", nullptr, flags);
         drawTitleBar();
         drawClientArea();
         ImGui::End();
 
-        ImGui::PopStyleVar(isMaximized ? 2 : 1);
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor();
 
         drawImportModals();
         drawExitConfirmationModal();
@@ -510,7 +523,6 @@ namespace shuttle::editor::core
 
             ImGui::Separator();
 
-            bool canSave = false;
             LoadedAsset* assetToSave = nullptr;
 
             if (m_selectedSceneId != 0)
@@ -955,6 +967,8 @@ namespace shuttle::editor::core
             false,
             ImGuiWindowFlags_NoScrollbar |
             ImGuiWindowFlags_NoScrollWithMouse);
+
+        m_isViewportFocused = ImGui::IsWindowFocused();
 
         const ImVec2 viewportSize = ImGui::GetContentRegionAvail();
         uint32_t width = std::max(1u, static_cast<uint32_t>(viewportSize.x));

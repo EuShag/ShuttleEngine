@@ -17,8 +17,7 @@ namespace shuttle
         vk::Extent2D extent;
     };
 
-    class ImGuiContextM
-    {
+    class ImGuiContextM {
     public:
         static vk::ResultValue<ImGuiContextM> create(
             pal::WindowBase& window,
