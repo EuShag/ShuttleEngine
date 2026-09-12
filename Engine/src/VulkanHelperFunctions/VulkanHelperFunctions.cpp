@@ -37,7 +37,7 @@ std::filesystem::path makeScreenshotFileName()
 
 } // namespace
 
-vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Device const& device, char const* filePath)
+vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Device const& device, vk::detail::DispatchLoaderDynamic const& dld, char const* filePath)
 {
     std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
     if (!shaderModuleFile.is_open())
@@ -50,10 +50,10 @@ vk::ResultValue<vk::UniqueShaderModule> loadAndCreateShaderModuleUnique(vk::Devi
     shaderModuleFile.read(fragmentShaderCode.data(), shaderModuleFileSize);
 
     return device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
-        .codeSize = fragmentShaderCode.size(), .pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())});
+        .codeSize = fragmentShaderCode.size(), .pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())}, nullptr, dld);
 }
 
-vk::ResultValue<vk::ShaderModule> loadAndCreateShaderModule(vk::Device const& device, char const* filePath)
+vk::ResultValue<vk::ShaderModule> loadAndCreateShaderModule(vk::Device const& device, vk::detail::DispatchLoaderDynamic const& dld, char const* filePath)
 {
     std::fstream shaderModuleFile(filePath, std::ios::binary | std::ios::ate | std::ios::in);
     if (!shaderModuleFile.is_open())
@@ -66,87 +66,7 @@ vk::ResultValue<vk::ShaderModule> loadAndCreateShaderModule(vk::Device const& de
     shaderModuleFile.read(fragmentShaderCode.data(), shaderModuleFileSize);
 
     return device.createShaderModule(vk::ShaderModuleCreateInfo{
-        .codeSize = fragmentShaderCode.size(), .pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())});
-}
-
-bool checkLayersSupport(std::vector<char const*> const& requiredLayers)
-{
-    auto [result, availableLayers] = vk::enumerateInstanceLayerProperties();
-    if (result != vk::Result::eSuccess)
-    {
-        throw std::runtime_error("Failed to enumerate instance layer properties");
-    }
-    for (char const* requiredLayer : requiredLayers)
-    {
-        bool found = false;
-        for (auto const& [layerName, _1, _2, _3] : availableLayers)
-        {
-            if (strcmp(requiredLayer, layerName) == 0)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool checkExtensionSupport(std::vector<char const*> const& requiredExtensions)
-{
-    auto [result, availableExtensions] = vk::enumerateInstanceExtensionProperties();
-    if (result != vk::Result::eSuccess)
-    {
-        throw std::runtime_error("Failed to enumerate instance extension properties");
-    }
-
-    for (char const* requiredExtension : requiredExtensions)
-    {
-        bool found = false;
-        for (auto const& [extensionName, _] : availableExtensions)
-        {
-            if (strcmp(requiredExtension, extensionName) == 0)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool checkExtensionsSupport(vk::PhysicalDevice const& physicalDevice,
-                            std::vector<char const*> const& requiredExtensions)
-{
-    auto [result, availableExtensions] = physicalDevice.enumerateDeviceExtensionProperties();
-    if (result != vk::Result::eSuccess)
-    {
-        throw std::runtime_error("Failed to enumerate device extension properties");
-    }
-    for (char const* requiredExtension : requiredExtensions)
-    {
-        bool found = false;
-        for (auto const& [extensionName, _] : availableExtensions)
-        {
-            if (strcmp(requiredExtension, extensionName) == 0)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            return false;
-        }
-    }
-    return true;
+        .codeSize = fragmentShaderCode.size(), .pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())}, nullptr, dld);
 }
 
 void strideCopy(void* dst, void const* src, size_t elementSize, size_t elementCount, size_t dstStride, size_t srcStride)
@@ -188,6 +108,7 @@ void safeScreenshot(void* screenshotBuffer, uint32_t width, uint32_t height)
 
 vk::ResultValue<AttachmentOutput> createAttachmentOutput(
     vk::Device device,
+    vk::detail::DispatchLoaderDynamic const& dld,
     shuttle::resources::DeviceAllocator const &deviceAllocator,
     AttachmentOutputCreateInfo const &attachmentOutputCreateInfo) {
 
@@ -221,7 +142,7 @@ vk::ResultValue<AttachmentOutput> createAttachmentOutput(
                 .levelCount = 1,
                 .baseArrayLayer = 0,
                 .layerCount = 1}
-        });
+        }, nullptr, dld);
     if (createImageViewResult != vk::Result::eSuccess) {
         return {createImageViewResult, {}};
     }
@@ -261,4 +182,39 @@ vk::ResultValue<vk::UniqueSurfaceKHR> createVulkanSurfaceUnique(
     auto [result, surface] = createVulkanSurface(instance, platform, handle, dispatcher);
 
     return { result, vk::UniqueSurfaceKHR(surface, vk::detail::ObjectDestroy(instance, nullptr, dispatcher)) };
+}
+
+vk::Result submitRenderCommands(
+    vk::Queue graphicsQueue,
+    vk::CommandBuffer commandBuffer,
+    vk::detail::DispatchLoaderDynamic const &dld,
+    vk::Semaphore renderFinishedSemaphore,
+    vk::Semaphore imageAvailableSemaphore,
+    vk::Fence inFlightFence) {
+
+    vk::SemaphoreSubmitInfo waitSemaphoreSubmitInfo{
+        .semaphore = imageAvailableSemaphore,
+        .stageMask = vk::PipelineStageFlagBits2::eAllCommands
+    };
+
+    vk::SemaphoreSubmitInfo signalSemaphoreSubmitInfo{
+        .semaphore = renderFinishedSemaphore,
+        .stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput
+    };
+
+    vk::CommandBufferSubmitInfo commandBufferSubmitInfo{
+        .commandBuffer = commandBuffer
+    };
+
+    return graphicsQueue.submit2(
+        {{
+            .waitSemaphoreInfoCount = 1,
+            .pWaitSemaphoreInfos = &waitSemaphoreSubmitInfo,
+            .commandBufferInfoCount = 1,
+            .pCommandBufferInfos = &commandBufferSubmitInfo,
+            .signalSemaphoreInfoCount = 1,
+            .pSignalSemaphoreInfos = &signalSemaphoreSubmitInfo,
+        }},
+        inFlightFence, dld
+    );
 }

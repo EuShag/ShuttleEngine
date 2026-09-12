@@ -83,8 +83,6 @@ namespace shuttle::engine::render
 
 } // namespace shuttle::engine::render
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-
 namespace shuttle::engine
 {
 
@@ -124,7 +122,7 @@ namespace shuttle::engine
                 assets::scene_compiler::SceneCompilerOptions const& options)
             {
                 m_engine.setHasFrameResources(false);
-                if (auto waitForResult = m_engine.waitRenderIdle();
+                if (auto waitForResult = m_engine.waitRenderIdle(TODO);
                     waitForResult != vk::Result::eSuccess)
                 {
                     throw std::runtime_error(
@@ -181,7 +179,7 @@ namespace shuttle::engine
                 ibl::IblGenerationSettings const& settings)
             {
                 m_engine.setHasFrameResources(false);
-                if (auto waitForResult = m_engine.waitRenderIdle();
+                if (auto waitForResult = m_engine.waitRenderIdle(TODO);
                     waitForResult != vk::Result::eSuccess)
                 {
                     throw std::runtime_error(
@@ -318,7 +316,7 @@ namespace shuttle::engine
                     {
                         m_activeSceneId = id;
                         m_engine.setHasFrameResources(false);
-                        if (auto waitForResult = m_engine.waitRenderIdle();
+                        if (auto waitForResult = m_engine.waitRenderIdle(TODO);
                             waitForResult != vk::Result::eSuccess)
                         {
                             throw std::runtime_error(
@@ -336,7 +334,7 @@ namespace shuttle::engine
         m_mainWindow.setCloseAssetCallback(
             [this](editor::core::ResourceId id)
             {
-                if (auto result = m_engine.waitRenderIdle();
+                if (auto result = m_engine.waitRenderIdle(TODO);
                     result != vk::Result::eSuccess)
                 {
                     std::cerr << "Failed to wait for render idle: "
@@ -467,7 +465,7 @@ namespace shuttle::engine
     void Application::loadScene(std::filesystem::path const& path)
     {
         m_engine.setHasFrameResources(false);
-        if (auto waitForResult = m_engine.waitRenderIdle();
+        if (auto waitForResult = m_engine.waitRenderIdle(TODO);
             waitForResult != vk::Result::eSuccess)
         {
             throw std::runtime_error(
@@ -512,7 +510,7 @@ namespace shuttle::engine
     void Application::loadEnvironment(std::filesystem::path const& path)
     {
         m_engine.setHasFrameResources(false);
-        if (auto waitForResult = m_engine.waitRenderIdle();
+        if (auto waitForResult = m_engine.waitRenderIdle(TODO);
             waitForResult != vk::Result::eSuccess)
         {
             throw std::runtime_error(

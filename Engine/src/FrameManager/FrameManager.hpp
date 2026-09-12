@@ -11,58 +11,40 @@
 
 namespace shuttle
 {
-class FrameManager
-{
-  public:
-    [[nodiscard]] static vk::ResultValue<FrameManager> create(vk::Device device, uint32_t framesInFlightCount,
-                                                              uint32_t swapchainImageCount,
-                                                              FrameManager&& frameManager = {});
-
-    [[nodiscard]] vk::Result prepareFrameSlot(vk::Device device, uint32_t frameIndex);
-    [[nodiscard]] vk::ResultValue<uint32_t> acquireFrameSlot(vk::Device device);
-    [[nodiscard]] vk::Result beginFrame(vk::Device device, uint32_t frameIndex);
-
-
-    [[nodiscard]] vk::ResultValue<uint32_t> acquireNextImage(vk::Device device, vk::SwapchainKHR swapchain, uint32_t frameIndex);
-
-    [[nodiscard]] vk::Result submitRenderCommands(vk::Queue graphicsQueue, vk::CommandBuffer cmd, uint32_t frameIndex,
-                                                  uint32_t imageIndex);
-
-    [[nodiscard]] vk::Result present(vk::Queue presentQueue, vk::SwapchainKHR swapchain, uint32_t imageIndex);
-
-    [[nodiscard]] vk::Result waitRenderIdle(vk::Device device) const noexcept;
-
-    void addOldDepthAttachment(resources::UniqueAllocatedImage &&oldDepthImage, vk::UniqueImageView &&oldDepthImageView);
-
-    FrameManager() noexcept = default;
-
-    // Удаляем копирование, так как vk::Unique... не копируемы
-    FrameManager(const FrameManager&) = delete;
-    FrameManager& operator=(const FrameManager&) = delete;
-
-    // Разрешаем перемещение (Move)
-    FrameManager(FrameManager&& other) noexcept = default;
-    FrameManager& operator=(FrameManager&& other) noexcept = default;
-
-  private:
-    FrameManager(uint32_t framesInFlightCount, uint32_t swapchainImageCount) noexcept
-        : framesInFlightCount{framesInFlightCount}, swapchainImageCount{swapchainImageCount}
+    class FrameManager
     {
-    }
+    public:
+        [[nodiscard]] static vk::ResultValue<FrameManager> create(vk::Device device, uint32_t framesInFlightCount, vk::detail::DispatchLoaderDynamic const& dldi);
 
-    bool isEmpty() const { return framesInFlightCount == 0; }
+        [[nodiscard]] vk::Result prepareFrameSlot(vk::Device device, uint32_t frameIndex, vk::detail::DispatchLoaderDynamic const& dldi);
+        [[nodiscard]] vk::ResultValue<uint32_t> acquireNextFrameSlot(vk::Device device, vk::detail::DispatchLoaderDynamic const& dldi);
+        [[nodiscard]] vk::ResultValue<uint32_t> acquireNextImage(vk::Device device, vk::SwapchainKHR swapchain, uint32_t frameIndex, vk::detail::DispatchLoaderDynamic const& dldi);
+        [[nodiscard]] vk::Result beginFrame(vk::Device device, uint32_t frameIndex, vk::detail::DispatchLoaderDynamic const &dldi);
+        [[nodiscard]] vk::Result waitRenderIdle(vk::Device device, vk::detail::DispatchLoaderDynamic const &dldi) const noexcept;
 
-    [[nodiscard]] vk::Result init(vk::Device device, FrameManager&& oldFrameManager = {});
+        FrameManager() noexcept = default;
 
-    std::vector<vk::UniqueFence> uniqueInFlightFences;
-    std::vector<vk::UniqueSemaphore> uniqueImageAvailableSemaphores;
-    std::vector<vk::UniqueSemaphore> uniqueRenderFinishedSemaphores;
-    std::vector<resources::UniqueAllocatedImage> oldDepthImages;
-    std::vector<vk::UniqueImageView> oldDepthImageViews;
+        // Удаляем копирование, так как vk::Unique... не копируемы
+        FrameManager(const FrameManager&) = delete;
+        FrameManager& operator=(const FrameManager&) = delete;
 
-    uint32_t framesInFlightCount;
-    uint32_t swapchainImageCount;
-};
+        // Разрешаем перемещение (Move)
+        FrameManager(FrameManager&& other) noexcept = default;
+        FrameManager& operator=(FrameManager&& other) noexcept = default;
+
+    private:
+        FrameManager(uint32_t framesInFlightCount) noexcept
+        : framesInFlightCount{framesInFlightCount} {}
+
+        [[nodiscard]] bool isEmpty() const { return framesInFlightCount == 0; }
+
+        [[nodiscard]] vk::Result init(vk::Device device, vk::detail::DispatchLoaderDynamic const& dldi);
+
+        std::vector<vk::UniqueFence> uniqueInFlightFences;
+        std::vector<vk::UniqueSemaphore> uniqueImageAvailableSemaphores;
+
+        uint32_t framesInFlightCount{};
+    };
 } // namespace shuttle
 
 #endif // HELLOTRIANGLE_FRAMEMANAGER_HPP

@@ -27,6 +27,28 @@ namespace shuttle::engine::render {
               mappedMemory(cameraDataMappedPtr),
               cameraDataAddress(cameraDataAddress) {}
 
+        CameraSystem(CameraSystem const&) = delete;
+        CameraSystem& operator=(CameraSystem const&) = delete;
+
+        CameraSystem(CameraSystem&& other)  noexcept : cameraDataBuffer(std::move(other.cameraDataBuffer)),
+              mappedMemory(other.mappedMemory),
+              cameraDataAddress(other.cameraDataAddress) {
+            other.mappedMemory = nullptr;
+            other.cameraDataAddress = 0;
+        }
+
+        CameraSystem& operator=(CameraSystem&& other) noexcept {
+            if (this != &other) {
+                cameraDataBuffer = std::move(other.cameraDataBuffer);
+                mappedMemory = other.mappedMemory;
+                cameraDataAddress = other.cameraDataAddress;
+
+                other.mappedMemory = nullptr;
+                other.cameraDataAddress = 0;
+            }
+            return *this;
+        }
+
         CameraSystem() = default;
 
     private:

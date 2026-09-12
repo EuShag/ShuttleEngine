@@ -22,10 +22,10 @@
 
 #include "../../../Assets/EnvironmentCompiler/include/Assets/EnvironmentCompiler/CpuIblGenerator.hpp"
 #include "Assets/SceneCompiler/SceneCompiler.hpp"
-#include "DeviceAllocator/DeviceAllocator.hpp"
 #include "Render/MainPass.hpp"
 #include "ImGuiContextM/ImGuiContextM.hpp"
 #include "backends/imgui_impl_vulkan.h"
+#include "Engine/Engine.hpp"
 
 namespace pfd
 {
@@ -48,149 +48,6 @@ namespace shuttle::editor::core
     {
         Scene = 0,    /**< 3D Scene asset. */
         Environment  /**< Environment/IBL asset. */
-    };
-
-    // ============================================================
-    // Resource Management Structures (Resource Bin)
-    // ============================================================
-
-    /**
-     * @brief RAII wrapper for managing ImGui Vulkan viewport descriptor sets.
-     * Automatically removes texture from ImGui when destroyed or overwritten.
-     */
-    struct UniqueViewportDescriptorSet
-    {
-        /**
-         * @brief Constructs wrapper around an existing Vulkan descriptor set.
-         * @param descriptorSet Vulkan descriptor set handle.
-         */
-        UniqueViewportDescriptorSet(VkDescriptorSet descriptorSet)
-            : descriptorSet{descriptorSet}
-        {
-        }
-
-        /**
-         * @brief Default constructor creating an empty descriptor set handle.
-         */
-        UniqueViewportDescriptorSet() = default;
-
-        /**
-         * @brief Move constructor.
-         * @param other Object to move from.
-         */
-        UniqueViewportDescriptorSet(UniqueViewportDescriptorSet&& other) noexcept
-        {
-            descriptorSet = other.descriptorSet;
-            other.descriptorSet = VK_NULL_HANDLE;
-        }
-
-        /**
-         * @brief Move assignment operator.
-         * @param other Object to move from.
-         * @return Reference to self.
-         */
-        UniqueViewportDescriptorSet& operator=(UniqueViewportDescriptorSet&& other) noexcept
-        {
-            if (this->descriptorSet != other.descriptorSet)
-            {
-                if (descriptorSet != VK_NULL_HANDLE)
-                {
-                    ImGui_ImplVulkan_RemoveTexture(descriptorSet);
-                }
-                descriptorSet = other.descriptorSet;
-                other.descriptorSet = VK_NULL_HANDLE;
-            }
-            return *this;
-        }
-
-        /**
-         * @brief Destructor releasing ImGui Vulkan texture resource.
-         */
-        ~UniqueViewportDescriptorSet()
-        {
-            if (descriptorSet != VK_NULL_HANDLE)
-            {
-                ImGui_ImplVulkan_RemoveTexture(descriptorSet);
-            }
-        }
-
-        /**
-         * @brief Gets raw descriptor set handle.
-         * @return VkDescriptorSet handle.
-         */
-        VkDescriptorSet operator*() const
-        {
-            return descriptorSet;
-        }
-
-    private:
-        VkDescriptorSet descriptorSet{};
-    };
-
-    /**
-     * @brief Deferred resource cleanup bin for retiring GPU resources safely across frame delays.
-     */
-    class ResourceBin
-    {
-    public:
-        /**
-         * @brief Retired image resource entry with associated view and asset identifier.
-         */
-        struct RetiredImage
-        {
-            resources::UniqueAllocatedImage image; /**< Allocated image handle. */
-            vk::UniqueImageView view;             /**< Image view handle. */
-            ResourceId id;                        /**< Associated resource ID. */
-        };
-
-        /**
-         * @brief Retired descriptor set entry with associated asset identifier.
-         */
-        struct RetiredDescriptorSet
-        {
-            UniqueViewportDescriptorSet descriptorSet; /**< Unique descriptor set wrapper. */
-            ResourceId id{};                           /**< Associated resource ID. */
-        };
-
-        /**
-         * @brief Retires an allocated image and image view for deferred destruction.
-         * @param img Image object to retire.
-         * @param view Image view object to retire.
-         * @param id Associated resource ID.
-         */
-        void retireImage(resources::UniqueAllocatedImage&& img, vk::UniqueImageView&& view, ResourceId id)
-        {
-            m_images.push_back({std::move(img), std::move(view), id});
-        }
-
-        /**
-         * @brief Retires a viewport descriptor set for deferred destruction.
-         * @param ds Descriptor set object to retire.
-         * @param id Associated resource ID.
-         */
-        void retireDescriptorSet(UniqueViewportDescriptorSet&& ds, ResourceId id)
-        {
-            m_descriptorSets.push_back({std::move(ds), id});
-        }
-
-        /**
-         * @brief Releases retired resources associated with given resource ID.
-         * @param id Resource ID to release.
-         */
-        void release(ResourceId id);
-
-        /**
-         * @brief Clears all retired images and descriptor sets immediately.
-         */
-        void clear()
-        {
-            m_images.clear();
-            m_descriptorSets.clear();
-        }
-
-    private:
-        std::vector<RetiredImage> m_images;
-        std::vector<RetiredDescriptorSet> m_descriptorSets;
     };
 
     // ============================================================
@@ -254,7 +111,7 @@ namespace shuttle::editor::core
         /**
          * @brief Main ImGui UI rendering implementation override.
          */
-        void drawUi() override;
+        void drawUi(uint32_t frameIndex) override;
 
         /**
          * @brief Polls asynchronous portable file dialog responses.
@@ -364,28 +221,6 @@ namespace shuttle::editor::core
          * @param newPath Updated file system location.
          */
         void markAssetSaved(ResourceId id, std::string const& newName, std::filesystem::path const& newPath);
-
-        // Resource Bin Access
-
-        /**
-         * @brief Accesses deferred resource bin manager.
-         * @return Reference to ResourceBin instance.
-         */
-        ResourceBin& getResourceBin() { return m_resourceBin; }
-
-        /**
-         * @brief Creates ImGui Vulkan descriptor set from Vulkan image view.
-         * @param imageView Vulkan ImageView handle.
-         * @return VkDescriptorSet descriptor set handle.
-         */
-        static VkDescriptorSet createViewportDescriptorSet(vk::ImageView imageView);
-
-        /**
-         * @brief Creates unique RAII ImGui Vulkan descriptor set wrapper from image view.
-         * @param imageView Vulkan ImageView handle.
-         * @return UniqueViewportDescriptorSet instance.
-         */
-        static UniqueViewportDescriptorSet createViewportDescriptorSetUnique(vk::ImageView imageView);
 
         /**
          * @brief Checks if debug rendering mode is enabled.
@@ -532,8 +367,6 @@ namespace shuttle::editor::core
         ResourceId m_selectedSceneId = 0;
         ResourceId m_selectedEnvironmentId = 0;
 
-        ResourceBin m_resourceBin{};
-
         // Temporary data for import modals
         std::filesystem::path m_tempImportPath{};
         assets::scene_compiler::SceneCompilerOptions m_pendingSceneOptions{};
@@ -552,8 +385,7 @@ namespace shuttle::editor::core
         std::function<void(ResourceId)> closeAssetCallback{};
 
         // Helper variables
-        VkDescriptorSet outDescriptorSet{VK_NULL_HANDLE};
-        std::array<VkDescriptorSet, 4> viewportDebugDescriptorSets{VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+        std::vector<engine::ViewportIndices> viewportIndices{};
         ImFont* editorTitleFont{nullptr};
         float camMoveSpeed{5.0f};
         float camRotationSpeed{2.5f};

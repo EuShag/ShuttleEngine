@@ -16,6 +16,7 @@
 [submodule "external/imgui"]
 	path = external/imgui
 	url = https://github.com/ocornut/imgui
+	branch = master
 [submodule "external/bc7enc_rdo"]
 	path = external/bc7enc_rdo
 	url = https://github.com/richgel999/bc7enc_rdo
@@ -40,3 +41,6 @@
 [submodule "external/filament"]
 	path = external/filament
 	url = https://github.com/google/filament/
+[submodule "external/concurrentqueue"]
+	path = external/concurrentqueue
+	url = https://github.com/cameron314/concurrentqueue

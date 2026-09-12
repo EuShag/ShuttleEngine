@@ -13,8 +13,7 @@ vk::ResultValue<Swapchain> createSwapchain(SwapchainContext const& ctx, vk::Exte
                                            vk::SwapchainKHR oldSwapchain) noexcept
 {
 
-    vkb::SwapchainBuilder builder{ctx.physicalDevice, ctx.device, ctx.surface, ctx.graphicsQueueFamily,
-                                  ctx.presentQueueFamily};
+    vkb::SwapchainBuilder builder{ctx.physicalDevice, ctx.device, ctx.surface};
 
     auto vkbSwapchainResult = builder.set_old_swapchain(oldSwapchain)
                                   .set_desired_extent(extent.width, extent.height)

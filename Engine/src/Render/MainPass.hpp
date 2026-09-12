@@ -193,6 +193,29 @@ namespace shuttle::engine::render {
             mainPassSettingsBufferAddress(mainPassSettingsBufferAddress),
             mainPassSettingsMappedPtr(mainPassSettingsMappedPtr) {}
 
+        MainPassSettingSystem(const MainPassSettingSystem&) = delete;
+        MainPassSettingSystem& operator=(const MainPassSettingSystem&) = delete;
+
+        MainPassSettingSystem(MainPassSettingSystem&& other) noexcept :
+            mainPassSettingsBuffer(std::move(other.mainPassSettingsBuffer)),
+            mainPassSettingsBufferAddress(other.mainPassSettingsBufferAddress),
+            mainPassSettingsMappedPtr(other.mainPassSettingsMappedPtr) {
+                other.mainPassSettingsBufferAddress = 0;
+                other.mainPassSettingsMappedPtr = nullptr;
+        }
+
+        MainPassSettingSystem& operator=(MainPassSettingSystem&& other) noexcept {
+            if (this != &other) {
+                mainPassSettingsBuffer = std::move(other.mainPassSettingsBuffer);
+                mainPassSettingsBufferAddress = other.mainPassSettingsBufferAddress;
+                mainPassSettingsMappedPtr = other.mainPassSettingsMappedPtr;
+
+                other.mainPassSettingsBufferAddress = 0;
+                other.mainPassSettingsMappedPtr = nullptr;
+            }
+            return *this;
+        }
+
     private:
 
         resources::UniqueAllocatedBuffer mainPassSettingsBuffer;

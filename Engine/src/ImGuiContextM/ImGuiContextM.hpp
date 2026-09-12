@@ -5,10 +5,26 @@
 #include "PAL/Platform.hpp"
 #include "PAL/Common/Window/WindowBase.hpp"
 
+namespace shuttle {
+    class ImGuiContextM;
+} // namespace shuttle
+template<>
+class vk::UniqueHandleTraits<vk::DescriptorSet, shuttle::ImGuiContextM> {
+public:
+    struct deleter {
+        deleter(shuttle::ImGuiContextM const& context) : m_context(&context) {}
+        void destroy(DescriptorSet descriptorSet) const;
+    private:
+        shuttle::ImGuiContextM const* m_context;
+    };
+};
+
 namespace shuttle
 {
+    using ImGuiUniqueDescriptorSet = vk::UniqueHandle<vk::DescriptorSet, ImGuiContextM>;
+
     struct IUiPainter {
-        virtual void drawUi() = 0;
+        virtual void drawUi(uint32_t frameIndex) = 0;
         virtual ~IUiPainter() = default;
     };
 
@@ -28,9 +44,15 @@ namespace shuttle
             vk::Queue queue,
             uint32_t imageCount);
 
-        void drawUi(IUiPainter &painter) const;
+        void drawUi(IUiPainter &painter, uint32_t frameIndex) const;
 
         void writeRenderCommands(vk::CommandBuffer cmd, UiPassInfo const& info) const;
+
+        [[nodiscard]] vk::ResultValue<vk::DescriptorSet> createImGuiTextureDescriptorSet(vk::ImageView imageView) const;
+
+        [[nodiscard]] vk::ResultValue<ImGuiUniqueDescriptorSet> createImGuiTextureDescriptorSetUnique(vk::ImageView imageView) const;
+
+        void destroyImGuiTextureDescriptorSet(vk::DescriptorSet descriptorSet) const;
 
         ImGuiContextM() = default;
 

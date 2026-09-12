@@ -38,7 +38,7 @@
 
         if (err != VK_SUCCESS)
         {
-            return static_cast<int>(err);
+            return err;
         }
 
         *out_vk_surface = reinterpret_cast<ImU64>(surface);
@@ -152,13 +152,13 @@ namespace shuttle
         return {static_cast<vk::Result>(UiRenderCreateResult), std::move(result)};
     }
 
-    void ImGuiContextM::drawUi(IUiPainter &painter) const {
+    void ImGuiContextM::drawUi(IUiPainter &painter, uint32_t frameIndex) const {
         auto oldContext = ImGui::GetCurrentContext();
         ImGui::SetCurrentContext(static_cast<ImGuiContext*>(m_imguiContext));
         ImGui_ImplVulkan_NewFrame();
         m_platform->newGuiFrame();
         ImGui::NewFrame();
-        painter.drawUi();
+        painter.drawUi(frameIndex);
         ImGui::Render();
         ImGui::SetCurrentContext(oldContext);
     }
@@ -190,6 +190,27 @@ namespace shuttle
         ImGui::SetCurrentContext(oldContext);
     }
 
+    vk::ResultValue<vk::DescriptorSet> ImGuiContextM::createImGuiTextureDescriptorSet(vk::ImageView imageView) const{
+        auto oldContext = ImGui::GetCurrentContext();
+        ImGui::SetCurrentContext(static_cast<ImGuiContext*>(m_imguiContext));
+        VkDescriptorSet descriptorSet = ImGui_ImplVulkan_AddTexture(
+            imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        ImGui::SetCurrentContext(oldContext);
+        return {vk::Result::eSuccess, descriptorSet};
+    }
+
+    vk::ResultValue<ImGuiUniqueDescriptorSet> ImGuiContextM::createImGuiTextureDescriptorSetUnique(vk::ImageView imageView) const{
+        auto [result, descriptorSet] = createImGuiTextureDescriptorSet(imageView);
+        return {result, vk::UniqueHandle<vk::DescriptorSet, ImGuiContextM>{
+            descriptorSet, vk::UniqueHandleTraits<vk::DescriptorSet, ImGuiContextM>::deleter{*this}}};
+    }
+
+    void ImGuiContextM::destroyImGuiTextureDescriptorSet(vk::DescriptorSet descriptorSet) const{
+        auto oldContext = ImGui::GetCurrentContext();
+        ImGui::SetCurrentContext(static_cast<ImGuiContext*>(m_imguiContext));
+        ImGui_ImplVulkan_RemoveTexture(descriptorSet);
+        ImGui::SetCurrentContext(oldContext);
+    }
 
     ImGuiContextM::~ImGuiContextM() {
         if (m_imguiContext){
@@ -207,4 +228,9 @@ namespace shuttle
             ImGui::SetCurrentContext(oldContext);
         }
     }
+}
+
+void vk::UniqueHandleTraits<vk::DescriptorSet, shuttle::ImGuiContextM>::deleter::destroy(
+    DescriptorSet descriptorSet) const {
+        m_context->destroyImGuiTextureDescriptorSet(descriptorSet);
 }

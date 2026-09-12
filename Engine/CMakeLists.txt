@@ -35,6 +35,7 @@ else()
     set(IMGUI_SOURCES
             ${IMGUI_SOURCES}
             "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp"
+            src/Engine/Pipeline.cpp
     )
     message(STATUS "PAL: Using SDL2 Backend")
     list(APPEND PAL_SOURCES
@@ -51,6 +52,10 @@ add_executable(
     Engine
     ${IMGUI_SOURCES}
     ${PAL_SOURCES}
+    src/SwapchainManager/SwapchainManager.cpp
+    src/SwapchainManager/SwapchainManager.hpp
+    src/FenceWaiter/FenceWaiter.cpp
+    src/FenceWaiter/FenceWaiter.hpp
     src/PAL/Common/Events/Events.hpp
     src/PAL/Common/Keyboard/KeyState.hpp
     src/PAL/Common/Window/WindowBase.hpp
@@ -90,14 +95,12 @@ add_executable(
     src/FrameManager/FrameManager.hpp
     src/SwapchainFactory/SwapchainFactory.cpp
     src/SwapchainFactory/SwapchainFactory.hpp
-    src/RetireController/RetireController.cpp
-    src/RetireController/RetireController.hpp
     src/MainWindow/MainWindow.cpp
     src/MainWindow/MainWindow.hpp
     src/Render/MainPass.cpp
     src/Render/MainPass.hpp
     src/Render/Common.hpp
-        src/Render/CameraSystem.cpp
+    src/Render/CameraSystem.cpp
     src/Render/CameraSystem.hpp
     src/Render/WorldTransformUpdatePass.cpp
     src/Render/WorldTransformUpdatePass.hpp
@@ -122,6 +125,8 @@ add_executable(
     src/ImGuiContextM/ImGuiContextM.cpp
     src/Engine/Engine.cpp
     src/Engine/Engine.hpp
+    src/Engine/Resource.hpp
+        src/Engine/Handle.hpp
 )
 
 target_include_directories(
@@ -133,6 +138,7 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${PROJECT_SOURCE_DIR}/external/cmft/include
+        ${PROJECT_SOURCE_DIR}/external/concurrentqueue
         ${PROJECT_SOURCE_DIR}/external/VulkanMemoryAllocator/include
         ${PROJECT_SOURCE_DIR}/external/stb
         ${PROJECT_SOURCE_DIR}/external/vk-bootstrap/src

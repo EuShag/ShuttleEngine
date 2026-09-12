@@ -4,17 +4,60 @@
 
 #include "Engine.hpp"
 
+#include <fstream>
+
 #include "Application/Application.hpp"
 #include "VulkanDebugger/VulkanDebugger.hpp"
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
+
 namespace shuttle::engine {
+
+    void SceneDeleter::operator()(SceneHandle sceneHandle) const {
+        if (sceneHandle != NullHandle) {
+            engine->destroyScene(sceneHandle);
+        }
+    }
+    void EnvironmentDeleter::operator()(EnvironmentHandle environmentHandle) const {
+        if (environmentHandle != NullHandle) {
+            engine->destroyEnvironment(environmentHandle);
+        }
+    }
+    void FrameGraphDeleter::operator()(FrameGraphHandle frameGraphHandle) const {
+        if (frameGraphHandle != NullHandle) {
+            engine->destroyFrameGraph(frameGraphHandle);
+        }
+    }
+    void FrameResourcesDeleter::operator()(FrameResourcesHandle frameResourcesHandle) const {
+        if (frameResourcesHandle != NullHandle) {
+            engine->destroyFrameResources(frameResourcesHandle);
+        }
+    }
+    void ViewportResourcesDeleter::operator()(ViewportResourcesHandle viewportResourcesHandle) const {
+        if (viewportResourcesHandle != NullHandle) {
+            engine->destroyViewportResources(viewportResourcesHandle);
+        }
+    }
+
+    void SwapchainResourcesDeleter::operator()(SwapchainResourcesHandle swapchainResourcesHandle) const {
+        if (swapchainResourcesHandle != NullHandle) {
+            engine->destroySwapchainResources(swapchainResourcesHandle);
+        }
+    }
+
+    void SurfaceDeleter::operator()(SurfaceHandle surfaceHandle) const {
+        if (surfaceHandle != NullHandle) {
+            engine->destroySurface(surfaceHandle);
+        }
+    }
+
+
     Engine::Engine(
         pal::Platform&  platform,
         pal::WindowHandle& windowHandle,
         pal::WindowBase& window
     ) {
-
-        VULKAN_HPP_DEFAULT_DISPATCHER.init();
+        m_dispatcher.init(m_dynamicLoader);
 
         // Получаем расширения поверхности от выбранной платформы (Win32 или SDL2)
         auto requiredSurfaceExtensions = pal::Platform::getSurfaceRequiredExtensions();
@@ -46,7 +89,7 @@ namespace shuttle::engine {
         std::cout << "[System] Vulkan instance created successfully.\n";
 
         vk::Instance instance{instanceResult.value().instance};
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
+        m_dispatcher.init(instance);
 
         m_uniqueInstance = vk::UniqueInstance{
             vk::Instance{instanceResult.value().instance},
@@ -145,10 +188,15 @@ namespace shuttle::engine {
                 .pipelineRobustness = vk::True,
                 .pushDescriptor = vk::True};
 
+        VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR swapchainMaintenance1Features =
+            vk::PhysicalDeviceSwapchainMaintenance1FeaturesKHR{
+                .swapchainMaintenance1 = vk::True};
+
         auto vkbPhysicalDeviceResult =
             vkb::PhysicalDeviceSelector{instanceResult.value(), *m_uniqueSurface}
                 .set_minimum_version(1, 4)
                 .add_required_extension(vk::KHRSwapchainExtensionName)
+                .add_required_extension(vk::KHRSwapchainMaintenance1ExtensionName)
                 .select();
 
         if (!vkbPhysicalDeviceResult.has_value())
@@ -169,6 +217,7 @@ namespace shuttle::engine {
                 .add_pNext(&features12)
                 .add_pNext(&features13)
                 .add_pNext(&features14)
+                .add_pNext(&swapchainMaintenance1Features)
                 .build();
 
         if (!vkbDeviceResult.has_value())
@@ -202,21 +251,21 @@ namespace shuttle::engine {
         m_physicalDevice = vkbPhysicalDeviceResult.value().physical_device;
         m_device = vkbDeviceResult.value().device;
 
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(m_device);
+        m_dispatcher.init(m_device);
         m_uniqueDevice = vk::UniqueDevice{
             m_device,
             vk::UniqueHandleTraits<
                 vk::Device,
-                VULKAN_HPP_DEFAULT_DISPATCHER_TYPE>::deleter{
+                vk::detail::DispatchLoaderDynamic>::deleter{
                 nullptr,
-                VULKAN_HPP_DEFAULT_DISPATCHER}};
+                m_dispatcher}};
 
         auto [createAllocatorResult, uniqueAllocator] =
             resources::UniqueAllocator::makeUnique(
                 *m_uniqueInstance,
                 *m_uniqueDevice,
                 m_physicalDevice,
-                vk::detail::defaultDispatchLoaderDynamic);
+                m_dispatcher);
 
         if (createAllocatorResult != vk::Result::eSuccess)
         {
@@ -224,17 +273,6 @@ namespace shuttle::engine {
         }
 
         m_allocator = std::move(uniqueAllocator);
-
-        m_swapchainContext = SwapchainContext{
-            .physicalDevice = m_physicalDevice,
-            .device = m_device,
-            .surface = *m_uniqueSurface,
-            .graphicsQueueFamily = m_graphicsQueueFamilyIndex,
-            .presentQueueFamily = m_graphicsQueueFamilyIndex};
-
-        vk::Extent2D windowExtent{ window.getWidth(), window.getHeight() };
-        auto [createSwapchainResult, swapchain] =
-            createSwapchain(m_swapchainContext, windowExtent);
 
         if (createSwapchainResult != vk::Result::eSuccess)
         {
@@ -380,23 +418,10 @@ namespace shuttle::engine {
 
         m_activeResources = SwapchainResources{
             .swapchain = std::move(swapchain),
-            .frameManager = std::move(frameManager)};
+            .swapchainManager = std::move(frameManager)};
         m_swapchainImageLayouts.resize(
             m_activeResources.swapchain.imageCount,
             vk::ImageLayout::eUndefined);
-
-        m_depthAttachmentOutputs.resize(m_frameCount);
-        m_colorAttachmentOutputs.resize(m_frameCount);
-        m_debugOutputs1.resize(m_frameCount);
-        m_debugOutputs2.resize(m_frameCount);
-        m_debugOutputs3.resize(m_frameCount);
-        m_debugOutputs4.resize(m_frameCount);
-
-        m_colorAttachmentSets.resize(m_frameCount);
-        m_debugAttachmentSets1.resize(m_frameCount);
-        m_debugAttachmentSets2.resize(m_frameCount);
-        m_debugAttachmentSets3.resize(m_frameCount);
-        m_debugAttachmentSets4.resize(m_frameCount);
 
         auto descriptorSetLayout = m_descriptorHeapSet.getDescriptorSetLayout();
 
@@ -422,45 +447,124 @@ namespace shuttle::engine {
 
         m_pipelineLayout = std::move(pipelineLayout_);
 
+    }
+
+    Engine::~Engine() {
+        if (auto result = m_device.waitIdle(); result != vk::Result::eSuccess) {
+            std::string message = "Failed to wait for device idle in destructor: " + vk::to_string(result) + "\n";
+            assert(false && message.c_str());
+            std::terminate();
+        }
+    }
+
+    vk::ResultValue<Engine::RenderIndices> Engine::prepareFrame(
+        FrameResourcesHandle frameResources,
+        SwapchainResourcesHandle swapchain
+    ) {
+        auto [prepareRes, currentFrameIndex] = m_activeResources.swapchainManager.acquireFrameSlot(m_device);
+
+        if (prepareRes != vk::Result::eSuccess) {
+            return {prepareRes, {}};
+        }
+        m_retireController.renderRetireUpdate(currentFrameIndex);
+        m_resourceBin.release(currentFrameIndex);
+        auto [acquireResult, currentImageIndex] = m_activeResources.swapchainManager.acquireNextImage(
+            m_device,
+            *m_activeResources.swapchain.swapchain,
+            currentFrameIndex);
+        if (acquireResult != vk::Result::eSuccess) {
+            return {acquireResult, {}};
+        }
+        m_retireController.presentRetireUpdate(currentImageIndex);
+        return {vk::Result::eSuccess, {.frameIndex = currentFrameIndex, .imageIndex = currentImageIndex}};
+    }
+
+    vk::ResultValue<EnvironmentHandle> Engine::createEnvironmentResources(
+        std::filesystem::path const &filePath) {
+        auto [result, environment] = render::createEnvironmentResources(
+            m_renderContext,
+            m_graphicsQueue,
+            *m_uniqueGraphicsCommandPool,
+            m_descriptorHeapSet,
+            filePath);
+
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        auto handle = m_environmentResources.allocate(std::move(environment));
+        return {result, handle};
+    }
+
+    vk::ResultValue<SceneHandle> Engine::uploadScene(render::LoadedSceneData const &sceneData) {
+        auto [result, scene] = render::uploadScene(
+            sceneData,
+            m_renderContext,
+            m_graphicsQueue,
+            *m_uniqueGraphicsCommandPool,
+            m_descriptorHeapSet,
+            m_fallbackTextures.indices);
+
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        auto handle = m_uploadedScenes.allocate(std::move(scene));
+        return {result, handle};
+    }
+
+    vk::ResultValue<UniqueSceneHandle> Engine::uploadSceneUnique(render::LoadedSceneData const &sceneData) {
+        auto [result, sceneHandle] = uploadScene(sceneData);
+
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        return {result, UniqueSceneHandle{sceneHandle, SceneDeleter{this}}};
+    }
+
+    vk::ResultValue<UniqueEnvironmentHandle> Engine::createEnvironmentUnique(std::filesystem::path const &filePath) {
+        auto [result, environmentHandle] = createEnvironmentResources(filePath);
+
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        return {result, UniqueEnvironmentHandle{environmentHandle, EnvironmentDeleter{this}}};
+    }
+
+    vk::ResultValue<FrameGraphHandle> Engine::createFrameGraph() {
         auto [createWorldTransformUpdatePassResult, worldTransformUpdatePass_] =
             render::WorldTransformUpdatePass::create(m_device, *m_pipelineLayout);
 
         if (createWorldTransformUpdatePassResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Failed to create world transform update pass");
+            return {createWorldTransformUpdatePassResult, {}};
         }
-
-        m_worldTransformUpdatePass = std::move(worldTransformUpdatePass_);
 
         auto [createMeshInstanceCountPassResult, meshInstanceCountPass_] =
             render::MeshInstancesCountPass::create(m_device, *m_pipelineLayout);
 
         if (createMeshInstanceCountPassResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Failed to create mesh instance count pass");
+            return {createMeshInstanceCountPassResult, {}};
         }
-
-        m_meshInstanceCountPass = std::move(meshInstanceCountPass_);
 
         auto [createPrefixSumPassResult, prefixSumPass_] =
             render::PrefixSumPass::create(m_device, *m_pipelineLayout);
 
         if (createPrefixSumPassResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Failed to create prefix sum pass");
+            return {createPrefixSumPassResult, {}};
         }
-
-        m_prefixSumPass = std::move(prefixSumPass_);
 
         auto [createInstanceRemapPassResult, instanceRemapPass_] =
             render::InstanceRemapPass::create(m_device, *m_pipelineLayout);
 
         if (createInstanceRemapPassResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Failed to create instance remap pass");
+            return {createInstanceRemapPassResult, {}};
         }
-
-        m_instanceRemapPass = std::move(instanceRemapPass_);
 
         auto [createMainRenderPassResult, mainRenderPass_] =
             render::MainRenderPass::create(
@@ -471,31 +575,159 @@ namespace shuttle::engine {
 
         if (createMainRenderPassResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Failed to create main render pass");
+            return {createMainRenderPassResult, {}};
         }
 
-        m_mainRenderPass = std::move(mainRenderPass_);
+        auto handle = m_frameGraphs.allocate(
+            FrameGraph{
+                .m_worldTransformUpdatePass = std::move(worldTransformUpdatePass_),
+                .m_meshInstanceCountPass = std::move(meshInstanceCountPass_),
+                .m_prefixSumPass = std::move(prefixSumPass_),
+                .m_instanceRemapPass = std::move(instanceRemapPass_),
+                .m_mainRenderPass = std::move(mainRenderPass_)
+            }
+        );
 
-        m_cameraSystems.resize(m_frameCount);
-        m_mainPassSettingSystems.resize(m_frameCount);
-        m_worldTransformBuffers.resize(m_frameCount);
-        m_instanceRemapBuffers.resize(m_frameCount);
-        m_meshInstanceCursorBuffers.resize(m_frameCount);
-        m_indirectDrawCommandsBuffers.resize(m_frameCount);
-        m_worldTransformBufferAddresses.resize(m_frameCount);
-        m_instanceRemapBufferAddresses.resize(m_frameCount);
-        m_meshInstanceCursorBufferAddresses.resize(m_frameCount);
-        m_indirectDrawCommandsBufferAddresses.resize(m_frameCount);
-
+        return {vk::Result::eSuccess, handle};
     }
 
-    Engine::~Engine() {
-        m_device.waitIdle();
+    vk::ResultValue<UniqueFrameGraphHandle> Engine::createFrameGraphUnique() {
+        auto [result, frameGraphHandle] = createFrameGraph();
+
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        return {result, UniqueFrameGraphHandle{frameGraphHandle, FrameGraphDeleter{this}}};
     }
 
-    void Engine::createViewPortResources(vk::Extent2D viewportExtent, core::Camera& camera)
-    {
-        camera.setWindowSize(viewportExtent.width, viewportExtent.height);
+    vk::ResultValue<FrameResourcesHandle> Engine::createFrameResources(
+        SceneHandle sceneHandle,
+        FrameResourcesHandle oldResources) {
+
+        auto& scene = *m_uploadedScenes.get(sceneHandle);
+        FrameResources frameResources;
+
+        auto [createFrameManagerResult, frameManager] =
+            FrameManager::create(m_device, m_frameCount, m_dispatcher);
+        if (createFrameManagerResult != vk::Result::eSuccess)
+        {
+            return {createFrameManagerResult, {}};
+        }
+        frameResources.m_frameManager = std::move(frameManager);
+
+        for (int i = 0; i < m_frameCount; i++)
+        {
+            auto [createWorldTransformBufferResult, worldTransformBuffer] =
+                m_allocator->createAndAllocateBufferUnique(
+                    vk::BufferCreateInfo{
+                        .size = sizeof(glm::mat4) * scene.hostSceneData.nodes.size(),
+                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                 vk::BufferUsageFlagBits::eTransferDst,
+                        .sharingMode = vk::SharingMode::eExclusive},
+                    resources::MemoryUsage::eGpuOnly);
+
+            if (createWorldTransformBufferResult != vk::Result::eSuccess)
+            {
+                return {createWorldTransformBufferResult, {}};
+            }
+
+            auto [createInstanceRemapBufferResult, instanceRemapBuffer] =
+                m_allocator->createAndAllocateBufferUnique(
+                    vk::BufferCreateInfo{
+                        .size = sizeof(uint32_t) *
+                                scene.hostSceneData.drawableObjects.size(),
+                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                 vk::BufferUsageFlagBits::eTransferDst,
+                        .sharingMode = vk::SharingMode::eExclusive},
+                    resources::MemoryUsage::eGpuOnly);
+
+            if (createInstanceRemapBufferResult != vk::Result::eSuccess)
+            {
+                return {createInstanceRemapBufferResult, {}};
+            }
+
+            auto [createMeshInstanceCursorBufferResult, meshInstanceCursorBuffer] =
+                m_allocator->createAndAllocateBufferUnique(
+                    vk::BufferCreateInfo{
+                        .size = sizeof(uint32_t) *
+                                scene.sceneFrameRequirements.meshCount,
+                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                 vk::BufferUsageFlagBits::eTransferDst,
+                        .sharingMode = vk::SharingMode::eExclusive},
+                    resources::MemoryUsage::eGpuOnly);
+
+            if (createMeshInstanceCursorBufferResult != vk::Result::eSuccess)
+            {
+                return {createMeshInstanceCursorBufferResult, {}};
+            }
+
+            auto [createIndirectDrawCommandsBufferResult, indirectDrawCommandsBuffer] =
+                m_allocator->createAndAllocateBufferUnique(
+                    vk::BufferCreateInfo{
+                        .size = sizeof(vk::DrawIndexedIndirectCommand) *
+                                scene.sceneFrameRequirements.meshCount,
+                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                 vk::BufferUsageFlagBits::eTransferDst |
+                                 vk::BufferUsageFlagBits::eIndirectBuffer,
+                        .sharingMode = vk::SharingMode::eExclusive},
+                    resources::MemoryUsage::eGpuOnly);
+
+            if (createIndirectDrawCommandsBufferResult != vk::Result::eSuccess)
+            {
+                return {createIndirectDrawCommandsBufferResult, {}};
+            }
+
+            auto [createCameraSystemResult, m_cameraSystem] =
+                render::CameraSystem::create(m_device, *m_allocator);
+
+            if (createCameraSystemResult != vk::Result::eSuccess)
+            {
+                return {createCameraSystemResult, {}};
+            }
+
+            auto [createMainPassSettingSystemResult, mainPassSettingSystem] =
+                render::MainPassSettingSystem::create(m_device, *m_allocator);
+
+            if (createMainPassSettingSystemResult != vk::Result::eSuccess)
+            {
+                return {createMainPassSettingSystemResult, {}};
+            }
+
+            frameResources.m_cameraSystems.push_back(std::move(m_cameraSystem));
+            frameResources.m_mainPassSettingSystems.push_back(std::move(mainPassSettingSystem));
+            frameResources.m_worldTransformBuffers.push_back(std::move(worldTransformBuffer));
+            frameResources.m_instanceRemapBuffers.push_back(std::move(instanceRemapBuffer));
+            frameResources.m_meshInstanceCursorBuffers.push_back(std::move(meshInstanceCursorBuffer));
+            frameResources.m_indirectDrawCommandsBuffers.push_back(std::move(indirectDrawCommandsBuffer));
+            frameResources.m_worldTransformBufferAddresses.push_back(m_device.getBufferAddress({.buffer = *frameResources.m_worldTransformBuffers.back()}));
+            frameResources.m_instanceRemapBufferAddresses.push_back(m_device.getBufferAddress({.buffer = *frameResources.m_instanceRemapBuffers.back()}));
+            frameResources.m_meshInstanceCursorBufferAddresses.push_back(m_device.getBufferAddress({.buffer = *frameResources.m_meshInstanceCursorBuffers.back()}));
+            frameResources.m_indirectDrawCommandsBufferAddresses.push_back(m_device.getBufferAddress({.buffer = *frameResources.m_indirectDrawCommandsBuffers.back()}));
+        }
+
+        auto handle = m_frameResources.allocate(std::move(frameResources));
+
+        m_frameResources.markForDeletion(oldResources);
+
+        return {vk::Result::eSuccess, handle};
+    }
+
+    vk::ResultValue<UniqueFrameResourcesHandle> Engine::createFrameResourcesUnique(
+        SceneHandle scene,
+        FrameResourcesHandle oldResources) {
+        auto [result, frameResourcesHandle] = createFrameResources(scene, oldResources);
+
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        return {result, UniqueFrameResourcesHandle{frameResourcesHandle, FrameResourcesDeleter{this}}};
+    }
+
+    vk::ResultValue<ViewportResourcesHandle> Engine::createViewportResources(vk::Extent2D viewportExtent) {
+
+        ViewportResources viewportResources;
 
         for (uint32_t i = 0; i < m_frameCount; ++i)
         {
@@ -553,253 +785,207 @@ namespace shuttle::engine {
                 return std::move(debugOutputs);
             };
 
-            m_debugOutputs1[i] = std::move(createDebugOutputResources());
-            m_debugOutputs2[i] = std::move(createDebugOutputResources());
-            m_debugOutputs3[i] = std::move(createDebugOutputResources());
-            m_debugOutputs4[i] = std::move(createDebugOutputResources());
+            viewportResources.m_debugOutputs1[i] = std::move(createDebugOutputResources());
+            viewportResources.m_debugOutputs2[i] = std::move(createDebugOutputResources());
+            viewportResources.m_debugOutputs3[i] = std::move(createDebugOutputResources());
+            viewportResources.m_debugOutputs4[i] = std::move(createDebugOutputResources());
 
-            m_colorAttachmentOutputs[i] = std::move(colorAttachmentOutput);
-            m_depthAttachmentOutputs[i] = std::move(depthAttachmentOutput);
+            viewportResources.m_colorAttachmentOutputs[i] = std::move(colorAttachmentOutput);
+            viewportResources.m_depthAttachmentOutputs[i] = std::move(depthAttachmentOutput);
 
-            m_colorAttachmentSets[i] =
-                editor::core::MainWindow::createViewportDescriptorSetUnique(
-                    *m_colorAttachmentOutputs[i].view);
-            m_debugAttachmentSets1[i] =
-                editor::core::MainWindow::createViewportDescriptorSetUnique(
-                    *m_debugOutputs1[i].view);
-            m_debugAttachmentSets2[i] =
-                editor::core::MainWindow::createViewportDescriptorSetUnique(
-                    *m_debugOutputs2[i].view);
-            m_debugAttachmentSets3[i] =
-                editor::core::MainWindow::createViewportDescriptorSetUnique(
-                    *m_debugOutputs3[i].view);
-            m_debugAttachmentSets4[i] =
-                editor::core::MainWindow::createViewportDescriptorSetUnique(
-                    *m_debugOutputs4[i].view);
+            auto [createColorAttachmentSetResult, colorAttachmentSet] =
+                m_imGuiContext.createImGuiTextureDescriptorSetUnique(
+                    *viewportResources.m_colorAttachmentOutputs[i].view);
+            if (createColorAttachmentSetResult != vk::Result::eSuccess)
+            {
+                return {createColorAttachmentOutputResult, {}};
+            }
+
+            auto [createDebugAttachmentSet1Result, debugAttachmentSet1] =
+                m_imGuiContext.createImGuiTextureDescriptorSetUnique(
+                    *viewportResources.m_debugOutputs1[i].view);
+            if (createDebugAttachmentSet1Result != vk::Result::eSuccess)
+            {
+                return {createDebugAttachmentSet1Result, {}};
+            }
+
+            auto [createDebugAttachmentSet2Result, debugAttachmentSet2] =
+                m_imGuiContext.createImGuiTextureDescriptorSetUnique(
+                    *viewportResources.m_debugOutputs2[i].view);
+            if (createDebugAttachmentSet2Result != vk::Result::eSuccess)
+            {
+                return {createDebugAttachmentSet2Result, {}};
+            }
+
+            auto [createDebugAttachmentSet3Result, debugAttachmentSet3] =
+                m_imGuiContext.createImGuiTextureDescriptorSetUnique(
+                    *viewportResources.m_debugOutputs3[i].view);
+            if (createDebugAttachmentSet3Result != vk::Result::eSuccess)
+            {
+                return {createDebugAttachmentSet3Result, {}};
+            }
+
+            auto [createDebugAttachmentSet4Result, debugAttachmentSet4] =
+                m_imGuiContext.createImGuiTextureDescriptorSetUnique(
+                    *viewportResources.m_debugOutputs4[i].view);
+            if (createDebugAttachmentSet4Result != vk::Result::eSuccess)
+            {
+                return {createDebugAttachmentSet4Result, {}};
+            }
+
+            viewportResources.m_colorAttachmentSets[i] = std::move(colorAttachmentSet);
+            viewportResources.m_debugAttachmentSets1[i] = std::move(debugAttachmentSet1);
+            viewportResources.m_debugAttachmentSets2[i] = std::move(debugAttachmentSet2);
+            viewportResources.m_debugAttachmentSets3[i] = std::move(debugAttachmentSet3);
+            viewportResources.m_debugAttachmentSets4[i] = std::move(debugAttachmentSet4);
         }
+
+        auto handle = m_viewportResources.allocate(std::move(viewportResources));
+        return {vk::Result::eSuccess, handle};
     }
 
-    void Engine::recreateViewportResources(vk::Extent2D viewportExtent, core::Camera& camera)
+    vk::ResultValue<UniqueViewportResourcesHandle> Engine::createViewportResourcesUnique(vk::Extent2D viewportExtent) {
+        auto [result, viewportResourcesHandle] = createViewportResources(viewportExtent);
+
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        return {result, UniqueViewportResourcesHandle{viewportResourcesHandle, ViewportResourcesDeleter{this}}};
+    }
+
+    vk::ResultValue<ViewportIndices> Engine::getViewportIndices(
+        ViewportResourcesHandle viewportResourcesHandle,
+        uint32_t frameIndex) {
+
+        auto &viewportHandle = *m_viewportResources.get(viewportResourcesHandle);
+
+        if (frameIndex >= viewportHandle.m_colorAttachmentSets.size()) {
+            return {vk::Result::eErrorOutOfHostMemory, {}};
+        }
+
+        return {vk::Result::eSuccess,
+        {
+            .releaseTextureIndex = reinterpret_cast<ImU64>(static_cast<VkDescriptorSet>(*viewportHandle.m_colorAttachmentSets[frameIndex])),
+            .debug1TextureIndex = reinterpret_cast<ImU64>(static_cast<VkDescriptorSet>(*viewportHandle.m_debugAttachmentSets1[frameIndex])),
+            .debug2TextureIndex = reinterpret_cast<ImU64>(static_cast<VkDescriptorSet>(*viewportHandle.m_debugAttachmentSets2[frameIndex])),
+            .debug3TextureIndex = reinterpret_cast<ImU64>(static_cast<VkDescriptorSet>(*viewportHandle.m_debugAttachmentSets3[frameIndex])),
+            .debug4TextureIndex = reinterpret_cast<ImU64>(static_cast<VkDescriptorSet>(*viewportHandle.m_debugAttachmentSets4[frameIndex]))
+        }};
+
+    }
+
+    vk::ResultValue<SurfaceHandle> Engine::createSurface(
+    pal::Platform const& platform,
+    pal::WindowHandle const& window)
     {
-        camera.setWindowSize(viewportExtent.width, viewportExtent.height);
+        // 1. Создаем нативную поверхностность Vulkan через платформу
+        auto [createSurfaceResult, surface] = createVulkanSurfaceUnique(
+            *m_uniqueInstance,
+            platform,
+            window,
+            m_dispatcher
+        );
 
-        for (uint32_t i = 0; i < m_frameCount; ++i)
-        {
-            m_resourceBin.retireImage(
-                std::move(m_colorAttachmentOutputs[i].image),
-                std::move(m_colorAttachmentOutputs[i].view),
-                i);
-            m_resourceBin.retireImage(
-                std::move(m_depthAttachmentOutputs[i].image),
-                std::move(m_depthAttachmentOutputs[i].view),
-                i);
-            m_resourceBin.retireImage(
-                std::move(m_debugOutputs1[i].image),
-                std::move(m_debugOutputs1[i].view),
-                i);
-            m_resourceBin.retireImage(
-                std::move(m_debugOutputs2[i].image),
-                std::move(m_debugOutputs2[i].view),
-                i);
-            m_resourceBin.retireImage(
-                std::move(m_debugOutputs3[i].image),
-                std::move(m_debugOutputs3[i].view),
-                i);
-            m_resourceBin.retireImage(
-                std::move(m_debugOutputs4[i].image),
-                std::move(m_debugOutputs4[i].view),
-                i);
-            m_resourceBin.retireDescriptorSet(
-                std::move(m_colorAttachmentSets[i]),
-                i);
-            m_resourceBin.retireDescriptorSet(
-                std::move(m_debugAttachmentSets1[i]),
-                i);
-            m_resourceBin.retireDescriptorSet(
-                std::move(m_debugAttachmentSets2[i]),
-                i);
-            m_resourceBin.retireDescriptorSet(
-                std::move(m_debugAttachmentSets3[i]),
-                i);
-            m_resourceBin.retireDescriptorSet(
-                std::move(m_debugAttachmentSets4[i]),
-                i);
+        if (createSurfaceResult != vk::Result::eSuccess) {
+            return {createSurfaceResult, {}};
         }
 
-        createViewPortResources(viewportExtent, camera);
+        // 2. Выделяем слот через SlotMapStorage:
+        //    • Достает свободный индекс из Lock-Free очереди (или создает новый)
+        //    • Упаковывает текущее поколение слота + индекс в 64-битный Handle
+        SurfaceHandle handle = m_surfaces.allocate(std::move(surface));
+
+        return {vk::Result::eSuccess, {handle}};
     }
 
-    void Engine::recreateAllResources(pal::MainWindow &window)
+
+    vk::ResultValue<UniqueSurfaceHandle> Engine::createSurfaceUnique(pal::Platform &platform, pal::WindowHandle &window)
     {
-        vk::Extent2D windowExtent{ window.getWidth(), window.getHeight() };
-        auto [result, newResources] = m_retireController.updateSwapchainResources(
-            m_swapchainContext,
-            windowExtent,
-            m_frameCount,
-            std::move(m_activeResources));
+        auto [result, surfaceHandle] = createSurface(platform, window);
 
-        if (result != vk::Result::eSuccess)
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
+        }
+
+        return {result, UniqueSurfaceHandle{surfaceHandle, {this}}};
+    }
+
+    vk::ResultValue<SwapchainResourcesHandle> Engine::createSwapchainResources(
+        SurfaceHandle surfaceHandle,
+        vk::Extent2D viewportExtent,
+        SwapchainResourcesHandle oldSwapchainResourcesHandle) {
+
+        SwapchainContext context {
+            .physicalDevice = m_physicalDevice,
+            .device = *m_uniqueDevice,
+            .surface = **m_surfaces.get(surfaceHandle),
+        };
+
+        auto [createSwapchainResult, swapchain] =
+            createSwapchain(context, viewportExtent, oldSwapchainResourcesHandle != NullHandle ? *m_swapchainResources.get(oldSwapchainResourcesHandle)->swapchain.swapchain : nullptr);
+
+        if (createSwapchainResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Fatal: Swapchain recreation failed");
+            return {createSwapchainResult, {}};
         }
 
-        m_activeResources = std::move(newResources);
-    }
+        auto [createFrameManagerResult, swapchainManager] =
+            SwapchainManager::create(m_device, swapchain.imageCount);
 
-    void Engine::updateFrameData(render::UploadSceneOutput const* scene)
-    {
-        if (scene == nullptr)
+        if (createFrameManagerResult != vk::Result::eSuccess)
         {
-            throw std::runtime_error("Fatal: Scene resources are not available");
+            return {createFrameManagerResult, {}};
         }
 
-        for (int i = 0; i < m_frameCount; i++)
-        {
-            auto [createWorldTransformBufferResult, worldTransformBuffer] =
-                m_allocator->createAndAllocateBufferUnique(
-                    vk::BufferCreateInfo{
-                        .size = sizeof(glm::mat4) * scene->hostSceneData.nodes.size(),
-                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
-                                 vk::BufferUsageFlagBits::eTransferDst,
-                        .sharingMode = vk::SharingMode::eExclusive},
-                    resources::MemoryUsage::eGpuOnly);
+        auto handle = m_swapchainResources.allocate(
+            SwapchainResources{
+                .swapchain = std::move(swapchain),
+                .swapchainManager = std::move(swapchainManager)
+                });
 
-            if (createWorldTransformBufferResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error("Fatal: Failed to create world transform buffer");
-            }
-            m_worldTransformBuffers[i] = std::move(worldTransformBuffer);
+        return {vk::Result::eSuccess, handle};
+    }
 
-            auto [createInstanceRemapBufferResult, instanceRemapBuffer] =
-                m_allocator->createAndAllocateBufferUnique(
-                    vk::BufferCreateInfo{
-                        .size = sizeof(uint32_t) *
-                                scene->hostSceneData.drawableObjects.size(),
-                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
-                                 vk::BufferUsageFlagBits::eTransferDst,
-                        .sharingMode = vk::SharingMode::eExclusive},
-                    resources::MemoryUsage::eGpuOnly);
+    vk::ResultValue<UniqueSwapchainResourcesHandle> Engine::createSwapchainResourcesUnique(
+        SurfaceHandle surfaceHandle,
+        vk::Extent2D viewportExtent,
+        SwapchainResourcesHandle oldSwapchainResourcesHandle) {
 
-            if (createInstanceRemapBufferResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error("Fatal: Failed to create instance remap buffer");
-            }
-            m_instanceRemapBuffers[i] = std::move(instanceRemapBuffer);
-
-            auto [createMeshInstanceCursorBufferResult, meshInstanceCursorBuffer] =
-                m_allocator->createAndAllocateBufferUnique(
-                    vk::BufferCreateInfo{
-                        .size = sizeof(uint32_t) *
-                                scene->sceneFrameRequirements.meshCount,
-                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
-                                 vk::BufferUsageFlagBits::eTransferDst,
-                        .sharingMode = vk::SharingMode::eExclusive},
-                    resources::MemoryUsage::eGpuOnly);
-
-            if (createMeshInstanceCursorBufferResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error("Fatal: Failed to create mesh instance cursor buffer");
-            }
-            m_meshInstanceCursorBuffers[i] = std::move(meshInstanceCursorBuffer);
-
-            auto [createIndirectDrawCommandsBufferResult, indirectDrawCommandsBuffer] =
-                m_allocator->createAndAllocateBufferUnique(
-                    vk::BufferCreateInfo{
-                        .size = sizeof(vk::DrawIndexedIndirectCommand) *
-                                scene->sceneFrameRequirements.meshCount,
-                        .usage = vk::BufferUsageFlagBits::eShaderDeviceAddress |
-                                 vk::BufferUsageFlagBits::eTransferDst |
-                                 vk::BufferUsageFlagBits::eIndirectBuffer,
-                        .sharingMode = vk::SharingMode::eExclusive},
-                    resources::MemoryUsage::eGpuOnly);
-
-            if (createIndirectDrawCommandsBufferResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error("Fatal: Failed to create indirect draw commands buffer");
-            }
-            m_indirectDrawCommandsBuffers[i] = std::move(indirectDrawCommandsBuffer);
-
-            m_worldTransformBufferAddresses[i] = m_device.getBufferAddress({.buffer = *m_worldTransformBuffers[i]});
-            m_instanceRemapBufferAddresses[i] = m_device.getBufferAddress({.buffer = *m_instanceRemapBuffers[i]});
-            m_meshInstanceCursorBufferAddresses[i] = m_device.getBufferAddress({.buffer = *m_meshInstanceCursorBuffers[i]});
-            m_indirectDrawCommandsBufferAddresses[i] = m_device.getBufferAddress({.buffer = *m_indirectDrawCommandsBuffers[i]});
-
-            auto [createCameraSystemResult, m_cameraSystem] =
-                render::CameraSystem::create(m_device, *m_allocator);
-
-            if (createCameraSystemResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error(
-                    "Fatal: Failed to create camera system: " +
-                    vk::to_string(createCameraSystemResult));
-            }
-            m_cameraSystems[i] = std::move(m_cameraSystem);
-
-            auto [createMainPassSettingSystemResult, mainPassSettingSystem] =
-                render::MainPassSettingSystem::create(m_device, *m_allocator);
-
-            if (createMainPassSettingSystemResult != vk::Result::eSuccess)
-            {
-                throw std::runtime_error(
-                    "Fatal: Failed to create main pass setting system: " +
-                    vk::to_string(createMainPassSettingSystemResult));
-            }
-            m_mainPassSettingSystems[i] = std::move(mainPassSettingSystem);
+        auto [result, swapchainResourcesHandle] = createSwapchainResources(surfaceHandle, viewportExtent, oldSwapchainResourcesHandle);
+        if (result != vk::Result::eSuccess) {
+            return {result, {}};
         }
 
-        m_hasFrameResources = true;
+        return {result, UniqueSwapchainResourcesHandle{swapchainResourcesHandle, SwapchainResourcesDeleter{this}}};
     }
 
-    vk::ResultValue<Engine::RenderIndices> Engine::prepareFrame() {
-        auto [prepareRes, currentFrameIndex] = m_activeResources.frameManager.acquireFrameSlot(m_device);
-
-        if (prepareRes != vk::Result::eSuccess) {
-            return {prepareRes, {}};
-        }
-        m_retireController.renderRetireUpdate(currentFrameIndex);
-        m_resourceBin.release(currentFrameIndex);
-        auto [acquireResult, currentImageIndex] = m_activeResources.frameManager.acquireNextImage(
-            m_device,
-            *m_activeResources.swapchain.swapchain,
-            currentFrameIndex);
-        if (acquireResult != vk::Result::eSuccess) {
-            return {acquireResult, {}};
-        }
-        m_retireController.presentRetireUpdate(currentImageIndex);
-        return {vk::Result::eSuccess, {.frameIndex = currentFrameIndex, .imageIndex = currentImageIndex}};
+    void Engine::destroyScene(SceneHandle sceneHandle) {
+        m_uploadedScenes.markForDeletion(sceneHandle);
     }
 
-    bool Engine::hasFrameResources() const {
-        return m_hasFrameResources;
+    void Engine::destroyEnvironment(EnvironmentHandle environmentHandle) {
+        m_environmentResources.markForDeletion(environmentHandle);
     }
 
-    void Engine::setHasFrameResources(bool hasFrameResources) {
-        m_hasFrameResources = hasFrameResources;
+    void Engine::destroyFrameGraph(FrameGraphHandle frameGraphHandle) {
+        m_frameGraphs.markForDeletion(frameGraphHandle);
     }
 
-    vk::ResultValue<render::DeviceEnvironmentResources> Engine::createEnvironmentResources(
-        std::filesystem::path const &filePath) {
-        return render::createEnvironmentResources(
-            m_renderContext,
-            m_graphicsQueue,
-            *m_uniqueGraphicsCommandPool,
-            m_descriptorHeapSet,
-            filePath);
+    void Engine::destroyFrameResources(FrameResourcesHandle frameResourcesHandle) {
+        m_frameResources.markForDeletion(frameResourcesHandle);
     }
 
-    vk::ResultValue<render::UploadSceneOutput> Engine::uploadScene(render::LoadedSceneData const &sceneData) {
-        return render::uploadScene(
-            sceneData,
-            m_renderContext,
-            m_graphicsQueue,
-            *m_uniqueGraphicsCommandPool,
-            m_descriptorHeapSet,
-            m_fallbackTextures.indices);
+    void Engine::destroyViewportResources(ViewportResourcesHandle viewportResourcesHandle) {
+        m_viewportResources.markForDeletion(viewportResourcesHandle);
     }
 
+    void Engine::destroySurface(SurfaceHandle surfaceHandle) {
+        m_surfaces.markForDeletion(surfaceHandle);
+    }
 
-    vk::Result Engine::waitRenderIdle() {
-        return m_activeResources.frameManager.waitRenderIdle(m_device);
+    void Engine::destroySwapchainResources(SwapchainResourcesHandle swapchainResourcesHandle) {
+        m_swapchainResources.markForDeletion(swapchainResourcesHandle);
     }
 
     void Engine::doFrameRender(
@@ -833,7 +1019,7 @@ namespace shuttle::engine {
             }
         }
 
-        if (auto result = m_activeResources.frameManager.beginFrame(m_device, renderIndices.frameIndex);
+        if (auto result = m_activeResources.swapchainManager.beginFrame(m_device, renderIndices.frameIndex);
             result != vk::Result::eSuccess)
         {
             throw std::runtime_error(
@@ -1332,7 +1518,7 @@ namespace shuttle::engine {
             throw std::runtime_error("Failed to end graphics command buffer");
         }
 
-        auto submitRes = m_activeResources.frameManager.submitRenderCommands(
+        auto submitRes = m_activeResources.swapchainManager.submitRenderCommands(
             m_graphicsQueue,
             cmd,
             renderIndices.frameIndex,
@@ -1362,12 +1548,12 @@ namespace shuttle::engine {
             updateFrameData(scene);
         }
 
-        auto [prepareResult, renderIndices] = prepareFrame();
+        auto [prepareResult, renderIndices] = prepareFrame(TODO, TODO);
         if (prepareResult == vk::Result::eNotReady) {
             return;
         }
         if (prepareResult == vk::Result::eSuboptimalKHR || prepareResult == vk::Result::eErrorOutOfDateKHR) {
-            recreateAllResources(main_window);
+            recreateAllResources(TODO);
             return;
         }
         if (prepareResult != vk::Result::eSuccess) {
@@ -1377,7 +1563,7 @@ namespace shuttle::engine {
 
         doFrameRender(mainWindow, camera, renderIndices, *scene, *environment, isResizeMode);
 
-        auto presentResult = m_activeResources.frameManager.present(
+        auto presentResult = m_activeResources.swapchainManager.present(
             m_graphicsQueue,
             *m_activeResources.swapchain.swapchain,
             renderIndices.imageIndex);
@@ -1385,7 +1571,7 @@ namespace shuttle::engine {
         if (presentResult == vk::Result::eSuboptimalKHR ||
             presentResult == vk::Result::eErrorOutOfDateKHR)
         {
-            recreateAllResources(main_window);
+            recreateAllResources(TODO);
         }
         else if (presentResult != vk::Result::eSuccess)
         {
@@ -1396,5 +1582,35 @@ namespace shuttle::engine {
         {
             m_swapchainImageLayouts[renderIndices.imageIndex] = vk::ImageLayout::ePresentSrcKHR;
         }
+    }
+
+    vk::ResultValue<vk::ShaderModule> Engine::createShaderModule(std::filesystem::path const &shaderPath) {
+        std::fstream shaderModuleFile(shaderPath, std::ios::binary | std::ios::ate | std::ios::in);
+        if (!shaderModuleFile.is_open())
+        {
+            throw std::runtime_error("Failed to open fragment shader file");
+        }
+        auto const shaderModuleFileSize = shaderModuleFile.tellg();
+        std::vector<char> fragmentShaderCode(shaderModuleFileSize);
+        shaderModuleFile.seekg(0);
+        shaderModuleFile.read(fragmentShaderCode.data(), shaderModuleFileSize);
+
+        return m_device.createShaderModule(vk::ShaderModuleCreateInfo{
+            .codeSize = fragmentShaderCode.size(), .pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())}, nullptr, m_dispatcher);
+    }
+
+    vk::ResultValue<vk::UniqueShaderModule> Engine::createShaderModuleUnique(std::filesystem::path const &shaderPath) const {
+        std::fstream shaderModuleFile(shaderPath, std::ios::binary | std::ios::ate | std::ios::in);
+        if (!shaderModuleFile.is_open())
+        {
+            throw std::runtime_error("Failed to open fragment shader file");
+        }
+        auto const shaderModuleFileSize = shaderModuleFile.tellg();
+        std::vector<char> fragmentShaderCode(shaderModuleFileSize);
+        shaderModuleFile.seekg(0);
+        shaderModuleFile.read(fragmentShaderCode.data(), shaderModuleFileSize);
+
+        return m_device.createShaderModuleUnique(vk::ShaderModuleCreateInfo{
+            .codeSize = fragmentShaderCode.size(), .pCode = reinterpret_cast<uint32_t const*>(fragmentShaderCode.data())}, nullptr, m_dispatcher);
     }
 }

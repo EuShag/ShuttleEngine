@@ -267,7 +267,7 @@ namespace shuttle::editor::core
             18.0f);
     }
 
-    void MainWindow::drawUi()
+    void MainWindow::drawUi(uint32_t frameIndex)
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
@@ -1411,20 +1411,6 @@ namespace shuttle::editor::core
         }
     }
 
-    VkDescriptorSet MainWindow::createViewportDescriptorSet(vk::ImageView imageView)
-    {
-        return ImGui_ImplVulkan_AddTexture(
-            imageView,
-            static_cast<VkImageLayout>(vk::ImageLayout::eShaderReadOnlyOptimal));
-    }
-
-    UniqueViewportDescriptorSet MainWindow::createViewportDescriptorSetUnique(
-        vk::ImageView imageView)
-    {
-        return UniqueViewportDescriptorSet{
-            createViewportDescriptorSet(imageView)};
-    }
-
     bool MainWindow::hasViewport() const
     {
         if (!debugModeEnabled)
@@ -1484,32 +1470,4 @@ namespace shuttle::editor::core
     {
         viewportDebugDescriptorSets = debugSets;
     }
-
-    void ResourceBin::release(ResourceId id)
-    {
-        for (size_t i = 0; i < m_images.size();)
-        {
-            if (m_images[i].id == id)
-            {
-                m_images[i] = std::move(m_images.back());
-                m_images.pop_back();
-            }
-            else
-            {
-                ++i;
-            }
-        }
-
-        for (size_t i = 0; i < m_descriptorSets.size();)
-        {
-            if (m_descriptorSets[i].id == id) {
-                m_descriptorSets[i] = std::move(m_descriptorSets.back());
-                m_descriptorSets.pop_back();
-            }
-            else {
-                ++i;
-            }
-        }
-    }
-
 } // namespace shuttle::editor::core

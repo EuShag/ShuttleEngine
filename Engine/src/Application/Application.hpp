@@ -22,8 +22,6 @@
 #include <vector>
 #include <optional>
 
-#include <vulkan/vulkan.hpp>
-
 #include "portable-file-dialogs.h"
 
 // Кроссплатформенный слой PAL
