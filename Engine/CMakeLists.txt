@@ -35,7 +35,27 @@ else()
     set(IMGUI_SOURCES
             ${IMGUI_SOURCES}
             "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp"
-            src/Engine/Pipeline.cpp
+            VulkanContext/VulkanContext.cpp
+            VulkanContext/VulkanContext.hpp
+            src/CommandBufferProvider/CommandBufferProvider.cpp
+            src/CommandBufferProvider/CommandBufferProvider.hpp
+            src/CommandBufferProvider/CommandPool.cpp
+            src/CommandBufferProvider/CommandPool.hpp
+            src/CommandBufferProvider/CommandBufferToken.cpp
+            src/CommandBufferProvider/CommandBufferToken.hpp
+            src/CommandBufferProvider/CommandBufferRecorder.cpp
+            src/CommandBufferProvider/CommandBufferRecorder.hpp
+            src/CommandBufferProvider/DedicatedCommandPool.cpp
+            src/CommandBufferProvider/DedicatedCommandPool.hpp
+            src/Coroutines/CoroScope.hpp
+            src/Coroutines/CoroScope.cpp
+            src/Coroutines/AsyncTask.cpp
+            src/Coroutines/AsyncTask.hpp
+            src/Coroutines/BlockingTask.hpp
+            src/ThreadPoolExecutor/ThreadPoolExecutor.cpp
+            src/ThreadPoolExecutor/ThreadPoolExecutor.hpp
+            src/ThreadPoolExecutor/CoroutineWorkStealingQueue.hpp
+            src/ThreadPoolExecutor/Notifier.hpp
     )
     message(STATUS "PAL: Using SDL2 Backend")
     list(APPEND PAL_SOURCES
@@ -52,8 +72,6 @@ add_executable(
     Engine
     ${IMGUI_SOURCES}
     ${PAL_SOURCES}
-    src/SwapchainManager/SwapchainManager.cpp
-    src/SwapchainManager/SwapchainManager.hpp
     src/FenceWaiter/FenceWaiter.cpp
     src/FenceWaiter/FenceWaiter.hpp
     src/PAL/Common/Events/Events.hpp
@@ -89,12 +107,6 @@ add_executable(
     src/CameraController/CameraController.hpp
     src/main.cpp
     src/Render/Render.hpp
-    src/Render/SceneResources.cpp
-    src/Render/EnvironmentResources.cpp
-    src/FrameManager/FrameManager.cpp
-    src/FrameManager/FrameManager.hpp
-    src/SwapchainFactory/SwapchainFactory.cpp
-    src/SwapchainFactory/SwapchainFactory.hpp
     src/MainWindow/MainWindow.cpp
     src/MainWindow/MainWindow.hpp
     src/Render/MainPass.cpp
@@ -102,31 +114,43 @@ add_executable(
     src/Render/Common.hpp
     src/Render/CameraSystem.cpp
     src/Render/CameraSystem.hpp
-    src/Render/WorldTransformUpdatePass.cpp
-    src/Render/WorldTransformUpdatePass.hpp
-    src/Render/PrefixSumPass.cpp
-    src/Render/PrefixSumPass.hpp
-    src/Render/InstanceRemapPass.cpp
-    src/Render/InstanceRemapPass.hpp
     src/DeviceAllocator/VirtualBlock.cpp
     src/DeviceAllocator/VirtualBlock.hpp
     src/Render/DescriptorHeapSet.cpp
     src/Render/DescriptorHeapSet.hpp
     src/Render/FallbackTextures.hpp
-    src/Render/FallbackTextures.cpp
-    src/Render/CommonResources.cpp
     src/Render/CommonResources.hpp
     src/SceneDataLoader/SceneDataLoader.cpp
     src/SceneDataLoader/SceneDataLoader.hpp
     src/Render/SceneData.hpp
-    src/Render/MeshInstancesCountPass.cpp
-    src/Render/MeshInstancesCountPass.hpp
-    src/ImGuiContextM/ImGuiContextM.hpp
-    src/ImGuiContextM/ImGuiContextM.cpp
-    src/Engine/Engine.cpp
-    src/Engine/Engine.hpp
+    src/ImUiContext/ImUiContext.hpp
+    src/ImUiContext/ImUiContext.cpp
+    src/Engine/ImUiContext.cpp
+    src/Engine/EngineImpl.cpp
+    src/Engine/EngineImpl.hpp
     src/Engine/Resource.hpp
-        src/Engine/Handle.hpp
+    src/Engine/Handle.hpp
+    src/Engine/Pipeline.cpp
+    src/Engine/ViewportResources.hpp
+    src/Engine/Scenes.cpp
+    src/EnvironmentDataLoader/EnvironmentDataLoader.cpp
+    src/EnvironmentDataLoader/EnvironmentDataLoader.hpp
+    src/Engine/CommonResources.cpp
+    src/Engine/Environments.cpp
+    src/Engine/Swapchain.cpp
+    src/Engine/RenderSceneUi.cpp
+    src/Engine/RenderUiOnly.cpp
+    src/Engine/Create.cpp
+    src/Engine/IEngineImpl.hpp
+        src/MiAllocator/MiAllocator.cpp
+        src/MiAllocator/MiAllocator.hpp
+        src/Coroutines/LaunchMode.hpp
+        src/Coroutines/BlockingTask.cpp
+        src/Coroutines/Awaiters.cpp
+        src/Coroutines/Awaiters.hpp
+        src/Coroutines/IExecuter.hpp
+        src/CoroutineExecutor/coroutine_executor.cpp
+        include/ErrorCode.hpp
 )
 
 target_include_directories(
@@ -147,6 +171,7 @@ target_include_directories(
         ${PROJECT_SOURCE_DIR}/Assets/SceneCompiler/include
         ${PROJECT_SOURCE_DIR}/Assets/EnvironmentCompiler/include
         ${PROJECT_SOURCE_DIR}/Assets/TextureCompiler/include
+        ${PROJECT_SOURCE_DIR}/external/mimalloc/include
         ${PROJECT_SOURCE_DIR}/include)
 
 target_compile_definitions(

@@ -13,10 +13,6 @@
 [submodule "external/mio"]
 	path = external/mio
 	url = https://github.com/vimpunk/mio
-[submodule "external/imgui"]
-	path = external/imgui
-	url = https://github.com/ocornut/imgui
-	branch = master
 [submodule "external/bc7enc_rdo"]
 	path = external/bc7enc_rdo
 	url = https://github.com/richgel999/bc7enc_rdo
@@ -44,3 +40,9 @@
 [submodule "external/concurrentqueue"]
 	path = external/concurrentqueue
 	url = https://github.com/cameron314/concurrentqueue
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "external/mimalloc"]
+	path = external/mimalloc
+	url = https://github.com/microsoft/mimalloc

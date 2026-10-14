@@ -1,10 +1,10 @@
 #pragma once
 
+#include <atomic>
 #include <string>
 #include <string_view>
 #include <utility> // Для std::exchange в move-конструкторе
 
-#include "imgui_internal.h"
 #include "PAL/Common/Window/WindowType.hpp"
 #include "PAL/Common/Window/Decorations/WindowDecorations.hpp"
 
@@ -154,7 +154,7 @@ namespace shuttle::pal
         bool          m_shouldClose = false;
 
         WindowDecorations m_decorations{};
-        void* m_imguiContext = nullptr;
+        std::atomic<void*> m_imguiContext = nullptr;
 
         IWindowListener*       m_windowListener = nullptr;
         input::IInputListener* m_inputListener = nullptr;

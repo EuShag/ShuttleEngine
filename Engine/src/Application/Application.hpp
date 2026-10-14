@@ -103,7 +103,7 @@ namespace shuttle::engine
         editor::core::ResourceId m_activeSceneId = 0;
         editor::core::ResourceId m_activeEnvironmentId = 0;
 
-        Engine m_engine;
+        EngineImpl m_engine;
 
         std::chrono::high_resolution_clock::time_point m_lastTime;
         float m_deltaTime = 0.0f;

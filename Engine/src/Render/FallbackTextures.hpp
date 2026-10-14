@@ -28,12 +28,4 @@ namespace shuttle::engine::render
         FallbackTextureStorage storage;
         FallbackTextureIndices indices;
     };
-
-    [[nodiscard]]
-    vk::ResultValue<FallbackTextures> createFallbackTextures(
-        vk::Device device,
-        vk::Queue transferQueue,
-        vk::CommandPool transferCommandPool,
-        resources::DeviceAllocator const& allocator,
-        DescriptorHeapSet& descriptorHeap);
 }

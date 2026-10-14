@@ -14,7 +14,7 @@ namespace shuttle::engine::render {
     {
     public:
 
-        static vk::ResultValue<CameraSystem> create(vk::Device device, resources::DeviceAllocator const& allocator);
+        static vk::ResultValue<CameraSystem> create(vk::Device device, vk::detail::DispatchLoaderDynamic const &dispatcher, resources::DeviceAllocator const &allocator);
 
         void updateData(core::Camera const& camera) const;
 

@@ -46,7 +46,7 @@ vk::ResultValue<DeviceAllocator> DeviceAllocator::create(vk::Instance instance, 
                                                .pHeapSizeLimit = nullptr,
                                                .pVulkanFunctions = &vulkanFunctions,
                                                .instance = instance,
-                                               .vulkanApiVersion = VK_API_VERSION_1_0,
+                                               .vulkanApiVersion = VK_API_VERSION_1_4,
                                                .pTypeExternalMemoryHandleTypes = nullptr};
 
     auto result = vmaCreateAllocator(&allocatorCreateInfo, &resultAllocator);

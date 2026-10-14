@@ -47,25 +47,13 @@ if(MSVC)
     add_compile_options(/FS)
 endif()
 
-add_subdirectory(
-    Assets
-)
-add_subdirectory(
-    external/meshoptimizer
-)
-add_subdirectory(
-    external/vk-bootstrap
-)
-add_subdirectory(
-    shaders
-)
-
-add_subdirectory(
-    Engine
-)
-add_subdirectory(
-    resources
-)
+add_subdirectory(Assets)
+add_subdirectory(external/meshoptimizer)
+add_subdirectory(external/vk-bootstrap)
+add_subdirectory(shaders)
+add_subdirectory(Engine)
+add_subdirectory(resources)
+add_subdirectory(external/mimalloc)
 
 set(ASSIMP_BUILD_TESTS
     OFF

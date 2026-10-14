@@ -14,6 +14,7 @@
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "SceneDataLoader/SceneDataLoader.hpp"
 #include "DescriptorHeapSet.hpp"
+#include "EnvironmentDataLoader/EnvironmentDataLoader.hpp"
 
 namespace shuttle::engine::render
 {
@@ -159,54 +160,6 @@ namespace shuttle::engine::render
         uint32_t reserved1{};
     };
 
-    struct alignas(16) FrameInfo
-    {
-        // ============================================================
-        // Camera
-        // ============================================================
-
-        glm::mat4 viewMatrix;
-        glm::mat4 projectionMatrix;
-
-        glm::mat4 viewProjectionMatrix;
-        glm::mat4 previousViewProjectionMatrix;
-
-        glm::vec4 cameraPosition;
-
-        // ============================================================
-        // Resolution
-        // ============================================================
-
-        glm::vec2 renderResolution;
-        glm::vec2 invRenderResolution;
-
-        glm::vec2 displayResolution;
-        glm::vec2 invDisplayResolution;
-
-        // ============================================================
-        // Timing
-        // ============================================================
-
-        float deltaTime;
-        float elapsedTime;
-
-        uint32_t frameIndex;
-        uint32_t drawableCount;
-
-        // ============================================================
-        // Camera Parameters
-        // ============================================================
-
-        float nearPlane;
-        float farPlane;
-
-        float exposure;
-        float gamma;
-
-        uint32_t frustumCount;
-        uint32_t shadowCascadeCount;
-    };
-
     struct HostSceneData
     {
         // Scene graph
@@ -235,8 +188,7 @@ namespace shuttle::engine::render
         vk::DeviceAddress commonDataDeviceAddress{};
         vk::DeviceAddress sceneDataDeviceAddress{};
         vk::DeviceAddress environmentDataDeviceAddress{};
-        vk::DeviceAddress cameraDataDeviceAddress{};    
-
+        vk::DeviceAddress cameraDataDeviceAddress{};
     };
 
     constexpr vk::DeviceSize PassSpecificDataOffset = sizeof(RenderRootData);
@@ -285,15 +237,6 @@ namespace shuttle::engine::render
         SceneFrameRequirements sceneFrameRequirements;
     };
 
-    struct ShadowSettings
-    {
-        uint32_t resolution = 4096;
-        uint32_t cascadeCount = 4;
-        float splitLambda = 0.85f;
-        float maxDistance = 250.0f;
-        float shadowBias = 0.0005f;
-    };
-
     enum class FrameRecordSegment : uint32_t
     {
         Full = 0,
@@ -301,22 +244,6 @@ namespace shuttle::engine::render
         Lighting = 2,
         MainPresent = 3,
     };
-
-    vk::ResultValue<UploadSceneOutput> uploadScene(
-        const LoadedSceneData& loadedSceneData,
-        RenderContext& context,
-        vk::Queue transferQueue,
-        vk::CommandPool transferCommandPool,
-        DescriptorHeapSet& descriptorHeapSet,
-        FallbackTextureIndices const& fallbackTextureIndices);
-
-    vk::ResultValue<DeviceEnvironmentResources> createEnvironmentResources(
-        RenderContext& context,
-        vk::Queue transferQueue,
-        vk::CommandPool transferCommandPool,
-        DescriptorHeapSet& descriptorHeapSet,
-        const std::filesystem::path& environmentBlobPath);
-
 } // namespace shuttle::engine::render
 
 #endif // SHUTTLEENGINE_RENDER_HPP

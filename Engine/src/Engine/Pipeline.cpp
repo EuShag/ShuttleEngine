@@ -1,11 +1,34 @@
 //
 // Created by Shagu on 12.09.2026.
 //
-#include "Engine.hpp"
+#include "EngineImpl.hpp"
 
 namespace shuttle::engine {
 
-    vk::ResultValue<vk::UniquePipeline> Engine::createMainRenderPipeline(
+    vk::ResultValue<vk::UniquePipeline> EngineImpl::createComputePipeline(std::filesystem::path const &shaderPath) {
+        auto [createShaderModuleResult, shaderModule] =
+                createShaderModuleUnique(shaderPath);
+
+        if (createShaderModuleResult != vk::Result::eSuccess)
+        {
+            return {createShaderModuleResult, {}};
+        }
+
+        vk::PipelineShaderStageCreateInfo stageInfo{
+            .stage = vk::ShaderStageFlagBits::eCompute,
+            .module = *shaderModule,
+            .pName = "main"
+        };
+
+        return m_uniqueDevice->createComputePipelineUnique(
+            {},
+            {
+                .stage = stageInfo,
+                .layout = *m_pipelineLayout
+            }, nullptr, m_dispatcher);
+    }
+
+    vk::ResultValue<vk::UniquePipeline> EngineImpl::createMainRenderPipeline(
         vk::Format colorFormat,
         vk::Format depthFormat,
         bool enableDebug = false) const
@@ -83,10 +106,10 @@ namespace shuttle::engine {
         vk::PipelineColorBlendAttachmentState blendAttachment{
             .blendEnable = vk::False,
             .colorWriteMask =
-                vk::ColorComponentFlagBits::eR |
-                vk::ColorComponentFlagBits::eG |
-                vk::ColorComponentFlagBits::eB |
-                vk::ColorComponentFlagBits::eA
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA
         };
 
         std::array blendAttachments {
@@ -127,7 +150,7 @@ namespace shuttle::engine {
             .depthAttachmentFormat = depthFormat
         };
 
-        return m_device.createGraphicsPipelineUnique({}, {
+        return m_uniqueDevice->createGraphicsPipelineUnique({}, {
             .pNext = &renderingInfo,
             .stageCount = static_cast<uint32_t>(shaderStages.size()),
             .pStages = shaderStages.data(),
@@ -145,7 +168,7 @@ namespace shuttle::engine {
         }, nullptr, m_dispatcher);
     }
 
-    [[nodiscard]] vk::ResultValue<vk::UniquePipeline> Engine::createSkyboxPipeline(
+    [[nodiscard]] vk::ResultValue<vk::UniquePipeline> EngineImpl::createSkyboxPipeline(
         vk::Format colorFormat,
         vk::Format depthFormat,
         bool enableDebug) const {
@@ -231,10 +254,10 @@ namespace shuttle::engine {
         vk::PipelineColorBlendAttachmentState blendAttachment{
             .blendEnable = vk::False,
             .colorWriteMask =
-                vk::ColorComponentFlagBits::eR |
-                vk::ColorComponentFlagBits::eG |
-                vk::ColorComponentFlagBits::eB |
-                vk::ColorComponentFlagBits::eA
+            vk::ColorComponentFlagBits::eR |
+            vk::ColorComponentFlagBits::eG |
+            vk::ColorComponentFlagBits::eB |
+            vk::ColorComponentFlagBits::eA
         };
 
         std::array blendAttachments {
@@ -275,7 +298,7 @@ namespace shuttle::engine {
             .depthAttachmentFormat = depthFormat
         };
 
-        return m_device.createGraphicsPipelineUnique({}, {
+        return m_uniqueDevice->createGraphicsPipelineUnique({}, {
             .pNext = &renderingInfo,
             .stageCount = static_cast<uint32_t>(shaderStages.size()),
             .pStages = shaderStages.data(),
@@ -291,46 +314,5 @@ namespace shuttle::engine {
             .renderPass = nullptr, // Using dynamic rendering
             .subpass = 0
         }, nullptr, m_dispatcher);
-    }
-
-    void Engine::writeRenderCommands(
-        vk::CommandBuffer cmdBuffer,
-        FrameGraphHandle renderGraphHandle,
-        FrameResourcesHandle frameResourcesHandle,
-        ViewportResourcesHandle viewportResourcesHandle,
-        SceneHandle sceneHandle,
-        EnvironmentHandle environmentHandle) {
-
-        auto frameGraph = m_frameGraphs.get(renderGraphHandle);
-        auto frameResources = m_frameResources.get(frameResourcesHandle);
-        auto viewportResources = m_viewportResources.get(viewportResourcesHandle);
-        auto scene = m_uploadedScenes.get(sceneHandle);
-        auto environment = m_environmentResources.get(environmentHandle);
-
-
-
-    }
-
-    vk::ResultValue<vk::UniquePipeline> Engine::createComputePipeline(std::filesystem::path const &shaderPath) {
-        auto [createShaderModuleResult, shaderModule] =
-                createShaderModuleUnique(shaderPath);
-
-        if (createShaderModuleResult != vk::Result::eSuccess)
-        {
-            return {createShaderModuleResult, {}};
-        }
-
-        vk::PipelineShaderStageCreateInfo stageInfo{
-            .stage = vk::ShaderStageFlagBits::eCompute,
-            .module = *shaderModule,
-            .pName = "main"
-        };
-
-        return m_device.createComputePipelineUnique(
-            {},
-            {
-            .stage = stageInfo,
-            .layout = *m_pipelineLayout
-            }, nullptr, m_dispatcher);
     }
 }

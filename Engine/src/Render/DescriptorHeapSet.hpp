@@ -103,20 +103,19 @@ namespace shuttle::engine::render
     class DescriptorHeapSet
     {
     public:
-        [[nodiscard]]
-        static vk::ResultValue<DescriptorHeapSet> create(
+        [[nodiscard]] static vk::ResultValue<DescriptorHeapSet> create(
             vk::Device device,
-            DescriptorHeapSetCreateInfo const& createInfo);
+            vk::detail::DispatchLoaderDynamic const &dispatcher,
+            DescriptorHeapSetCreateInfo const &createInfo);
 
         // ============================================================
         // Raw descriptor writes
         // ============================================================
 
-        [[nodiscard]]
-        vk::ResultValue<uint32_t> writeTexture(
+        [[nodiscard]] vk::ResultValue<uint32_t> writeTexture(
             vk::ImageView imageView,
-            vk::ImageLayout imageLayout =
-                vk::ImageLayout::eShaderReadOnlyOptimal);
+            vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal
+        );
 
         [[nodiscard]]
         vk::ResultValue<uint32_t> writeSampler(
@@ -210,6 +209,7 @@ namespace shuttle::engine::render
 
         DescriptorHeapSet(
             vk::Device device,
+            vk::detail::DispatchLoaderDynamic const &dispatcher,
             vk::UniqueDescriptorPool descriptorPool,
             vk::UniqueDescriptorSetLayout descriptorSetLayout,
             vk::DescriptorSet descriptorSet,
@@ -260,6 +260,7 @@ namespace shuttle::engine::render
             uint32_t index);
 
         vk::Device device{};
+        vk::detail::DispatchLoaderDynamic const* dispatch{};
 
         vk::UniqueDescriptorPool descriptorPool{};
         vk::UniqueDescriptorSetLayout descriptorSetLayout{};

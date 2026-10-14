@@ -23,7 +23,7 @@
 #include "../../../Assets/EnvironmentCompiler/include/Assets/EnvironmentCompiler/CpuIblGenerator.hpp"
 #include "Assets/SceneCompiler/SceneCompiler.hpp"
 #include "Render/MainPass.hpp"
-#include "ImGuiContextM/ImGuiContextM.hpp"
+#include "ImGuiContextM/ImUiContext.hpp"
 #include "backends/imgui_impl_vulkan.h"
 #include "Engine/Engine.hpp"
 

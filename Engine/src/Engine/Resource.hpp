@@ -5,7 +5,9 @@
 #ifndef SHUTTLEENGINE_RESOURCE_HPP
 #define SHUTTLEENGINE_RESOURCE_HPP
 #include <atomic>
+#include <iostream>
 #include <optional>
+#include <ostream>
 #include <vector>
 
 #include "concurrentqueue.h"
@@ -43,19 +45,50 @@ namespace shuttle::engine {
 
         // Запрос на удаление (вызывается из Главного Потока)
         [[nodiscard]] bool setDestroy() {
+            // 1. Устанавливаем флаг удаления с memory_order_release,
+            // чтобы фоновые потоки гарантированно увидели наше намерение.
             mustDestroy.store(true, std::memory_order_release);
-            return tryDestroy();
+
+            // 2. Делаем атомарный снимок счетчика «в полете» прямо сейчас
+            uint32_t currentInFlight = inFlightCounter.load(std::memory_order_acquire);
+
+            // 3. Передаем этот снимок в tryDestroy, исключая двойное чтение!
+            return tryDestroy(currentInFlight);
         }
 
-        // Захват ресурса на время работы GPU
-        void acquire() noexcept {
-            inFlightCounter.fetch_add(1, std::memory_order_relaxed);
+        // Захват ресурса на время работы GPU (Вызывается перед отправкой задачи)
+        [[nodiscard]] bool acquire() noexcept {
+            uint32_t currentCounter = inFlightCounter.load(std::memory_order_acquire);
+
+            while (true) {
+                // 1. Проверяем флаг уничтожения. Если он взведен — захват НЕВОЗМОЖЕН!
+                if (mustDestroy.load(std::memory_order_acquire)) {
+                    return false; // Ресурс блокирован, его уже удаляют
+                }
+
+                // 2. Если порт чист, пытаемся атомарно инкрементировать счетчик задач
+                // compare_exchange гарантирует, что между проверкой mustDestroy и инкрементом счетчика данные не изменятся скрытно
+                if (inFlightCounter.compare_exchange_weak(
+                        currentCounter,
+                        currentCounter + 1,
+                        std::memory_order_acq_rel,
+                        std::memory_order_acquire))
+                {
+                    return true; // Успешный захват, ресурс в безопасности на время работы GPU
+                }
+                // Если другой поток успел изменить счетчик раньше нас, compare_exchange обновит currentCounter, и мы уйдем на следующий цикл проверки
+            }
         }
+
 
         // Освобождение из FenceWaiter (Фоновый Поток)
         [[nodiscard]] bool release() {
-            inFlightCounter.fetch_sub(1, std::memory_order_release); // release гарантирует видимость завершения работ
-            return tryDestroy();
+            // fetch_sub возвращает СТАРОЕ значение.
+            // Если старое было 1, значит после вычитания стало строго 0!
+            uint32_t oldCounter = inFlightCounter.fetch_sub(1, std::memory_order_acq_rel);
+            uint32_t currentCounter = oldCounter - 1;
+
+            return tryDestroy(currentCounter);
         }
 
         // Быстрая проверка: помечен ли ресурс на удаление?
@@ -63,12 +96,10 @@ namespace shuttle::engine {
             return mustDestroy.load(std::memory_order_relaxed);
         }
 
-        bool tryDestroy() {
-            // Читаем счетчик и флаг уничтожения
-            if (inFlightCounter.load(std::memory_order_acquire) == 0 &&
-                mustDestroy.load(std::memory_order_acquire))
+        bool tryDestroy(uint32_t knownInFlightCount) {
+            // Используем ПЕРЕДАННЫЙ локальный снимок счетчика, избегая двойного чтения!
+            if (knownInFlightCount == 0 && mustDestroy.load(std::memory_order_acquire))
             {
-                // Атомарно сбрасываем флаг, чтобы только ОДИН поток выполнял уничтожение!
                 bool expected = true;
                 if (mustDestroy.compare_exchange_strong(expected, false)) {
                     if (resource.has_value()) {
@@ -77,9 +108,7 @@ namespace shuttle::engine {
                         resource.reset();
 
                         // 2. ИНКРЕМЕНТИРУЕМ ПОКОЛЕНИЕ СЛОТА!
-                        // Все старые хэндлы со старым поколением теперь инвалидированы!
                         generation.fetch_add(1, std::memory_order_release);
-                        // 3. Если ресурс уничтожен, возвращаем true
                         return true;
                     }
                 }
@@ -99,7 +128,7 @@ namespace shuttle::engine {
     private:
         std::optional<TResource> resource;       // std::optional позволяет делать .reset()
         std::atomic<uint32_t> generation{INITIAL_GENERATION};
-        std::atomic<uint64_t> inFlightCounter{0}; // Атомарный счетчик полета GPU
+        std::atomic<uint32_t> inFlightCounter{0}; // Атомарный счетчик полета GPU
         std::atomic<bool> mustDestroy{false};     // АТОМАРНЫЙ флаг удаления!
     };
 
@@ -258,8 +287,29 @@ namespace shuttle::engine {
             return slot.get(); // Возвращаем ресурс только если он жив и активен
         }
 
+        // 3. ЗАНЯТЬ РЕСУРС
+        void acquire(HandleType handle) {
+            uint32_t idx = handle.index();
+            if (idx >= m_slots.size()) {
+                auto& slot = m_slots[idx];
+                if (slot.getGeneration() != handle.generation() || slot.isPendingDelete()) {
+                    slot.acquire();
+                }
+            }
+        }
 
-        // 3. ЗАПРОС НА УДАЛЕНИЕ (Пометка слота)
+        // 4. ОСВОБОДИТЬ РЕСУРС
+        void release(HandleType handle) {
+            uint32_t idx = handle.index();
+            if (idx >= m_slots.size()) {
+                auto& slot = m_slots[idx];
+                if (slot.getGeneration() != handle.generation() || slot.isPendingDelete()) {
+                    slot.release();
+                }
+            }
+        }
+
+        // 5. ЗАПРОС НА УДАЛЕНИЕ (Пометка слота)
         void markForDeletion(HandleType handle) {
             uint32_t idx = handle.index();
             if (idx < m_slots.size()) {
@@ -270,7 +320,7 @@ namespace shuttle::engine {
             }
         }
 
-        // 4. ФОНОВАЯ ОЧИСТКА (Вызывается из FenceWaiter или в конце кадра)
+        // 6. ФОНОВАЯ ОЧИСТКА (Вызывается из FenceWaiter или в конце кадра)
         void processCleanup() {
             size_t currentSize = m_slots.size();
             for (uint32_t i = 0; i < currentSize; ++i) {

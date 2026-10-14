@@ -20,7 +20,7 @@ namespace shuttle::engine {
 
     // Базовый Handle
     struct Handle {
-        uint64_t id = 0;
+        uint64_t id{};
 
         constexpr Handle() noexcept = default;
         constexpr explicit Handle(uint64_t rawId) noexcept : id(rawId) {}
@@ -28,7 +28,7 @@ namespace shuttle::engine {
             : id((static_cast<uint64_t>(generation) << 32) | static_cast<uint64_t>(index)) {}
 
         // Разрешаем неявное конструирование из NullHandle!
-        constexpr Handle(NullHandle_t) noexcept : id(0) {}
+        explicit constexpr Handle(NullHandle_t) noexcept {}
 
         [[nodiscard]] constexpr uint32_t index() const noexcept { return static_cast<uint32_t>(id & 0xFFFFFFFF); }
         [[nodiscard]] constexpr uint32_t generation() const noexcept { return static_cast<uint32_t>(id >> 32); }
@@ -48,7 +48,7 @@ namespace shuttle::engine {
         constexpr TypedHandle(uint32_t index, uint32_t generation) noexcept : id{index, generation} {}
 
         // НЕЯВНЫЙ конструктор и оператор присваивания из NullHandle!
-        constexpr TypedHandle(NullHandle_t) noexcept {}
+        explicit constexpr TypedHandle(NullHandle_t) noexcept {}
 
         TypedHandle& operator=(NullHandle_t) noexcept {
             id = Handle{0};
@@ -108,7 +108,9 @@ namespace shuttle::engine {
 
         UniqueHandle& operator=(UniqueHandle&& other) noexcept {
             if (this != &other) {
-                deleter(handle);
+                if (handle != Handle{}) {
+                    deleter(handle);
+                }
                 handle = other.handle;
                 deleter = std::move(other.deleter);
                 other.handle = Handle{};

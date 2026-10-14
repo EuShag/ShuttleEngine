@@ -83,6 +83,7 @@ namespace shuttle::engine::render
 
     DescriptorHeapSet::DescriptorHeapSet(
         vk::Device device,
+        vk::detail::DispatchLoaderDynamic const& dispatcher,
         vk::UniqueDescriptorPool descriptorPool,
         vk::UniqueDescriptorSetLayout descriptorSetLayout,
         vk::DescriptorSet descriptorSet,
@@ -93,6 +94,7 @@ namespace shuttle::engine::render
         BindingStorage storageTexelBuffer)
         :
         device(device),
+        dispatch{&dispatcher},
         descriptorPool(std::move(descriptorPool)),
         descriptorSetLayout(std::move(descriptorSetLayout)),
         descriptorSet(descriptorSet),
@@ -120,6 +122,7 @@ namespace shuttle::engine::render
 
     vk::ResultValue<DescriptorHeapSet> DescriptorHeapSet::create(
         vk::Device device,
+        vk::detail::DispatchLoaderDynamic const& dispatcher,
         DescriptorHeapSetCreateInfo const& createInfo)
     {
         // ============================================================
@@ -154,7 +157,7 @@ namespace shuttle::engine::render
             .maxSets = 1,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data()
-        });
+        }, nullptr, dispatcher);
 
         if (createPoolResult != vk::Result::eSuccess) return {createPoolResult, {}};
 
@@ -228,7 +231,7 @@ namespace shuttle::engine::render
             .flags =vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPool,
             .bindingCount = static_cast<uint32_t>(bindings.size()),
             .pBindings = bindings.data()
-        });
+        }, nullptr, dispatcher);
 
         if (createLayoutResult != vk::Result::eSuccess) return {createLayoutResult, {}};
 
@@ -242,7 +245,7 @@ namespace shuttle::engine::render
             .descriptorPool = *descriptorPool,
             .descriptorSetCount = 1,
             .pSetLayouts = &layout
-        });
+        }, dispatcher);
 
         if (allocateSetResult != vk::Result::eSuccess)
         {
@@ -294,6 +297,7 @@ namespace shuttle::engine::render
             vk::Result::eSuccess,
             DescriptorHeapSet{
                 device,
+                dispatcher,
                 std::move(descriptorPool),
                 std::move(descriptorSetLayout),
                 descriptorSets.front(),
@@ -388,7 +392,7 @@ namespace shuttle::engine::render
             .pImageInfo = &imageInfo
         };
 
-        device.updateDescriptorSets(1, &write, 0, nullptr);
+        device.updateDescriptorSets(1, &write, 0, nullptr, *dispatch);
 
         return {vk::Result::eSuccess, index};
     }
@@ -427,7 +431,7 @@ namespace shuttle::engine::render
             .pTexelBufferView = &bufferView
         };
 
-        device.updateDescriptorSets(1, &write, 0, nullptr);
+        device.updateDescriptorSets(1, &write, 0, nullptr, *dispatch);
 
         return {vk::Result::eSuccess, index};
     }
@@ -472,7 +476,7 @@ namespace shuttle::engine::render
             .pImageInfo = &samplerInfo
         };
 
-        device.updateDescriptorSets(1, &write, 0, nullptr);
+        device.updateDescriptorSets(1, &write, 0, nullptr, *dispatch);
 
         return {vk::Result::eSuccess,  index};
     }

@@ -1,5 +1,5 @@
 #pragma once
-#include <vulkan/vulkan.hpp>
+#include "IncludeVulkan.hpp"
 #include <concurrentqueue.h>
 #include <vector>
 #include <thread>
@@ -19,8 +19,10 @@ namespace shuttle::engine {
         // Передаем кастомный хэндлер внутренних ошибок самого FenceWaiter
         using ErrorCallback = std::function<void(vk::Result, std::string const&)>;
 
-        explicit FenceWaiter(vk::Device const device = vk::Device{}, ErrorCallback errorCallback = nullptr)
-            : m_device(device), m_running(false), m_errorCallback(std::move(errorCallback))
+        FenceWaiter() = default;
+
+        explicit FenceWaiter(vk::Device device, vk::detail::DispatchLoaderDynamic const& dispatcher, ErrorCallback errorCallback = nullptr)
+            : m_device(device), m_dispatcher{&dispatcher}, m_running(false), m_errorCallback(std::move(errorCallback))
         {
             if (m_device) start(m_device);
         }
@@ -31,7 +33,12 @@ namespace shuttle::engine {
             if (m_running) return;
             m_device = device;
             m_running = true;
-            m_workerThread = std::thread(&FenceWaiter::threadLoop, this);
+            m_workerThread = std::thread([this] {
+                if (auto result = threadLoop(); result != vk::Result::eSuccess) {
+                    internalErrorCode = result;
+                    handleInternalError(result, std::string("Error message: ") + std::string(vk::to_string(result)));
+                }
+            });
         }
 
         void stop() {
@@ -44,7 +51,12 @@ namespace shuttle::engine {
         }
 
         // ВЫДЕЛЕНИЕ СВОБОДНОГО ФЕНСА ДЛЯ ИСПОЛЬЗОВАНИЯ (Вызывается из CPU/Рендер-потока)
-        [[nodiscard]] vk::Fence acquireFence() {
+        [[nodiscard]] vk::ResultValue<vk::Fence> acquireFence() {
+
+            if (internalErrorCode != vk::Result::eSuccess) {
+                return {internalErrorCode, {}};
+            }
+
             vk::UniqueFence uniqueFence;
 
             // Если в lock-free пуле есть готовый фенс — забираем хэндл
@@ -54,28 +66,31 @@ namespace shuttle::engine {
                 // Чтобы не терять Unique-объект, мы можем временно переместить его во внутренний трекер,
                 // либо, если пулинг чистый, хранить хэндлы. Для простоты пулинга UniqueFence:
                 m_activeFencesTracker.enqueue(std::move(uniqueFence));
-                return fenceHandle;
+                return {vk::Result::eSuccess, fenceHandle};
             }
 
-            // Если пул пуст — создаем новый фенс (изначально сброшенный / signaled)
-            vk::FenceCreateInfo createInfo(vk::FenceCreateFlagBits::eSignaled);
-            auto newUnique = m_device.createFenceUnique(createInfo);
-            vk::Fence fenceHandle = newUnique.get();
+            auto [result, newUnique] = m_device.createFenceUnique({.flags = vk::FenceCreateFlagBits::eSignaled}, nullptr, *m_dispatcher);
+            if (result != vk::Result::eSuccess) { return {result, {}}; }
+            vk::Fence fenceHandle = *newUnique;
 
             m_activeFencesTracker.enqueue(std::move(newUnique));
-            return fenceHandle;
+            return {vk::Result::eSuccess, fenceHandle};
         }
 
-        void addWaitTask(vk::Fence fence, std::function<void(vk::Result)> callback) {
-            m_taskQueue.enqueue({fence, std::move(callback)});
+        vk::Result addWaitTask(vk::Fence fence, std::function<void(vk::Result)> callback) {
+            if (internalErrorCode != vk::Result::eSuccess) {
+                return internalErrorCode;
+            }
+            m_taskQueue.enqueue({.fence = fence, .callback = std::move(callback)});
+            return vk::Result::eSuccess;
         }
 
     private:
         // Хелпер для безопасного сброса и возврата фенса в пул
-        void recycleFence(vk::Fence fence) {
+        vk::Result recycleFence(vk::Fence fence) {
             // Нативный сброс фенса в Vulkan API
-            if (auto resetRes = m_device.resetFences(1, &fence); resetRes != vk::Result::eSuccess) {
-                handleInternalError(resetRes, "Reset fence failed");
+            if (auto resetRes = m_device.resetFences(1, &fence, *m_dispatcher); resetRes != vk::Result::eSuccess) {
+                return resetRes;
             }
 
             // Ищем соответствующий UniqueFence во временном трекере и возвращаем в пул свободных
@@ -89,6 +104,7 @@ namespace shuttle::engine {
                     m_activeFencesTracker.enqueue(std::move(uniqueFence));
                 }
             }
+            return vk::Result::eSuccess;
         }
 
         // Централизованная обработка критических сбоев Vulkan (Device Lost и т.д.)
@@ -100,7 +116,7 @@ namespace shuttle::engine {
             }
         }
 
-        void threadLoop() {
+        vk::Result threadLoop() {
             std::vector<vk::Fence>                         fenceBuffer;
             std::vector<std::function<void(vk::Result)>>   callbackBuffer;
 
@@ -115,35 +131,62 @@ namespace shuttle::engine {
                 if (!fenceBuffer.empty()) {
                     auto waitRes = m_device.waitForFences(
                         static_cast<uint32_t>(fenceBuffer.size()), fenceBuffer.data(),
-                        VK_FALSE, 2'000'000
+                        vk::False, 2'000'000, *m_dispatcher
                     );
-                    if (waitRes != vk::Result::eSuccess) {
-                        handleInternalError(waitRes, "Wait fences internal error");
-                    }
 
-                    for (size_t i = 0; i < fenceBuffer.size(); ++i) {
-                        vk::Result fenceRes = vk::Result::eNotReady;
-                        fenceRes = m_device.getFenceStatus(fenceBuffer[i]);
+                    if (waitRes != vk::Result::eTimeout) {
+                        if (waitRes != vk::Result::eSuccess) {
+                            return waitRes;
+                        }
 
-                        if (fenceRes != vk::Result::eNotReady) {
-                            // ФЕНС ОТРАБОТАЛ (Success или Критический сбой)
-                            if (callbackBuffer[i]) {
-                                callbackBuffer[i](fenceRes);
-                            }
+                        for (size_t i = 0; i < fenceBuffer.size(); ++i) {
+                            vk::Result fenceRes = vk::Result::eNotReady;
+                            fenceRes = m_device.getFenceStatus(fenceBuffer[i], *m_dispatcher);
 
-                            if (fenceRes == vk::Result::eSuccess) {
-                                // Если всё ок — сбрасываем и возвращаем в пул свободных
-                                recycleFence(fenceBuffer[i]);
+                            if (fenceRes != vk::Result::eNotReady) {
+                                // ФЕНС ОТРАБОТАЛ (Success или Критический сбой)
+                                if (callbackBuffer[i]) {
+                                    callbackBuffer[i](fenceRes);
+                                }
+
+                                if (fenceRes == vk::Result::eSuccess) {
+                                    // Если всё ок — сбрасываем и возвращаем в пул свободных
+                                    auto recycleResult = recycleFence(fenceBuffer[i]);
+                                    if (recycleResult != vk::Result::eSuccess) {
+                                        return recycleResult;
+                                    }
+                                } else {
+                                    // ПАТЧ №1: ФЕНС ВЕРНУЛ ОШИБКУ (Device Lost)
+                                    // Мы аккуратно извлекаем ТОЛЬКО ЭТОТ конкретный фенс из активного трекера,
+                                    // не трогая чужие живые фенсы!
+
+                                    // Вспомогательный буфер для временной переливки
+                                    moodycamel::ConcurrentQueue<vk::UniqueFence> tempTracker;
+                                    vk::UniqueFence currentActive;
+
+                                    // Переливаем элементы, пока не найдем наш поврежденный фенс
+                                    while (m_activeFencesTracker.try_dequeue(currentActive)) {
+                                        if (currentActive.get() == fenceBuffer[i]) {
+                                            vk::UniqueFence deadFence = std::move(currentActive); // Нашли! Забираем его на уничтожение (RAII)
+                                            break;
+                                        }
+                                        tempTracker.enqueue(std::move(currentActive));
+                                    }
+
+                                    // Возвращаем остальные живые фенсы обратно на базу
+                                    while (tempTracker.try_dequeue(currentActive)) {
+                                        m_activeFencesTracker.enqueue(std::move(currentActive));
+                                    }
+
+                                    // ПАТЧ №2: УДАЛЕН ДУБЛИРУЮЩИЙ ВЫЗОВ КОЛБЭКА!
+                                    // Он уже выполнился строчкой выше: `if (callbackBuffer[i]) callbackBuffer[i](fenceRes);`
+                                    // Даем deadFence спокойно умереть по выходу из блока `{}` (RAII-деструкция)
+                                }
                             } else {
-                                // Если фенс вернул ошибку (Device Lost) — МЫ ЕГО УНИЧТОЖАЕМ (выкидываем из трекера)
-                                vk::UniqueFence deadFence;
-                                m_activeFencesTracker.try_dequeue(deadFence); // Просто даем ему умереть (RAII)
-                                handleInternalError(fenceRes, "Fence completed with critical error status");
+                                // Фенс еще выполняется на GPU
+                                nextFenceBuffer.push_back(fenceBuffer[i]);
+                                nextCallbackBuffer.push_back(std::move(callbackBuffer[i]));
                             }
-                        } else {
-                            // Фенс еще выполняется на GPU
-                            nextFenceBuffer.push_back(fenceBuffer[i]);
-                            nextCallbackBuffer.push_back(std::move(callbackBuffer[i]));
                         }
                     }
                 }
@@ -151,7 +194,7 @@ namespace shuttle::engine {
                 // ФАЗА 2: Забираем новичков из lock-free очереди
                 while (m_taskQueue.try_dequeue(newTask)) {
                     vk::Result instantRes = vk::Result::eNotReady;
-                    instantRes = m_device.getFenceStatus(newTask.fence);
+                    instantRes = m_device.getFenceStatus(newTask.fence, *m_dispatcher);
 
                     if (instantRes != vk::Result::eNotReady) {
                         if (newTask.callback) {
@@ -160,9 +203,22 @@ namespace shuttle::engine {
                         if (instantRes == vk::Result::eSuccess) {
                             recycleFence(newTask.fence);
                         } else {
-                            vk::UniqueFence deadFence;
-                            m_activeFencesTracker.try_dequeue(deadFence);
-                            handleInternalError(instantRes, "Instant task check failed with critical error");
+                            // Точечно выковыриваем мертвый фенс новичка из трекера
+                            moodycamel::ConcurrentQueue<vk::UniqueFence> tempTracker;
+                            vk::UniqueFence currentActive;
+
+                            while (m_activeFencesTracker.try_dequeue(currentActive)) {
+                                if (currentActive.get() == newTask.fence) {
+                                    vk::UniqueFence deadFence = std::move(currentActive);
+                                    break;
+                                }
+                                tempTracker.enqueue(std::move(currentActive));
+                            }
+                            while (tempTracker.try_dequeue(currentActive)) {
+                                m_activeFencesTracker.enqueue(std::move(currentActive));
+                            }
+
+                            // ДУБЛИРУЮЩИЙ ВЫЗОВ КОЛБЭКА УДАЛЕН! Он уже отработал выше в коде.
                         }
                         continue;
                     }
@@ -181,11 +237,15 @@ namespace shuttle::engine {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
             }
+            return vk::Result::eSuccess;
         }
 
         vk::Device m_device;
+        vk::detail::DispatchLoaderDynamic const* m_dispatcher{};
         std::atomic<bool> m_running;
         std::thread m_workerThread;
+
+        vk::Result internalErrorCode {vk::Result::eSuccess};
 
         moodycamel::ConcurrentQueue<FenceWaitTask> m_taskQueue;
         moodycamel::ConcurrentQueue<vk::UniqueFence> m_freeFences;

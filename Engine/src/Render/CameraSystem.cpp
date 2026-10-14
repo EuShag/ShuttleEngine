@@ -5,7 +5,7 @@
 #include "CameraSystem.hpp"
 
 namespace shuttle::engine::render {
-    vk::ResultValue<CameraSystem> CameraSystem::create(vk::Device device, resources::DeviceAllocator const &allocator) {
+    vk::ResultValue<CameraSystem> CameraSystem::create(vk::Device device, vk::detail::DispatchLoaderDynamic const& dispatcher, resources::DeviceAllocator const &allocator) {
         auto [createCameraDataBufferResult, cameraDataBuffer] = allocator.createAndAllocateBufferUnique(
             vk::BufferCreateInfo{
                 .size = sizeof(core::CameraData),
@@ -26,7 +26,7 @@ namespace shuttle::engine::render {
             return {vk::Result::eErrorMemoryMapFailed, {}};
         }
 
-        auto cameraDataDeviceAddress = device.getBufferAddress({.buffer = *cameraDataBuffer});
+        auto cameraDataDeviceAddress = device.getBufferAddress({.buffer = *cameraDataBuffer}, dispatcher);
 
         return {vk::Result::eSuccess, CameraSystem{
                 std::move(cameraDataBuffer),

@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "IncludeVulkan.hpp"
 #include "DeviceAllocator/DeviceAllocator.hpp"
 #include "PAL/Platform.hpp"
