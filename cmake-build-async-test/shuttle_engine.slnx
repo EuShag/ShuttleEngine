@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Project Path="ALL_BUILD.vcxproj" Id="3209feca-be04-39b1-8c0c-322efa10a6f4">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/assimp/code/assimp.vcxproj"/>
+		<BuildDependency Project="async/async.vcxproj"/>
+		<BuildDependency Project="async/async_one_thread_executor_test.vcxproj"/>
+		<BuildDependency Project="shaders/compile_shaders.vcxproj"/>
+		<BuildDependency Project="resources/copy_resources.vcxproj"/>
+		<BuildDependency Project="engine/engine.vcxproj"/>
+		<BuildDependency Project="external/meshoptimizer/meshoptimizer.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-obj.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-obj-target.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-api.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-api-fill.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-profile.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-stress.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-stress-dynamic.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-stress-heaps.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-stress-static.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-test-stress-subprocs.vcxproj"/>
+		<BuildDependency Project="pal/pal.vcxproj"/>
+		<BuildDependency Project="assets/core/shuttle_asset_core.vcxproj"/>
+		<BuildDependency Project="assets/texture_compiler/shuttle_texture_compiler.vcxproj"/>
+		<BuildDependency Project="external/vk-bootstrap/vk-bootstrap.vcxproj"/>
+		<BuildDependency Project="external/assimp/contrib/zlib/zlibstatic.vcxproj"/>
+	</Project>
+	<Project Path="Continuous.vcxproj" Id="04d4ab53-c779-3b98-b554-64b333203ffc">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="Experimental.vcxproj" Id="7fb2a8f9-cb3f-39b9-a486-1e99b53aab79">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="INSTALL.vcxproj" Id="0b155918-c568-3ede-855d-3ee7c9032e40">
+		<BuildDependency Project="ALL_BUILD.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="Nightly.vcxproj" Id="88c3d72d-8de2-3902-88de-e3cc1105707f">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="NightlyMemoryCheck.vcxproj" Id="fecfc9f1-fa97-348d-958e-753fe6dc7fd9">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="RUN_TESTS.vcxproj" Id="a4fd5827-22f1-3bb6-a7f8-7854372646d2">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="external/assimp/UpdateAssimpLibsDebugSymbolsAndDLLs.vcxproj" Id="a31d481b-3eee-35b5-b17c-bd166bd476b1">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="ZERO_CHECK.vcxproj" Id="898ea41b-139d-370b-b6d5-9444fa684b02"/>
+	<Project Path="external/assimp/code/assimp.vcxproj" Id="b63367db-6cd9-343a-bbb8-12e2d740920f">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/assimp/contrib/zlib/zlibstatic.vcxproj"/>
+	</Project>
+	<Project Path="async/async.vcxproj" Id="8d8d52c2-51ba-3552-8616-bae4303d0cc6">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="async/async_one_thread_executor_test.vcxproj" Id="fbca6c2d-0001-3a33-a5d2-9bc7403d7071">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="async/async.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="shaders/compile_shaders.vcxproj" Id="ab19d6c5-82cf-3d3b-a56c-dd5425344123">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="resources/copy_resources.vcxproj" Id="29a37f27-2e84-3dc2-9d09-c0e99692199c">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="engine/engine.vcxproj" Id="fa4dfd6b-4f88-3e56-ba95-12bea7a93daf">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/assimp/code/assimp.vcxproj"/>
+		<BuildDependency Project="async/async.vcxproj"/>
+		<BuildDependency Project="shaders/compile_shaders.vcxproj"/>
+		<BuildDependency Project="resources/copy_resources.vcxproj"/>
+		<BuildDependency Project="external/meshoptimizer/meshoptimizer.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+		<BuildDependency Project="pal/pal.vcxproj"/>
+		<BuildDependency Project="assets/core/shuttle_asset_core.vcxproj"/>
+		<BuildDependency Project="assets/texture_compiler/shuttle_texture_compiler.vcxproj"/>
+		<BuildDependency Project="external/vk-bootstrap/vk-bootstrap.vcxproj"/>
+		<BuildDependency Project="external/assimp/contrib/zlib/zlibstatic.vcxproj"/>
+	</Project>
+	<Project Path="external/meshoptimizer/meshoptimizer.vcxproj" Id="9ae902c2-8802-3a57-a158-0bd531aed86e">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc.vcxproj" Id="8953550b-18e9-3930-8f96-08c09dd4b542">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-obj.vcxproj" Id="d131f55d-adab-31fa-9294-b0f6d5463b39">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-obj-target.vcxproj" Id="20dab1d2-96d3-31d8-b232-759fad6bed09">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-obj.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-static.vcxproj" Id="268ad6dd-2458-3d11-b044-e9c3129bf9e4">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-api.vcxproj" Id="f35fd4d4-4063-3d6a-b2d8-a9d1c9aac625">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-api-fill.vcxproj" Id="9af843d8-80de-3c0a-af8b-729703f1c50f">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-profile.vcxproj" Id="a80633fe-d310-3638-9783-bc1abac7b07c">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-stress.vcxproj" Id="5cd1fcd0-d477-37dc-9abb-e8c405e45ad4">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-stress-dynamic.vcxproj" Id="0eb2f275-5411-3f37-b054-1fbd8981a05b">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-stress-heaps.vcxproj" Id="ee0251a9-03f1-3a79-8481-47d863a34b0c">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-stress-static.vcxproj" Id="21ca025f-6a82-3104-ad00-6a4bb8afb8db">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-obj.vcxproj"/>
+	</Project>
+	<Project Path="external/mimalloc/mimalloc-test-stress-subprocs.vcxproj" Id="99e0f4af-be9c-3d1d-975e-c03e1bb30784">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/mimalloc/mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="pal/pal.vcxproj" Id="bd96a2a9-dba2-3470-bf01-de5b659de6e8">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="assets/core/shuttle_asset_core.vcxproj" Id="7868e2ca-82e9-3abf-8076-54ccca809de9">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="assets/environment_compiler/shuttle_environment_compiler.vcxproj" Id="9c821177-161a-3d5d-934e-b0e05b3d8a4b">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="external/assimp/code/assimp.vcxproj"/>
+		<BuildDependency Project="external/meshoptimizer/meshoptimizer.vcxproj"/>
+		<BuildDependency Project="assets/core/shuttle_asset_core.vcxproj"/>
+		<BuildDependency Project="external/assimp/contrib/zlib/zlibstatic.vcxproj"/>
+	</Project>
+	<Project Path="assets/scene_compiler/shuttle_scene_compiler.vcxproj" Id="35ff41a6-2d6b-3286-b0fe-b028659aa898">
+		<BuildDependency Project="assets/environment_compiler/shuttle_environment_compiler.vcxproj"/>
+	</Project>
+	<Project Path="assets/texture_compiler/shuttle_texture_compiler.vcxproj" Id="e115884c-f235-3b3f-9697-77ea1241d23f">
+		<BuildDependency Project="assets/scene_compiler/shuttle_scene_compiler.vcxproj"/>
+	</Project>
+	<Project Path="external/vk-bootstrap/vk-bootstrap.vcxproj" Id="3aa16675-b47b-3b14-8e6d-c48f3e0502ba">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="external/assimp/contrib/zlib/zlibstatic.vcxproj" Id="7e2cc44b-6f4e-3e74-9afc-072581ed8de4">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+</Solution>

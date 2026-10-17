@@ -1,0 +1,4 @@
+# CMake generation dependency list for this directory.
+E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/CMakeFiles/cmake.verify_globs
+E:/Users/Shagu/Projects/ShuttleEngine/external/vk-bootstrap/CMakeLists.txt
+E:/Users/Shagu/Projects/ShuttleEngine/external/vk-bootstrap/gen/CurrentBuildVulkanVersion.cmake

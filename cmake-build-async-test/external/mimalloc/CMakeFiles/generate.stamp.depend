@@ -1,0 +1,16 @@
+# CMake generation dependency list for this directory.
+E:/Program Files/CMake/share/cmake-4.2/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/CheckIncludeFiles.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/CheckLinkerFlag.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/FindGit.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/FindPackageHandleStandardArgs.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/FindPackageMessage.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/GNUInstallDirs.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/Internal/CheckFlagCommonConfig.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/Internal/CheckLinkerFlag.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake
+E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/CMakeFiles/cmake.verify_globs
+E:/Users/Shagu/Projects/ShuttleEngine/external/mimalloc/CMakeLists.txt
+E:/Users/Shagu/Projects/ShuttleEngine/external/mimalloc/cmake/JoinPaths.cmake
+E:/Users/Shagu/Projects/ShuttleEngine/external/mimalloc/cmake/mimalloc-config-version.cmake
+E:/Users/Shagu/Projects/ShuttleEngine/external/mimalloc/mimalloc.pc.in

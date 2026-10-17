@@ -1,0 +1,63 @@
+@startuml
+skinparam BackgroundColor #FFFFFF
+skinparam ArrowColor #2C3E50
+skinparam ActorBorderColor #2C3E50
+skinparam ControlBorderColor #2C3E50
+skinparam SequenceLifeLineBorderColor #2C3E50
+
+title Процесс планирования задачи через ThreadPoolExecutor::execute()
+
+actor "Вызывающий поток" as Caller
+participant "ThreadPoolExecutor" as Executor
+database "TLS: m_currentWorker" as TLS
+entity "Локальная дека\n(Chase-Lev)" as LocalQueue
+database "Глобальный склад\n(SafeConcurrentQueue)" as GlobalQueue
+entity "CoroutineNotifier" as Notifier
+
+Caller -> Executor : execute(coroHandle)
+activate Executor
+
+alt #FFEAEA Ошибка: хэндл пустой ИЛИ пул останавливается (m_stopping == true)
+    Executor --> Caller : return ResultCode::EXECUTOR_STOPPED / INVALID
+else #F4F6F7 Штатный режим
+    Executor -> TLS : Считать указатель текущего воркера
+    activate TLS
+    TLS --> Executor : currentCtx
+    deactivate TLS
+
+    alt #E8F8F5 FAST-PATH: Вызов изнутри потока пула (currentCtx != nullptr)
+        Executor -> LocalQueue : try_push(coroHandle)
+        activate LocalQueue
+
+        alt Локальный карман свободен (< 1024 задач)
+            LocalQueue --> Executor : true
+            Executor -> Notifier : notify_one() (Будим случайного соседа для воровства)
+            Executor --> Caller : return ResultCode::SUCCESS
+        else #FADBD8 Аварийное переполнение локальной деки
+            LocalQueue --> Executor : false
+            deactivate LocalQueue
+            Executor -> Executor : _enqueue_incoming(coroHandle)
+            activate Executor
+            Executor -> GlobalQueue : enqueue(coroHandle)
+            activate GlobalQueue
+            GlobalQueue --> Executor : true / false (OOM)
+            deactivate GlobalQueue
+            deactivate Executor
+            Executor --> Caller : return ResultCode
+        end
+
+    else #EBF5FB SLOW-PATH: Вызов из внешнего потока (currentCtx == nullptr)
+        Executor -> Executor : _enqueue_incoming(coroHandle)
+        activate Executor
+        Executor -> GlobalQueue : enqueue(coroHandle)
+        activate GlobalQueue
+        GlobalQueue --> Executor : Статус аллокации Windows
+        deactivate GlobalQueue
+        Executor -> Notifier : notify_one() (Будим воркера пула)
+        deactivate Executor
+        Executor --> Caller : return ResultCode
+    end
+end
+
+deactivate Executor
+@endum

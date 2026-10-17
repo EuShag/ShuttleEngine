@@ -1,0 +1,58 @@
+@startuml
+skinparam backgroundColor #FAFAFA
+skinparam BoxPadding 15
+skinparam ParticipantPadding 15
+skinparam sequence {
+    ActorBorderColor #2B579A
+    ActorBackgroundColor #EBF3FF
+    ParticipantBorderColor #2B579A
+    ParticipantBackgroundColor #EBF3FF
+    ArrowColor #2B579A
+    LifeLineBorderColor #2B579A
+    LifeLineBackgroundColor #EBF3FF
+    FontName "Segoe UI"
+    FontSize 13
+}
+
+title Диаграмма последовательности: InitialAwaiter (Shuttle Engine)
+
+box "Родительский контекст" #F3F3F3
+participant "Родительская корутина\n(Parent)" as Parent
+end box
+
+box "Дочерняя корутина (Child Frame Context)" #E8F1FF
+participant "InitialAwaiter" as InitAwaiter
+participant "CoroScope" as Scope
+end box
+
+box "Планировщик" #FFF2CC
+participant "IExecutor" as Executor
+end box
+
+Parent -> InitAwaiter : **rootScope.launch()**\n[Создание фрейма дочки]
+
+note over InitAwaiter, Scope: Дочка приостановлена в initial_suspend.\nВызывается InitAwaiter::await_ready()
+
+InitAwaiter -> Scope : getLaunchOptions()
+Scope --> InitAwaiter : LaunchOptions
+
+alt LaunchMode == Immediate (Синхронный запуск)
+    note over InitAwaiter: await_ready() == **true**\n[Пропускаем await_suspend]
+    InitAwaiter --> Parent : Синхронное выполнение тела дочки на текущем стеке
+else LaunchMode == Async (Асинхронный запуск)
+    note over InitAwaiter: await_ready() == **false**\n[Входим в await_suspend]
+
+    InitAwaiter -> Executor : **execute(childHandle)**\n[Регистрируем дочку в очереди]
+
+    InitAwaiter -> Scope : getParentHandle()
+    Scope --> InitAwaiter : [parentHandle]
+
+    alt У дочки ЕСТЬ родитель (parentHandle != nullptr)
+        note over InitAwaiter, Parent: **Symmetric Transfer:**\nВозвращаем parentHandle.\nПоток мгновенно прыгает назад в код родителя!
+        InitAwaiter -> Parent : return parentHandle
+    else У дочки НЕТ родителя (Корневой запуск)
+        note over InitAwaiter: Возвращаем std::noop_coroutine().\nПоток выходит в вызывающую функцию (например, main)
+        InitAwaiter -> : return std::noop_coroutine()
+    end
+end
+@enduml

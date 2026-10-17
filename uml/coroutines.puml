@@ -1,0 +1,54 @@
+@startuml
+skinparam BackgroundColor #FFFFFF
+skinparam ArrowColor #2D3748
+skinparam StateBackgroundColor #EDF2F7
+skinparam StateBorderColor #CBD5E0
+
+title Атомарный конечный автомат синхронизации задач (TaskState Machine)
+
+' Спокойно рисуем логику переходов
+[*] --> Initialized : 1. Вызов конструктора\npromise_type\n(0 аллокаций кучи)
+
+note right of Initialized
+  **Задача создана:**
+  Выделен taskId,
+  корутина засыпает
+  в initial_suspend()
+end note
+
+' ШТАТНАЯ ВЕТКА САСПЕНДА
+Initialized --> Suspended : 2. Метод launch()\nставит в очередь\nи вызывает handle.resume()
+
+note right of Suspended
+  **Корутина спит на co_await:**
+  Хэндл сохранен в SharedState,
+  поток CPU полностью свободен
+end note
+
+Suspended --> Signaled : 3. Железо GPU\nотщелкнуло семафор!\nПоток-Ждун вызывает\nwaker.wake() -> requeue()
+
+' --- ТВОЙ ОБНОВЛЕННЫЙ FAST-PATH ПРЯМОГО ЗАВЕРШЕНИЯ ---
+Initialized --> Signaled : 2b. Корутина выполнилась СРАЗУ\n(Без ухода в спячку на co_await)
+
+note right of Signaled
+  **Задача завершена / вернулась в воркер CPU:**
+  await_resume() возвращает
+  структуру OperationResult<T>
+end note
+
+Signaled --> [*] : 5. Финал кадра:\nfinal_suspend() +\nнативный RAII-деструктор\n~AsyncTask()
+
+' Ветка принудительной отмены
+Initialized --> Canceled : 4. Деструктор ~CoroScope()\nили co_return родителя\nвызвал proxy.requestCancellation()
+Suspended --> Canceled : 4. Деструктор ~CoroScope()\nили co_return родителя\nвызвал proxy.requestCancellation()
+
+note left of Canceled
+  **Флаг отмены взведен:**
+  Хэндл извлекается,
+  await_resume() возвращает
+  isCanceled = true
+end note
+
+Canceled --> [*] : 5. Экстренное выжигание\nфрейма дочерней\nкорутины из кучи mimalloc
+
+@enduml

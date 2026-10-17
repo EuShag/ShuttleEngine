@@ -1,0 +1,61 @@
+//
+// Created by Shagu on 05.08.2026.
+//
+
+#ifndef SHUTTLEENGINE_CAMERASYSTEM_HPP
+#define SHUTTLEENGINE_CAMERASYSTEM_HPP
+
+#include "include_vulkan.hpp"
+#include "device_allocator/device_allocator.hpp"
+#include "camera/camera.hpp"
+
+namespace shuttle::engine::render {
+    class CameraSystem
+    {
+    public:
+
+        static vk::ResultValue<CameraSystem> create(vk::Device device, vk::detail::DispatchLoaderDynamic const &dispatcher, resources::DeviceAllocator const &allocator);
+
+        void updateData(core::Camera const& camera) const;
+
+        [[nodiscard]] vk::DeviceAddress getCameraDataAddress() const {
+            return cameraDataAddress;
+        }
+
+        CameraSystem(resources::UniqueAllocatedBuffer cameraDataBuffer, void* cameraDataMappedPtr, vk::DeviceAddress cameraDataAddress)
+            : cameraDataBuffer(std::move(cameraDataBuffer)),
+              mappedMemory(cameraDataMappedPtr),
+              cameraDataAddress(cameraDataAddress) {}
+
+        CameraSystem(CameraSystem const&) = delete;
+        CameraSystem& operator=(CameraSystem const&) = delete;
+
+        CameraSystem(CameraSystem&& other)  noexcept : cameraDataBuffer(std::move(other.cameraDataBuffer)),
+              mappedMemory(other.mappedMemory),
+              cameraDataAddress(other.cameraDataAddress) {
+            other.mappedMemory = nullptr;
+            other.cameraDataAddress = 0;
+        }
+
+        CameraSystem& operator=(CameraSystem&& other) noexcept {
+            if (this != &other) {
+                cameraDataBuffer = std::move(other.cameraDataBuffer);
+                mappedMemory = other.mappedMemory;
+                cameraDataAddress = other.cameraDataAddress;
+
+                other.mappedMemory = nullptr;
+                other.cameraDataAddress = 0;
+            }
+            return *this;
+        }
+
+        CameraSystem() = default;
+
+    private:
+        resources::UniqueAllocatedBuffer cameraDataBuffer{};
+        void* mappedMemory{};
+        vk::DeviceAddress cameraDataAddress{};
+    };
+}
+
+#endif //SHUTTLEENGINE_CAMERASYSTEM_HPP

@@ -95,5 +95,5 @@ foreach(SHADER_SOURCE ${SHADER_SOURCES})
 endforeach()
 
 add_custom_target(
-        CompileShaders ALL
+        compile_shaders ALL
         DEPENDS ${SHADER_SPV_FILES})

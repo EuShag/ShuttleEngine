@@ -1,0 +1,24 @@
+{
+	"InstallScripts" : 
+	[
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/assets/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/assets/core/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/assets/formats/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/assets/texture_compiler/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/assets/scene_compiler/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/assets/environment_compiler/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/external/meshoptimizer/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/external/vk-bootstrap/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/external/mimalloc/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/async/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/pal/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/engine/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/resources/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/external/assimp/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/external/assimp/contrib/zlib/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/external/assimp/code/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

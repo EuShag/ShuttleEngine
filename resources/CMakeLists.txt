@@ -1,6 +1,6 @@
 # Target for copying assets to the build directory
 add_custom_target(
-    CopyResources
+    copy_resources
     ALL
     COMMAND
         ${CMAKE_COMMAND}

@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\alloc-aligned.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\alloc-posix.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\arena.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\bitmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\heap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\libc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\options.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\os.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\page.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\page-map.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\prim\prim.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\prim\prim-tls.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\random.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\sample-guarded.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\sample-profile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\stats.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\subproc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\theap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\src\threadlocal.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{84782AF7-6060-3948-9703-376FD2670F5D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

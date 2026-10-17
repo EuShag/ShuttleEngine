@@ -1,0 +1,133 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "Release",
+	"cxx-modules" : {},
+	"database-info" : null,
+	"dir-cur-bld" : "E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/meshoptimizer",
+	"dir-cur-src" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer",
+	"dir-top-bld" : "E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release",
+	"dir-top-src" : "E:/Users/Shagu/Projects/ShuttleEngine",
+	"exports" : 
+	[
+		{
+			"cxx-module-info-dir" : "",
+			"destination" : "lib/cmake/meshoptimizer",
+			"export-name" : "meshoptimizer",
+			"export-prefix" : "E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/meshoptimizer/CMakeFiles/Export/ceb4a2f0e054867e59945df3bd2dce32",
+			"filesystem-export-name" : "meshoptimizer",
+			"install" : true,
+			"namespace" : "meshoptimizer::"
+		}
+	],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : [],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/meshoptimizer/CMakeFiles/meshoptimizer.dir",
+	"sources" : 
+	{
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/allocator.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/allocator.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/clusterizer.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/clusterizer.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/indexanalyzer.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/indexanalyzer.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/indexcodec.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/indexcodec.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/indexgenerator.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/indexgenerator.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/meshletcodec.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/meshletcodec.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/meshletutils.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/meshletutils.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/opacitymap.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/opacitymap.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/overdrawoptimizer.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/overdrawoptimizer.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/partition.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/partition.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/quantization.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/quantization.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/rasterizer.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/rasterizer.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/simplifier.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/simplifier.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/spatialorder.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/spatialorder.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/stripifier.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/stripifier.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/tangentspace.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/tangentspace.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/vcacheoptimizer.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/vcacheoptimizer.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/vertexcodec.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/vertexcodec.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/vertexfilter.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/vertexfilter.cpp"
+		},
+		"external/meshoptimizer/CMakeFiles/meshoptimizer.dir/src/vfetchoptimizer.cpp.obj" : 
+		{
+			"language" : "CXX",
+			"source" : "E:/Users/Shagu/Projects/ShuttleEngine/external/meshoptimizer/src/vfetchoptimizer.cpp"
+		}
+	}
+}

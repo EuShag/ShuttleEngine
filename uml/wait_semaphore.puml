@@ -1,0 +1,106 @@
+@startuml
+
+<style>
+document {
+  BoxPadding 10
+  ParticipantPadding 12
+}
+title {
+  FontSize 16
+  FontColor #111111
+}
+</style>
+
+title Триада классов асинхронного упреждающего ожидания (Shuttle Engine)
+
+box "Потоки CPU / Пул Воркеров" #LightBlue
+participant "C++20 Корутина" as Coro #LightGreen
+participant "GpuTaskAwaitable\n(Move-Only Обертка)" as Awaitable #Thistle
+end box
+
+box "Оперативная память (Интрузивная структура)" #White
+participant "GpuTaskSharedState\n(Атомарный стейт)" as State #Yellow
+end box
+
+box "Сервисное Ядро Движка" #F0F4F8
+participant "TimelineSemaphoreWaiter\n(Поток-Официант)" as Waiter #MediumPurple
+participant "GpuTaskScheduler\n(Планировщик воркеров)" as Scheduler #LightPink
+end box
+
+box "Железо GPU" #LightPink
+participant "Vulkan Timeline\nSemaphore" as GPU #Red
+end box
+
+== ЭТАП 1: Инициализация и Упреждающий запуск ==
+
+Coro -> State ** : Аллокация в Арене/Пуле (Status = PENDING, RefCount = 1)
+Coro -> GPU : vkQueueSubmit2()
+Coro -> Waiter : pushTask(State*)
+Note over Waiter: Реф-каунт = 2.\nWaiter УЖЕ мониторит семафор\nпараллельно с работой корутины.
+
+Coro -> Awaitable ** : Конструирование Awaitable(State*)
+Coro -> Awaitable : co_await Awaitable
+
+== РАЗВИЛКА А: GPU оказался быстрее CPU (Опережение Ждуном) ==
+
+Waiter -> GPU : vkGetSemaphoreCounterValue()
+GPU --> Waiter : Signal received! (Value >= Target)
+
+Waiter -> State : triggerAwakening() -> Loop-CAS: PENDING -> SIGNALED
+Note over State: Статус атомарно\nизменен на SIGNALED
+
+... Спустя время Корутина доходит до барьера ...
+Coro -> Awaitable : Вызов await_ready()
+activate Awaitable
+Awaitable -> State : Проверка статуса (load)
+State --> Awaitable : Статус == SIGNALED
+Awaitable --> Coro : await_ready() -> true (Пролет без анабиоза)
+deactivate Awaitable
+Note over Coro: Скорость 0 мс! Корутина не засыпала,\nконтекст потока i9-14900KF не прерывался.
+
+== РАЗВИЛКА Б: CPU дошел до барьера раньше (Уход в анабиоз) ==
+
+... Корутина быстро долетела до барьера, пока GPU еще считает ...
+Coro -> Awaitable : Вызов await_ready()
+activate Awaitable
+Awaitable -> State : Проверка статуса (load)
+State --> Awaitable : Статус == PENDING
+Awaitable --> Coro : await_ready() -> false
+deactivate Awaitable
+
+Coro -> Awaitable : Вызов await_suspend(coro_handle)
+activate Awaitable
+Awaitable -> State : Сохранение coro_handle в стейт
+Awaitable -> State : CAS-мутация (из PENDING в SUSPENDED)
+State --> Awaitable : Успешно (Шлюз для пробуждения открыт)
+Awaitable --> Coro : true (Корутина засыпает, воркер свободен)
+deactivate Awaitable
+
+... Спустя время GPU дописывает данные в VRAM ...
+Waiter -> GPU : vkGetSemaphoreCounterValue()
+GPU --> Waiter : Signal received! (Value >= Target)
+
+Waiter -> State : triggerAwakening() -> Loop-CAS: Провал по PENDING (уже SUSPENDED)\nУспех по SUSPENDED -> SIGNALED
+Waiter -> Scheduler : requeue(state->coroHandle)
+activate Scheduler
+
+Scheduler -> Awaitable : Возобновление (Вызов await_resume)
+activate Awaitable
+Awaitable -> State : Считать сохраненный VkResult
+State --> Awaitable : Возврат VkResult
+Awaitable --> Coro : Возврат VkResult в тело корутины
+deactivate Awaitable
+deactivate Scheduler
+
+== ЭТАП 3: Lock-Free деструкция и зачистка памяти ==
+
+Coro -> Awaitable !! : Выход из области видимости (Деструктор)
+Note over Awaitable: Линкоровочный объект Awaitable уничтожен
+
+Coro -> State : release() -> RefCount упал до 1
+
+Waiter -> State : release() -> RefCount упал до 0
+State -> State !! : delete this (Возврат памяти в Mimalloc/Пул)
+Note over State: Память атомарного стейта зачищена
+
+@enduml

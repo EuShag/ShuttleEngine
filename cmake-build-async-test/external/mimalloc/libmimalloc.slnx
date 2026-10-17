@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Project Path="ALL_BUILD.vcxproj" Id="3209feca-be04-39b1-8c0c-322efa10a6f4">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc.vcxproj"/>
+		<BuildDependency Project="mimalloc-obj.vcxproj"/>
+		<BuildDependency Project="mimalloc-obj-target.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-api.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-api-fill.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-profile.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-stress.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-stress-dynamic.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-stress-heaps.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-stress-static.vcxproj"/>
+		<BuildDependency Project="mimalloc-test-stress-subprocs.vcxproj"/>
+	</Project>
+	<Project Path="INSTALL.vcxproj" Id="0b155918-c568-3ede-855d-3ee7c9032e40">
+		<BuildDependency Project="ALL_BUILD.vcxproj"/>
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="RUN_TESTS.vcxproj" Id="a4fd5827-22f1-3bb6-a7f8-7854372646d2">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<Build Solution="Debug|*" Project="false"/>
+		<Build Solution="Release|*" Project="false"/>
+		<Build Solution="MinSizeRel|*" Project="false"/>
+		<Build Solution="RelWithDebInfo|*" Project="false"/>
+	</Project>
+	<Project Path="../../ZERO_CHECK.vcxproj" Id="898ea41b-139d-370b-b6d5-9444fa684b02"/>
+	<Project Path="mimalloc.vcxproj" Id="8953550b-18e9-3930-8f96-08c09dd4b542">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-obj.vcxproj" Id="d131f55d-adab-31fa-9294-b0f6d5463b39">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-obj-target.vcxproj" Id="20dab1d2-96d3-31d8-b232-759fad6bed09">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-obj.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-static.vcxproj" Id="268ad6dd-2458-3d11-b044-e9c3129bf9e4">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-api.vcxproj" Id="f35fd4d4-4063-3d6a-b2d8-a9d1c9aac625">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-api-fill.vcxproj" Id="9af843d8-80de-3c0a-af8b-729703f1c50f">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-profile.vcxproj" Id="a80633fe-d310-3638-9783-bc1abac7b07c">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-stress.vcxproj" Id="5cd1fcd0-d477-37dc-9abb-e8c405e45ad4">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-stress-dynamic.vcxproj" Id="0eb2f275-5411-3f37-b054-1fbd8981a05b">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-stress-heaps.vcxproj" Id="ee0251a9-03f1-3a79-8481-47d863a34b0c">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-stress-static.vcxproj" Id="21ca025f-6a82-3104-ad00-6a4bb8afb8db">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-obj.vcxproj"/>
+	</Project>
+	<Project Path="mimalloc-test-stress-subprocs.vcxproj" Id="99e0f4af-be9c-3d1d-975e-c03e1bb30784">
+		<BuildDependency Project="../../ZERO_CHECK.vcxproj"/>
+		<BuildDependency Project="mimalloc-static.vcxproj"/>
+	</Project>
+</Solution>

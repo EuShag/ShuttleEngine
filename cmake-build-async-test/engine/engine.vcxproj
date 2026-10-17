@@ -1,0 +1,516 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FA4DFD6B-4F88-3E56-BA95-12BEA7A93DAF}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>engine</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\bin\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">engine.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">engine</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\bin\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">engine.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">engine</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\bin\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">engine.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">engine</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\bin\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">engine.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">engine</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.4.350.0/include" /FS</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <OpenMPSupport>true</OpenMPSupport>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\engine.dir\Debug\</ProgramDataBaseFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\lib\Debug\vk-bootstrap.lib;..\lib\Debug\async.lib;..\lib\Debug\pal.lib;..\lib\Debug\shuttle_scene_compiler.lib;..\lib\Debug\shuttle_environment_compiler.lib;..\lib\Debug\mimalloc-debug.lib;psapi.lib;advapi32.lib;bcrypt.lib;user32.lib;gdi32.lib;shell32.lib;shcore.lib;ole32.lib;dwmapi.lib;comctl32.lib;..\lib\Debug\shuttle_texture_compiler.lib;..\lib\Debug\shuttle_scene_compiler.lib;..\lib\Debug\shuttle_environment_compiler.lib;..\lib\Debug\shuttle_texture_compiler.lib;..\lib\Debug\assimp-vc145-mtd.lib;..\lib\Debug\zlibstaticd.lib;..\lib\Debug\meshoptimizer.lib;..\lib\Debug\shuttle_asset_core.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -openmp</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/lib/Debug/engine.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/bin/Debug/engine.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.4.350.0/include" /FS</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <OpenMPSupport>true</OpenMPSupport>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ProgramDataBaseFileName>E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\engine.dir\Release\</ProgramDataBaseFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\lib\Release\vk-bootstrap.lib;..\lib\Release\async.lib;..\lib\Release\pal.lib;..\lib\Release\shuttle_scene_compiler.lib;..\lib\Release\shuttle_environment_compiler.lib;..\lib\Release\mimalloc.lib;psapi.lib;advapi32.lib;bcrypt.lib;user32.lib;gdi32.lib;shell32.lib;shcore.lib;ole32.lib;dwmapi.lib;comctl32.lib;..\lib\Release\shuttle_texture_compiler.lib;..\lib\Release\shuttle_scene_compiler.lib;..\lib\Release\shuttle_environment_compiler.lib;..\lib\Release\shuttle_texture_compiler.lib;..\lib\Release\assimp-vc145-mt.lib;..\lib\Release\zlibstatic.lib;..\lib\Release\meshoptimizer.lib;..\lib\Release\shuttle_asset_core.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -openmp</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/lib/Release/engine.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/bin/Release/engine.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.4.350.0/include" /FS</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <OpenMPSupport>true</OpenMPSupport>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ProgramDataBaseFileName>E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\engine.dir\MinSizeRel\</ProgramDataBaseFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\lib\MinSizeRel\vk-bootstrap.lib;..\lib\MinSizeRel\async.lib;..\lib\MinSizeRel\pal.lib;..\lib\MinSizeRel\shuttle_scene_compiler.lib;..\lib\MinSizeRel\shuttle_environment_compiler.lib;..\lib\MinSizeRel\mimalloc.lib;psapi.lib;advapi32.lib;bcrypt.lib;user32.lib;gdi32.lib;shell32.lib;shcore.lib;ole32.lib;dwmapi.lib;comctl32.lib;..\lib\MinSizeRel\shuttle_texture_compiler.lib;..\lib\MinSizeRel\shuttle_scene_compiler.lib;..\lib\MinSizeRel\shuttle_environment_compiler.lib;..\lib\MinSizeRel\shuttle_texture_compiler.lib;..\lib\MinSizeRel\assimp-vc145-mt.lib;..\lib\MinSizeRel\zlibstatic.lib;..\lib\MinSizeRel\meshoptimizer.lib;..\lib\MinSizeRel\shuttle_asset_core.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -openmp</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/lib/MinSizeRel/engine.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/bin/MinSizeRel/engine.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "C:/VulkanSDK/1.4.350.0/include" /FS</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck></BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <OpenMPSupport>true</OpenMPSupport>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\engine.dir\RelWithDebInfo\</ProgramDataBaseFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;IMGUI_IMPL_VULKAN_NO_PROTOTYPES;IMGUI_IMPL_VULKAN_HAS_EXTENSION;IMGUI_IMPL_VULKAN_USE_RUNTIME_BINDINGS;IMGUI_DISABLE_OBSOLETE_FUNCTIONS;GLM_FORCE_DEPTH_ZERO_TO_ONE;VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\Users\Shagu\Projects\ShuttleEngine\external\imgui;E:\Users\Shagu\Projects\ShuttleEngine\engine\include;E:\Users\Shagu\Projects\ShuttleEngine\engine\src;E:\Users\Shagu\Projects\ShuttleEngine\external\cmft\include;E:\Users\Shagu\Projects\ShuttleEngine\external\concurrentqueue;E:\Users\Shagu\Projects\ShuttleEngine\external\VulkanMemoryAllocator\include;E:\Users\Shagu\Projects\ShuttleEngine\external\stb;E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src;E:\Users\Shagu\Projects\ShuttleEngine\external\tinyddsloader;E:\Users\Shagu\Projects\ShuttleEngine\external\mio\single_include;E:\Users\Shagu\Projects\ShuttleEngine\assets\scene_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\environment_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\texture_compiler\include;E:\Users\Shagu\Projects\ShuttleEngine\external\mimalloc\include;E:\Users\Shagu\Projects\ShuttleEngine\include;E:\Users\Shagu\Projects\ShuttleEngine\async\include;E:\Users\Shagu\Projects\ShuttleEngine\pal\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\formats\include;E:\Users\Shagu\Projects\ShuttleEngine\assets\core\include;C:\VulkanSDK\1.4.350.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\lib\RelWithDebInfo\vk-bootstrap.lib;..\lib\RelWithDebInfo\async.lib;..\lib\RelWithDebInfo\pal.lib;..\lib\RelWithDebInfo\shuttle_scene_compiler.lib;..\lib\RelWithDebInfo\shuttle_environment_compiler.lib;..\lib\RelWithDebInfo\mimalloc.lib;psapi.lib;advapi32.lib;bcrypt.lib;user32.lib;gdi32.lib;shell32.lib;shcore.lib;ole32.lib;dwmapi.lib;comctl32.lib;..\lib\RelWithDebInfo\shuttle_texture_compiler.lib;..\lib\RelWithDebInfo\shuttle_scene_compiler.lib;..\lib\RelWithDebInfo\shuttle_environment_compiler.lib;..\lib\RelWithDebInfo\shuttle_texture_compiler.lib;..\lib\RelWithDebInfo\assimp-vc145-mt.lib;..\lib\RelWithDebInfo\zlibstatic.lib;..\lib\RelWithDebInfo\meshoptimizer.lib;..\lib\RelWithDebInfo\shuttle_asset_core.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 -openmp</AdditionalOptions>
+      <DataExecutionPrevention></DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers></ImageHasSafeExceptionHandlers>
+      <ImportLibrary>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/lib/RelWithDebInfo/engine.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/bin/RelWithDebInfo/engine.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress></RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/engine/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/engine/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/engine/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/engine/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/engine/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/engine/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/engine/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/engine/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\engine\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_draw.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_tables.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_demo.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\backends\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\vulkan_context\vulkan_context.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\vulkan_context\vulkan_context.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_provider.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_provider.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_pool.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_pool.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_token.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_token.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_recorder.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_recorder.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\dedicated_command_pool.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\dedicated_command_pool.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\fence_waiter\fence_waiter.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\fence_waiter\fence_waiter.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\application\application.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\application\application.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\vulkan_debugger\vulkan_debugger.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\image_loader\image.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\image_loader\image.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\vulkan_helper_functions\vulkan_helper_functions.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\camera\camera.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\device_allocator\device_allocator.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\camera_controller\camera_controller.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\camera_controller\camera_controller.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\main.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\render.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\main_window\main_window.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\main_window\main_window.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\main_pass.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\main_pass.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\common.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\camera_system.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\camera_system.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\device_allocator\virtual_block.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\device_allocator\virtual_block.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\descriptor_heap_set.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\descriptor_heap_set.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\fallback_textures.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\common_resources.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\scene_data_loader\scene_data_loader.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\scene_data_loader\scene_data_loader.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\scene_data.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\im_ui_context\im_ui_context.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\im_ui_context\im_ui_context.cpp">
+      <ObjectFileName>$(IntDir)/src/im_ui_context/im_ui_context.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\im_ui_context.cpp">
+      <ObjectFileName>$(IntDir)/src/engine/im_ui_context.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\engine_impl.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\engine_impl.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\resource.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\handle.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\pipeline.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\viewport_resources.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\scenes.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\environment_data_loader\environment_data_loader.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\environment_data_loader\environment_data_loader.hpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\common_resources.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\environments.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\swapchain.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\render_scene_ui.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\render_ui_only.cpp" />
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\create.cpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\i_engine_impl.hpp" />
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\include\result_code.hpp" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\ZERO_CHECK.vcxproj">
+      <Project>{898EA41B-139D-370B-B6D5-9444FA684B02}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\external\assimp\code\assimp.vcxproj">
+      <Project>{B63367DB-6CD9-343A-BBB8-12E2D740920F}</Project>
+      <Name>assimp</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\async\async.vcxproj">
+      <Project>{8D8D52C2-51BA-3552-8616-BAE4303D0CC6}</Project>
+      <Name>async</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\compile_shaders.vcxproj">
+      <Project>{AB19D6C5-82CF-3D3B-A56C-DD5425344123}</Project>
+      <Name>compile_shaders</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\resources\copy_resources.vcxproj">
+      <Project>{29A37F27-2E84-3DC2-9D09-C0E99692199C}</Project>
+      <Name>copy_resources</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\external\meshoptimizer\meshoptimizer.vcxproj">
+      <Project>{9AE902C2-8802-3A57-A158-0BD531AED86E}</Project>
+      <Name>meshoptimizer</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\external\mimalloc\mimalloc-static.vcxproj">
+      <Project>{268AD6DD-2458-3D11-B044-E9C3129BF9E4}</Project>
+      <Name>mimalloc-static</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\pal\pal.vcxproj">
+      <Project>{BD96A2A9-DBA2-3470-BF01-DE5B659DE6E8}</Project>
+      <Name>pal</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\assets\core\shuttle_asset_core.vcxproj">
+      <Project>{7868E2CA-82E9-3ABF-8076-54CCCA809DE9}</Project>
+      <Name>shuttle_asset_core</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\assets\texture_compiler\shuttle_texture_compiler.vcxproj">
+      <Project>{E115884C-F235-3B3F-9697-77EA1241D23F}</Project>
+      <Name>shuttle_texture_compiler</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\external\vk-bootstrap\vk-bootstrap.vcxproj">
+      <Project>{3AA16675-B47B-3B14-8E6D-C48F3E0502BA}</Project>
+      <Name>vk-bootstrap</Name>
+    </ProjectReference>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\external\assimp\contrib\zlib\zlibstatic.vcxproj">
+      <Project>{7E2CC44B-6F4E-3E74-9AFC-072581ED8DE4}</Project>
+      <Name>zlibstatic</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

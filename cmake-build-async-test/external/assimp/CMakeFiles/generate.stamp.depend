@@ -1,0 +1,16 @@
+# CMake generation dependency list for this directory.
+E:/Program Files/CMake/share/cmake-4.2/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
+E:/Program Files/CMake/share/cmake-4.2/Modules/CMakePackageConfigHelpers.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/CheckFunctionExists.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/CheckIncludeFile.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/CheckIncludeFileCXX.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/CheckTypeSize.cmake
+E:/Program Files/CMake/share/cmake-4.2/Modules/WriteBasicConfigVersionFile.cmake
+E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/CMakeFiles/cmake.verify_globs
+E:/Users/Shagu/Projects/ShuttleEngine/external/assimp/CMakeLists.txt
+E:/Users/Shagu/Projects/ShuttleEngine/external/assimp/assimp.pc.in
+E:/Users/Shagu/Projects/ShuttleEngine/external/assimp/cmake-modules/FindPkgMacros.cmake
+E:/Users/Shagu/Projects/ShuttleEngine/external/assimp/cmake-modules/PrecompiledHeader.cmake
+E:/Users/Shagu/Projects/ShuttleEngine/external/assimp/cmake-modules/assimp-plain-config.cmake.in
+E:/Users/Shagu/Projects/ShuttleEngine/external/assimp/include/assimp/config.h.in
+E:/Users/Shagu/Projects/ShuttleEngine/external/assimp/include/assimp/revision.h.in

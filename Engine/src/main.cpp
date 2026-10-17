@@ -7,10 +7,10 @@
  * All rights reserved.
  *
  * This source code is licensed under the MIT License found in the
- * LICENSE file in the root directory of this source tree.
+ * license file in the root directory of this source tree.
  */
 
-#include "Application/Application.hpp"
+#include "application/application.hpp"
 
 using namespace shuttle;
 

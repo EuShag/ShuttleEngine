@@ -1,0 +1,89 @@
+@startuml
+skinparam BackgroundColor #FFFFFF
+skinparam ArrowColor #2C3E50
+skinparam SequenceMessageAlign center
+
+title Внутренний жизненный цикл воркера пула (Thread Loop & Dispatcher)
+
+box "Поток ОС Windows (jthread)" #F9F9F9
+participant "Worker Loop\n(_worker_loop)" as Loop
+participant "Корутина-Диспетчер\n(dispatcherLambda)" as Dispatcher
+entity "Каскад Поиска\n(dequeCoroutine)" as Cascade
+end box
+
+participant "Локальная дека" as Local
+participant "Глобальный склад" as Global
+participant "Воркеры-Соседи" as Neighbors
+entity "CoroutineNotifier" as Notifier
+actor "Главный Поток\n(mainDispatcher)" as Main
+
+Loop -> Loop : Настройка IExecutor::current_executor = this
+Loop -> Loop : Инициализация Xorshift семени
+
+note over Loop, Dispatcher : Конструктор promise_type(ctx) привязывает\nWorkerContext& без использования TLS!
+
+Loop -> Dispatcher : dispatcherLambda(ctx).resume()
+activate Dispatcher
+
+loop Бесконечный цикл планирования (while true)
+
+    alt #FFEAEA КРИТИЧЕСКИЙ СБОЙ: ctx.m_pendingInternalError == UNEXPECTED_FAILURE
+        Dispatcher --> Loop : co_return ResultCode::UNEXPECTED_FAILURE
+    end
+
+    Dispatcher -> Cascade : Вызов dequeCoroutine()
+    activate Cascade
+
+    Cascade -> Local : pop() (Молниеносный LIFO)
+    alt Задача найдена в кармане
+        Local --> Cascade : coroHandle
+    else Локально пусто
+        Cascade -> Global : try_dequeue() (FIFO)
+        alt Задача найдена на общем складе
+            Global --> Cascade : coroHandle
+        else На складе пусто
+            Cascade -> Neighbors : Циклический steal() по Xorshift (С головы соседа)
+            Neighbors --> Cascade : coroHandle (Украдено! / пусто)
+        end
+    end
+
+    Cascade --> Dispatcher : nextTask (Полезная корутина ИЛИ хэндл самого диспетчера)
+    deactivate Cascade
+
+    alt #E8F8F5 ШТАТНЫЙ РЕЖИМ: Найдена реальная задача (nextTask != dispatcher)
+        Dispatcher -> Dispatcher : co_yield nextTask (Symmetric Transfer jmp)
+        note over Dispatcher : Поток улетает выполнять полезную корутину.\nВозвращается сюда через FinalAwaiter дочки.
+
+    else #FCF3CF ТИШИНА: Очереди пусты (nextTask == dispatcher)
+
+        alt Пул останавливается (m_stopping == true)
+            Dispatcher --> Loop : co_return ResultCode::SUCCESS (Плановое гашение)
+        end
+
+        note over Dispatcher : ВАША ИДЕЯ: Активный спин-лок\n500 итераций _mm_pause() + dequeCoroutine()
+
+        loop 500 раз или до первой задачи
+            Dispatcher -> Cascade : dequeCoroutine()
+            Cascade --> Dispatcher : spinTask
+        end
+
+        alt Спин-лок поймал задачу "в прыжке"
+            Dispatcher -> Dispatcher : co_yield spinTask (Мгновенный jmp без сна)
+        else #EBF5FB Спин-лок не помог -> Тяжелый сон ядра ОС
+            Dispatcher -> Notifier : wait(лямбда-предикат перепроверки очередей)
+            note over Notifier : Ультралегкий Windows WaitOnAddress (0% CPU).\nПросыпается от notify_one() при execute().
+            Notifier --> Dispatcher : Пробуждение (Появилась работа / Shutdown)
+        end
+    end
+end
+
+deactivate Dispatcher
+
+alt #FFEAEA ТОЧКА СБОРКИ ПРИ КРАШЕ: exitStatus == UNEXPECTED_FAILURE
+    Loop -> Main : execute(SOS Лямбда: Перенаправить катастрофу!)
+    Main -> Main : Экстренное закрытие окон Windows и систем графики/звука
+end
+
+Loop -> Loop : Очистка TLS, уничтожение фрейма диспетчера
+note over Loop : Физический поток ОС jthread чисто гасится
+@endum

@@ -1,0 +1,222 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_widgets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_tables.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\imgui\backends\imgui_impl_vulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\vulkan_context\vulkan_context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_provider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_pool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_token.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_recorder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\dedicated_command_pool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\fence_waiter\fence_waiter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\application\application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\vulkan_debugger\vulkan_debugger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\image_loader\image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\vulkan_helper_functions\vulkan_helper_functions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\camera\camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\device_allocator\device_allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\camera_controller\camera_controller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\main_window\main_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\main_pass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\camera_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\device_allocator\virtual_block.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\descriptor_heap_set.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\scene_data_loader\scene_data_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\im_ui_context\im_ui_context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\im_ui_context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\engine_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\pipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\scenes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\environment_data_loader\environment_data_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\common_resources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\environments.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\swapchain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\render_scene_ui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\render_ui_only.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\create.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\vulkan_context\vulkan_context.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_provider.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_pool.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_token.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\command_buffer_recorder.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\command_buffer_provider\dedicated_command_pool.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\fence_waiter\fence_waiter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\application\application.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\image_loader\image.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\camera_controller\camera_controller.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\render.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\main_window\main_window.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\main_pass.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\camera_system.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\device_allocator\virtual_block.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\descriptor_heap_set.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\fallback_textures.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\common_resources.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\scene_data_loader\scene_data_loader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\render\scene_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\im_ui_context\im_ui_context.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\engine_impl.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\resource.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\handle.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\viewport_resources.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\environment_data_loader\environment_data_loader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\src\engine\i_engine_impl.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\include\result_code.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\engine\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{AE53ECCB-C7EA-326A-99CF-41C68C1A8C99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{84782AF7-6060-3948-9703-376FD2670F5D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,1128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{AB19D6C5-82CF-3D3B-A56C-DD5425344123}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>compile_shaders</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\instance_remap_pass.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\instance_remap_pass_debug.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader instance_remap_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/instance_remap_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/instance_remap_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\instance_remap_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass.frag.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass.vert.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass_debug.frag.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader main_pass.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass_debug.vert.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader main_pass.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/main_pass.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/main_pass_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\main_pass.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\mesh_instances_count.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\mesh_instances_count_debug.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader mesh_instances_count.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/mesh_instances_count.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/mesh_instances_count_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\mesh_instances_count.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\prefix_sum_pass.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\prefix_sum_pass_debug.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader prefix_sum_pass.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/prefix_sum_pass.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/prefix_sum_pass_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\prefix_sum_pass.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox.frag.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox.vert.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox_debug.frag.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader skybox.frag</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.frag -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.frag.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.frag;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox_debug.vert.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader skybox.vert</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/skybox.vert -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/skybox_debug.vert.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\skybox.vert;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\world_transform_update.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\world_transform_update_debug.comp.spv.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling debug shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling debug shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Compiling debug shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Compiling debug shader world_transform_update.comp</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\VulkanSDK\1.4.350.0\Bin\glslc.exe --target-env=vulkan1.2 -DSHUTTLE_DEBUG_OUTPUTS=1 -I E:/Users/Shagu/Projects/ShuttleEngine/shaders E:/Users/Shagu/Projects/ShuttleEngine/shaders/world_transform_update.comp -o E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/world_transform_update_debug.comp.spv
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\shaders\world_transform_update.comp;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_descriptor_heap.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_frame.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_gpu_data.glsl;E:\Users\Shagu\Projects\ShuttleEngine\shaders\common_scene.glsl;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\9e2a7a2463899a017e757e70beaf3ba2\compile_shaders.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\compile_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</VerifyInputsAndOutputsExist>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\compile_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</VerifyInputsAndOutputsExist>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\compile_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</VerifyInputsAndOutputsExist>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'"></Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\instance_remap_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\main_pass_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\mesh_instances_count_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\prefix_sum_pass_debug.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.frag.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\skybox_debug.vert.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update.comp.spv;E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\world_transform_update_debug.comp.spv;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\compile_shaders</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+      <VerifyInputsAndOutputsExist Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</VerifyInputsAndOutputsExist>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\shaders\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/shaders/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/shaders/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/shaders/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule E:/Users/Shagu/Projects/ShuttleEngine/shaders/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"E:\Program Files\CMake\bin\cmake.exe" -SE:/Users/Shagu/Projects/ShuttleEngine -BE:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test --check-stamp-file E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-async-test/shaders/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\compile_shaders">
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\ZERO_CHECK.vcxproj">
+      <Project>{898EA41B-139D-370B-B6D5-9444FA684B02}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

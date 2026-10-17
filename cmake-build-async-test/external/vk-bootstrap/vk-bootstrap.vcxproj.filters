@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src\VkBootstrap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src\VkBootstrap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src\VkBootstrapDispatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src\VkBootstrapFeatureChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\src\VkBootstrapFeatureChain.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\external\vk-bootstrap\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{AE53ECCB-C7EA-326A-99CF-41C68C1A8C99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{84782AF7-6060-3948-9703-376FD2670F5D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

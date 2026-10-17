@@ -1,0 +1,24 @@
+{
+	"InstallScripts" : 
+	[
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/assets/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/assets/core/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/assets/formats/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/assets/texture_compiler/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/assets/scene_compiler/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/assets/environment_compiler/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/meshoptimizer/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/vk-bootstrap/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/shaders/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/mimalloc/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/async/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/pal/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/engine/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/resources/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/assimp/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/assimp/contrib/zlib/cmake_install.cmake",
+		"E:/Users/Shagu/Projects/ShuttleEngine/cmake-build-mingw-release/external/assimp/code/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

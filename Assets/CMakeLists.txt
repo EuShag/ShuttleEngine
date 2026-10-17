@@ -1,10 +1,10 @@
 add_subdirectory(
-    Core)
+    core)
 add_subdirectory(
-    Formats)
+    formats)
 add_subdirectory(
-    TextureCompiler)
+    texture_compiler)
 add_subdirectory(
-    SceneCompiler)
+    scene_compiler)
 add_subdirectory(
-    EnvironmentCompiler)
+    environment_compiler)

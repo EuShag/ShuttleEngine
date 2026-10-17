@@ -1,163 +1,85 @@
 cmake_minimum_required(VERSION 3.20)
 
-# Опция для принудительного использования SDL на Windows
-option(SHUTTLE_FORCE_SDL "Force SDL2 backend on Windows" OFF)
-
-# Список общих файлов PAL
-set(PAL_SOURCES
-        "src/PAL/Common/Window/WindowBase.cpp"
-        # Добавь сюда остальные .cpp если они появятся
-)
-
 set(IMGUI_SOURCES
-        "${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp"
-        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp"
-        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp"
-        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp"
-        "${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp" # Для тестирования
-        "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp"
+    "${PROJECT_SOURCE_DIR}/external/imgui/imgui.cpp"
+    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_draw.cpp"
+    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_widgets.cpp"
+    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_tables.cpp"
+    "${PROJECT_SOURCE_DIR}/external/imgui/imgui_demo.cpp" # Для тестирования
+    "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_vulkan.cpp"
 )
-
-# --- Выбор Бэкенда ---
-if(WIN32 AND NOT SHUTTLE_FORCE_SDL)
-    set(IMGUI_SOURCES
-            ${IMGUI_SOURCES}
-            "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_win32.cpp" # Бэкэнд для Win32
-    )
-    message(STATUS "PAL: Using Native Win32 Backend")
-    list(APPEND PAL_SOURCES
-            "src/PAL/Win32/Win32Platform.cpp"
-    )
-    # Системные либы Windows
-    set(PLATFORM_LIBS user32 gdi32 shell32 Shcore Ole32)
-    add_compile_definitions(SHUTTLE_PLATFORM_WIN32)
-else()
-    set(IMGUI_SOURCES
-            ${IMGUI_SOURCES}
-            "${PROJECT_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp"
-            VulkanContext/VulkanContext.cpp
-            VulkanContext/VulkanContext.hpp
-            src/CommandBufferProvider/CommandBufferProvider.cpp
-            src/CommandBufferProvider/CommandBufferProvider.hpp
-            src/CommandBufferProvider/CommandPool.cpp
-            src/CommandBufferProvider/CommandPool.hpp
-            src/CommandBufferProvider/CommandBufferToken.cpp
-            src/CommandBufferProvider/CommandBufferToken.hpp
-            src/CommandBufferProvider/CommandBufferRecorder.cpp
-            src/CommandBufferProvider/CommandBufferRecorder.hpp
-            src/CommandBufferProvider/DedicatedCommandPool.cpp
-            src/CommandBufferProvider/DedicatedCommandPool.hpp
-            src/Coroutines/CoroScope.hpp
-            src/Coroutines/CoroScope.cpp
-            src/Coroutines/AsyncTask.cpp
-            src/Coroutines/AsyncTask.hpp
-            src/Coroutines/BlockingTask.hpp
-            src/ThreadPoolExecutor/ThreadPoolExecutor.cpp
-            src/ThreadPoolExecutor/ThreadPoolExecutor.hpp
-            src/ThreadPoolExecutor/CoroutineWorkStealingQueue.hpp
-            src/ThreadPoolExecutor/Notifier.hpp
-    )
-    message(STATUS "PAL: Using SDL2 Backend")
-    list(APPEND PAL_SOURCES
-            "src/PAL/Sdl/SdlPlatform.cpp"
-    )
-    set(PLATFORM_LIBS ${SDL2Libraries})
-    add_compile_definitions(SHUTTLE_PLATFORM_SDL)
-    if(SHUTTLE_FORCE_SDL)
-        add_compile_definitions(SHUTTLE_FORCE_SDL)
-    endif()
-endif()
 
 add_executable(
-    Engine
+    engine
     ${IMGUI_SOURCES}
-    ${PAL_SOURCES}
-    src/FenceWaiter/FenceWaiter.cpp
-    src/FenceWaiter/FenceWaiter.hpp
-    src/PAL/Common/Events/Events.hpp
-    src/PAL/Common/Keyboard/KeyState.hpp
-    src/PAL/Common/Window/WindowBase.hpp
-    src/PAL/Common/Window/MainWindow.hpp
-    src/PAL/Common/Window/ModalDialogWindow.hpp
-    src/PAL/Common/Window/DetachedPanelWindow.hpp
-    src/PAL/Common/Window/WindowBase.cpp
-    src/PAL/Platform.hpp
-    src/PAL/Common/Window/Decorations/HitTestTypes.hpp
-    src/PAL/Common/Window/Decorations/ResizeLayout.hpp
-    src/PAL/Common/Window/Decorations/TitlebarLayout.hpp
-    src/PAL/Common/Window/Decorations/WindowDecorations.hpp
-    src/PAL/Common/Window/Decorations/WindowDecorationFlags.hpp
-    src/PAL/Common/Display/DisplayTypes.hpp
-    src/PAL/Common/Display/MonitorInfo.hpp
-    src/PAL/Common/Display/MonitorHandle.hpp
-    src/PAL/Win32/Win32Platform.cpp
-    src/PAL/Win32/Win32Platform.hpp
-    src/PAL/Common/Window/WindowType.hpp
-    src/PAL/Common/Window/ShowMode.hpp
-    src/Application/Application.cpp
-    src/Application/Application.hpp
-    src/PAL/Sdl/SdlPlatform.cpp
-    src/VulkanDebugger/VulkanDebugger.cpp
-    src/ImageLoader/Image.hpp
-    src/ImageLoader/Image.cpp
-    src/VulkanHelperFunctions/VulkanHelperFunctions.cpp
-    src/Camera/Camera.cpp
-    src/DeviceAllocator/DeviceAllocator.cpp
-    src/CameraController/CameraController.cpp
-    src/CameraController/CameraController.hpp
+    vulkan_context/vulkan_context.cpp
+    vulkan_context/vulkan_context.hpp
+    src/command_buffer_provider/command_buffer_provider.cpp
+    src/command_buffer_provider/command_buffer_provider.hpp
+    src/command_buffer_provider/command_pool.cpp
+    src/command_buffer_provider/command_pool.hpp
+    src/command_buffer_provider/command_buffer_token.cpp
+    src/command_buffer_provider/command_buffer_token.hpp
+    src/command_buffer_provider/command_buffer_recorder.cpp
+    src/command_buffer_provider/command_buffer_recorder.hpp
+    src/command_buffer_provider/dedicated_command_pool.cpp
+    src/command_buffer_provider/dedicated_command_pool.hpp
+    src/fence_waiter/fence_waiter.cpp
+    src/fence_waiter/fence_waiter.hpp
+    src/application/application.cpp
+    src/application/application.hpp
+    src/vulkan_debugger/vulkan_debugger.cpp
+    src/image_loader/image.hpp
+    src/image_loader/image.cpp
+    src/vulkan_helper_functions/vulkan_helper_functions.cpp
+    src/camera/camera.cpp
+    src/device_allocator/device_allocator.cpp
+    src/camera_controller/camera_controller.cpp
+    src/camera_controller/camera_controller.hpp
     src/main.cpp
-    src/Render/Render.hpp
-    src/MainWindow/MainWindow.cpp
-    src/MainWindow/MainWindow.hpp
-    src/Render/MainPass.cpp
-    src/Render/MainPass.hpp
-    src/Render/Common.hpp
-    src/Render/CameraSystem.cpp
-    src/Render/CameraSystem.hpp
-    src/DeviceAllocator/VirtualBlock.cpp
-    src/DeviceAllocator/VirtualBlock.hpp
-    src/Render/DescriptorHeapSet.cpp
-    src/Render/DescriptorHeapSet.hpp
-    src/Render/FallbackTextures.hpp
-    src/Render/CommonResources.hpp
-    src/SceneDataLoader/SceneDataLoader.cpp
-    src/SceneDataLoader/SceneDataLoader.hpp
-    src/Render/SceneData.hpp
-    src/ImUiContext/ImUiContext.hpp
-    src/ImUiContext/ImUiContext.cpp
-    src/Engine/ImUiContext.cpp
-    src/Engine/EngineImpl.cpp
-    src/Engine/EngineImpl.hpp
-    src/Engine/Resource.hpp
-    src/Engine/Handle.hpp
-    src/Engine/Pipeline.cpp
-    src/Engine/ViewportResources.hpp
-    src/Engine/Scenes.cpp
-    src/EnvironmentDataLoader/EnvironmentDataLoader.cpp
-    src/EnvironmentDataLoader/EnvironmentDataLoader.hpp
-    src/Engine/CommonResources.cpp
-    src/Engine/Environments.cpp
-    src/Engine/Swapchain.cpp
-    src/Engine/RenderSceneUi.cpp
-    src/Engine/RenderUiOnly.cpp
-    src/Engine/Create.cpp
-    src/Engine/IEngineImpl.hpp
-        src/MiAllocator/MiAllocator.cpp
-        src/MiAllocator/MiAllocator.hpp
-        src/Coroutines/LaunchMode.hpp
-        src/Coroutines/BlockingTask.cpp
-        src/Coroutines/Awaiters.cpp
-        src/Coroutines/Awaiters.hpp
-        src/Coroutines/IExecuter.hpp
-        src/CoroutineExecutor/coroutine_executor.cpp
-        include/ErrorCode.hpp
+    src/render/render.hpp
+    src/main_window/main_window.cpp
+    src/main_window/main_window.hpp
+    src/render/main_pass.cpp
+    src/render/main_pass.hpp
+    src/render/common.hpp
+    src/render/camera_system.cpp
+    src/render/camera_system.hpp
+    src/device_allocator/virtual_block.cpp
+    src/device_allocator/virtual_block.hpp
+    src/render/descriptor_heap_set.cpp
+    src/render/descriptor_heap_set.hpp
+    src/render/fallback_textures.hpp
+    src/render/common_resources.hpp
+    src/scene_data_loader/scene_data_loader.cpp
+    src/scene_data_loader/scene_data_loader.hpp
+    src/render/scene_data.hpp
+    src/im_ui_context/im_ui_context.hpp
+    src/im_ui_context/im_ui_context.cpp
+    src/engine/im_ui_context.cpp
+    src/engine/engine_impl.cpp
+    src/engine/engine_impl.hpp
+    src/engine/resource.hpp
+    src/engine/handle.hpp
+    src/engine/pipeline.cpp
+    src/engine/viewport_resources.hpp
+    src/engine/scenes.cpp
+    src/environment_data_loader/environment_data_loader.cpp
+    src/environment_data_loader/environment_data_loader.hpp
+    src/engine/common_resources.cpp
+    src/engine/environments.cpp
+    src/engine/swapchain.cpp
+    src/engine/render_scene_ui.cpp
+    src/engine/render_ui_only.cpp
+    src/engine/create.cpp
+    src/engine/i_engine_impl.hpp
+    include/result_code.hpp
 )
 
 target_include_directories(
-    Engine
+    engine
     PRIVATE
         ${Vulkan_INCLUDE_DIRS}
-        ${Vulkan_INCLUDE_DIRS}/SDL2
         ${PROJECT_SOURCE_DIR}/external/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -168,14 +90,14 @@ target_include_directories(
         ${PROJECT_SOURCE_DIR}/external/vk-bootstrap/src
         ${PROJECT_SOURCE_DIR}/external/tinyddsloader
         ${PROJECT_SOURCE_DIR}/external/mio/single_include
-        ${PROJECT_SOURCE_DIR}/Assets/SceneCompiler/include
-        ${PROJECT_SOURCE_DIR}/Assets/EnvironmentCompiler/include
-        ${PROJECT_SOURCE_DIR}/Assets/TextureCompiler/include
+        ${PROJECT_SOURCE_DIR}/assets/scene_compiler/include
+        ${PROJECT_SOURCE_DIR}/assets/environment_compiler/include
+        ${PROJECT_SOURCE_DIR}/assets/texture_compiler/include
         ${PROJECT_SOURCE_DIR}/external/mimalloc/include
         ${PROJECT_SOURCE_DIR}/include)
 
 target_compile_definitions(
-    Engine
+    engine
     PRIVATE
         IMGUI_IMPL_VULKAN_NO_PROTOTYPES
         IMGUI_IMPL_VULKAN_HAS_EXTENSION
@@ -184,19 +106,11 @@ target_compile_definitions(
         GLM_FORCE_DEPTH_ZERO_TO_ONE
         VULKAN_HPP_HANDLE_ERROR_OUT_OF_DATE_AS_SUCCESS)
 
-target_link_libraries(Engine PRIVATE vk-bootstrap::vk-bootstrap)
-target_link_libraries(Engine PRIVATE ShuttleAssetFormats)
-target_link_libraries(Engine PRIVATE ShuttleSceneCompiler)
-target_link_libraries(Engine PRIVATE ShuttleEnvironmentCompiler)
-# Найди строку target_link_libraries для Engine и добавь туда comctl32:
-if(WIN32)
-    target_link_libraries(Engine PRIVATE
-            dwmapi      # Для ImGui Win32 (DwmIsCompositionEnabled, DwmEnableBlurBehindWindow)
-            shcore      # Для High DPI (GetDpiForMonitor)
-            comctl32
-    )
-endif()
-
-
-add_dependencies(Engine CompileShaders)
-add_dependencies(Engine CopyResources)
+target_link_libraries(engine PRIVATE vk-bootstrap::vk-bootstrap)
+target_link_libraries(engine PRIVATE async::async)
+target_link_libraries(engine PRIVATE pal::pal)
+target_link_libraries(engine PRIVATE shuttle_asset_formats)
+target_link_libraries(engine PRIVATE shuttle_scene_compiler)
+target_link_libraries(engine PRIVATE shuttle_environment_compiler)
+add_dependencies(engine compile_shaders)
+add_dependencies(engine copy_resources)

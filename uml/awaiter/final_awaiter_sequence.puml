@@ -1,0 +1,65 @@
+@startuml
+skinparam backgroundColor #FAFAFA
+skinparam BoxPadding 15
+skinparam ParticipantPadding 15
+skinparam sequence {
+    ActorBorderColor #2B579A
+    ActorBackgroundColor #EBF3FF
+    ParticipantBorderColor #2B579A
+    ParticipantBackgroundColor #EBF3FF
+    ArrowColor #2B579A
+    LifeLineBorderColor #2B579A
+    LifeLineBackgroundColor #EBF3FF
+    FontName "Segoe UI"
+    FontSize 13
+}
+
+title Диаграмма последовательности: Финальный FinalAwaiter (Shuttle Engine)
+
+box "Поток Воркера (Физический стек / CPU)" #E8F1FF
+participant "FinalAwaiter\n(Локальный стек)" as FinalAwaiter
+participant "IExecutor\n(Контекст потока)" as Executor
+end box
+
+box "Дочерняя корутина (Умирающий фрейм в куче)" #F3F3F3
+participant "CoroScope\n(Внутри фрейма)" as Scope
+participant "Child Frame\n(Куча)" as ChildFrame
+end box
+
+box "Родитель" #FFF2CC
+participant "Родительская корутина\n(Parent)" as Parent
+end box
+
+note over ChildFrame: Дочка дошла до co_return.\nВызывается FinalAwaiter::await_suspend()
+
+' Шаг 1: Раннее извлечение на стек
+FinalAwaiter -> Scope : getParentHandle()
+Scope --> FinalAwaiter : **[parent]** (Сохраняем на стек воркера)
+
+FinalAwaiter -> Scope : getLaunchOptions().mode
+Scope --> FinalAwaiter : **[launchMode]** (Сохраняем на стек воркера)
+
+' Шаг 2: Проверка лок-фри барьера
+FinalAwaiter -> Scope : **signalDeathAndTryDestroy()**
+
+alt Счетчик детей == 0 (Мы последние, детей нет)
+    Scope --> FinalAwaiter : **true** (Мы имеем право на удаление)
+
+    FinalAwaiter -> ChildFrame : **handle.destroy()**
+    destroy ChildFrame
+    note over FinalAwaiter: **Фрейм в куче стерт!**\nНо переменные parent и launchMode\nабсолютно валидны на локальном стеке воркера.
+else Счетчик детей > 0 (Дети корутины ещё работают)
+    Scope --> FinalAwaiter : **false** (Мы не последние)
+    note over FinalAwaiter: Блок удаления пропускается.\nФрейм корутины застывает в куче.\nЕго позже сотрет последний ребенок.
+end
+
+' Шаг 3: Гарантированный Symmetric Transfer (Выход из авейтера)
+alt parent != nullptr && launchMode == LaunchMode::Immediate
+    note over FinalAwaiter, Parent: **Синхронный Fast-Path:**\nВозвращаем parent. Поток мгновенно прыгает в проснувшегося родителя.
+    FinalAwaiter -> Parent : return parent
+else Во всех остальных случаях (Async-финал или дети ещё работают)
+    note over FinalAwaiter, Executor: **Асинхронный финал / Продолжение работы:**\nВозвращаем getNextCoroutine(). Поток берет следующую задачу\nили уходит на парковку в atomic::wait, оставаясь живым!
+    FinalAwaiter -> Executor : return IExecutor::getNextCoroutine()
+end
+
+@enduml

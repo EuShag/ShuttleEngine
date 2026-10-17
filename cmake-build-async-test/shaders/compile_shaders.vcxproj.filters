@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\instance_remap_pass.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\instance_remap_pass_debug.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass.frag.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass.vert.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass_debug.frag.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\main_pass_debug.vert.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\mesh_instances_count.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\mesh_instances_count_debug.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\prefix_sum_pass.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\prefix_sum_pass_debug.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox.frag.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox.vert.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox_debug.frag.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\skybox_debug.vert.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\world_transform_update.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\4720ce0cade12eb24ebf2bcde2a5f243\world_transform_update_debug.comp.spv.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\CMakeFiles\9e2a7a2463899a017e757e70beaf3ba2\compile_shaders.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="E:\Users\Shagu\Projects\ShuttleEngine\shaders\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="E:\Users\Shagu\Projects\ShuttleEngine\cmake-build-async-test\shaders\CMakeFiles\compile_shaders" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{6238B37E-9288-30FF-8C24-11640A127D9F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

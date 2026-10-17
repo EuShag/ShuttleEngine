@@ -1,0 +1,116 @@
+@startuml
+
+<style>
+document {
+  BoxPadding 10
+  ParticipantPadding 10
+}
+</style>
+
+title Два сценария благополучного выхода из гонки (Shuttle Engine)
+
+box "Поток Воркера CPU" #LightBlue
+participant "Корутина А" as CoroA #LightGreen
+participant "TimelineAwaiter\n(Объект co_await)" as Awaiter #LightCyan
+end box
+
+box "Ядро Движка" #LightYellow
+participant "TimelineWatcher\n(Фоновый поток)" as Watcher #Orange
+participant "Планировщик\n(GpuTaskScheduler)" as Scheduler #LightPink
+end box
+
+box "Железо (GPU)" #LightPink
+participant "Vulkan Timeline" as GPU #Red
+end box
+
+== НАЧАЛО ГОНКИ: Одновременный уход в асинхронный сон и проверка GPU ==
+
+CoroA -> Awaitable : co_await wait_value_async(...)
+activate Awaitable
+
+note over Awaitable: Состояние: INIT
+
+Awaitable -> Watcher : Регистрировать (this, target_value)
+activate Watcher
+note right Watcher: Хранит указатель на awaiter\nв списке ожидания
+
+Awaitable -> CoroA : Вызов await_suspend(handle)
+deactivate Awaitable
+activate CoroA
+
+note over CoroA, Watcher #LightSalmon
+  <b>КРИТИЧЕСКАЯ СЕКЦИЯ (ГОНКА)</b>
+  Корутина А выполняет логику приостановки на Потоке 1.
+  В этот же микромомент на Потоке 2 (Watcher) просыпается проверка GPU!
+end note
+
+Watcher -> GPU : vkGetSemaphoreCounterValue()
+Watcher <-- GPU : возвращает current_value >= target_value
+note right Watcher #LightGreen: GPU ГОТОВ!
+
+alt СЦЕНАРИЙ А: GPU оказался быстрее CPU (Опережение Ждуном)
+
+         Watcher -> Awaitable : Попытка разбудить: try_signal()
+         activate Awaitable
+
+         Awaitable -> Awaitable : atomic_compare_exchange(\n  INIT -> SIGNALED)
+         note right Awaitable #LightGreen: <b>УСПЕХ!</b>\nWatcher успел раньше,\nчем корутина завершила сон.
+
+         Awaitable --> Watcher : Статус: "Корутина еще не спала"
+         deactivate Awaitable
+
+         note over Watcher: Watcher <b>НЕ вызывает</b> resume(),\nон просто зафиксировал сигнал.
+         deactivate Watcher
+
+    note over CoroA: Корутина А завершает\nработу в await_suspend()
+
+    CoroA -> Awaitable : atomic_compare_exchange(\n  INIT -> SUSPENDED)
+    activate Awaitable
+    note right Awaitable #LightSalmon: <b>ФЕЙЛ!</b>\nСтейт уже SIGNALED,\nа не INIT.
+
+    Awaitable -> Awaitable : Понимает, что результат уже готов!
+    Awaitable --> CoroA : возвращает false из await_suspend()
+    deactivate Awaitable
+    deactivate CoroA
+
+    note over CoroA #LightGreen: Корутина А <b>НЕ засыпает</b>,\nа мгновенно продолжает\nвыполнение на Потоке 1!
+
+else СЦЕНАРИЙ Б: CPU успел перевести состояние раньше (Классический саспенд)
+
+    note over CoroA: Корутина А успевает первой\nзавершить await_suspend()
+
+    CoroA -> Awaitable : atomic_compare_exchange(\n  INIT -> SUSPENDED)
+    activate Awaitable
+    note right Awaitable #LightGreen: <b>УСПЕХ!</b>\nСтейт переведен в SUSPENDED.
+
+    Awaitable --> CoroA : возвращает true из await_suspend()
+    deactivate Awaitable
+    deactivate CoroA
+    note over CoroA: Корутина А официально заснула.\nПоток 1 свободен.
+
+         activate Watcher
+         Watcher -> Awaitable : Попытка разбудить: try_signal()
+         activate Awaitable
+
+         Awaitable -> Awaitable : atomic_compare_exchange(\n  INIT -> SIGNALED)
+         note right Awaitable #LightSalmon: <b>ФЕЙЛ!</b>\nСтейт уже равен SUSPENDED.
+
+         Awaitable -> Awaitable : Логика Loop-CAS:\n  SUSPENDED -> SIGNALED
+         note right Awaitable #LightGreen: <b>УСПЕХ!</b>\nАтомарно перешли в SIGNALED
+
+         Awaitable --> Watcher : Статус: "Корутина спит, требуется возобновление"
+         deactivate Awaitable
+
+         Watcher -> Scheduler : requeue(coro_handle)
+         activate Scheduler
+         deactivate Watcher
+
+         Scheduler -> CoroA : Пробуждение корутины на воркере CPU
+         activate CoroA
+         deactivate Scheduler
+         note over CoroA #LightGreen: Корутина А успешно проснулась\nи продолжает работу на свободном ядре!
+         deactivate CoroA
+
+end
+
+@enduml
